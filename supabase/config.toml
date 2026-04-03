@@ -1,0 +1,6 @@
+[auth]
+site_url = "https://neighborlyy-admin-portal.netlify.app"
+additional_redirect_urls = [
+  "https://neighborlyy-admin-portal.netlify.app/**",
+  "http://localhost:3000/**"
+]

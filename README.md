@@ -29,8 +29,31 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Copy `.env.example` to `.env.local` and fill in your values. See below for details on keys that require extra care.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### `SUPABASE_SERVICE_ROLE_KEY` (Optional but Recommended)
+
+This key allows admin operations that bypass RLS policies, needed for:
+- Approving pending residents (writes to `profiles` table)
+- Managing users across communities (admin-level operations)
+
+To get this key:
+1. Go to **Supabase Dashboard > Settings > API**
+2. Copy the **service_role** key (secret)
+3. Add to `.env.local` as `SUPABASE_SERVICE_ROLE_KEY=xxx`
+4. Also add to Netlify: **Site settings > Environment variables**
+
+> **Warning**
+> NEVER commit this key to Git - it bypasses all security rules.
+
+## Deployment Checklist
+
+After every deployment, verify the following:
+
+- [ ] Environment variables are set in Netlify (see `.env.example`)
+- [ ] Supabase auth config matches expected values (see [`docs/SUPABASE_AUTH_CONFIG.md`](docs/SUPABASE_AUTH_CONFIG.md))
+
+> **Warning**
+> After deployment, manually restore password requirements in Supabase Dashboard -> Authentication -> Providers -> Email -> Password Requirements. Set minimum length to **8** and require **letters and digits**. See [`docs/SUPABASE_AUTH_CONFIG.md`](docs/SUPABASE_AUTH_CONFIG.md) for full details.

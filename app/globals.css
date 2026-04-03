@@ -5,11 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* shadcn base tokens */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -43,12 +43,57 @@
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Neighborlyy design system tokens */
+  --color-nly-background: var(--nly-background);
+  --color-nly-surface: var(--nly-surface);
+  --color-nly-surface-hover: var(--nly-surface-hover);
+
+  --color-nly-text-primary: var(--nly-text-primary);
+  --color-nly-text-secondary: var(--nly-text-secondary);
+  --color-nly-text-tertiary: var(--nly-text-tertiary);
+  --color-nly-text-placeholder: var(--nly-text-placeholder);
+
+  --color-nly-brand: var(--nly-brand);
+  --color-nly-brand-hover: var(--nly-brand-hover);
+  --color-nly-brand-active: var(--nly-brand-active);
+
+  --color-nly-accent: var(--nly-accent);
+  --color-nly-accent-hover: var(--nly-accent-hover);
+
+  --color-nly-success: var(--nly-success);
+  --color-nly-success-bg: var(--nly-success-bg);
+  --color-nly-warning: var(--nly-warning);
+  --color-nly-warning-bg: var(--nly-warning-bg);
+  --color-nly-error: var(--nly-error);
+  --color-nly-error-bg: var(--nly-error-bg);
+  --color-nly-info: var(--nly-info);
+  --color-nly-info-bg: var(--nly-info-bg);
+
+  --color-nly-alert-urgent: var(--nly-alert-urgent);
+  --color-nly-alert-high: var(--nly-alert-high);
+  --color-nly-alert-medium: var(--nly-alert-medium);
+  --color-nly-alert-low: var(--nly-alert-low);
+
+  --color-nly-border: var(--nly-border);
+  --color-nly-border-hover: var(--nly-border-hover);
+  --color-nly-divider: var(--nly-divider);
+  --color-nly-overlay: var(--nly-overlay);
+
+  --color-nly-input-bg: var(--nly-input-bg);
+  --color-nly-input-border: var(--nly-input-border);
+  --color-nly-input-border-focus: var(--nly-input-border-focus);
+  --color-nly-input-border-error: var(--nly-input-border-error);
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Border radius */
+  --radius: 0.75rem;
 }
 
 :root {
+  /* shadcn defaults (light mode — overridden to dark below) */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -81,6 +126,47 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Neighborlyy design system — always dark */
+  --nly-background: #0B1520;
+  --nly-surface: #1A2433;
+  --nly-surface-hover: #233044;
+
+  --nly-text-primary: #E9EEF4;
+  --nly-text-secondary: rgba(233, 238, 244, 0.82);
+  --nly-text-tertiary: rgba(233, 238, 244, 0.7);
+  --nly-text-placeholder: rgba(233, 238, 244, 0.44);
+
+  --nly-brand: #E65C4F;
+  --nly-brand-hover: #D84A3D;
+  --nly-brand-active: #C93C2F;
+
+  --nly-accent: #78A6C8;
+  --nly-accent-hover: #6A98BA;
+
+  --nly-success: #10B981;
+  --nly-success-bg: rgba(16, 185, 129, 0.1);
+  --nly-warning: #F59E0B;
+  --nly-warning-bg: rgba(245, 158, 11, 0.1);
+  --nly-error: #EF4444;
+  --nly-error-bg: rgba(239, 68, 68, 0.1);
+  --nly-info: #3B82F6;
+  --nly-info-bg: rgba(59, 130, 246, 0.1);
+
+  --nly-alert-urgent: #EF4444;
+  --nly-alert-high: #F97316;
+  --nly-alert-medium: #F59E0B;
+  --nly-alert-low: #06B6D4;
+
+  --nly-border: rgba(233, 238, 244, 0.12);
+  --nly-border-hover: rgba(233, 238, 244, 0.2);
+  --nly-divider: rgba(233, 238, 244, 0.08);
+  --nly-overlay: rgba(11, 21, 32, 0.85);
+
+  --nly-input-bg: #1A2433;
+  --nly-input-border: rgba(233, 238, 244, 0.12);
+  --nly-input-border-focus: #78A6C8;
+  --nly-input-border-error: #EF4444;
 }
 
 .dark {
@@ -121,10 +207,40 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--nly-background);
+    color: var(--nly-text-primary);
+    @apply antialiased;
   }
+
   html {
     @apply font-sans;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: var(--nly-surface);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--nly-text-tertiary);
+    border-radius: 6px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--nly-text-secondary);
+  }
+}
+
+@layer components {
+  /* Minimum 44px touch target for accessibility */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
   }
 }
