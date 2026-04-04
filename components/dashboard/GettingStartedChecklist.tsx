@@ -46,43 +46,6 @@ export function GettingStartedChecklist({
   const [dismissed, setDismissed] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
 
-  useEffect(() => {
-    const wasDismissed = localStorage.getItem(DISMISSED_KEY) === "true";
-    const wasCollapsed = localStorage.getItem(COLLAPSED_KEY) === "true";
-
-    if (wasDismissed) {
-      setDismissed(true);
-      return;
-    }
-
-    // Only show if community was created within last 24 hours
-    const createdAt = new Date(communityCreatedAt);
-    const hoursSinceCreation =
-      (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-    if (hoursSinceCreation > 24) {
-      setDismissed(true);
-      return;
-    }
-
-    setDismissed(false);
-    setCollapsed(wasCollapsed);
-  }, [communityCreatedAt]);
-
-  const handleDismiss = useCallback(() => {
-    localStorage.setItem(DISMISSED_KEY, "true");
-    setDismissed(true);
-  }, []);
-
-  const toggleCollapse = useCallback(() => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem(COLLAPSED_KEY, String(next));
-      return next;
-    });
-  }, []);
-
-  if (dismissed) return null;
-
   const items: ChecklistItem[] = [
     {
       id: "community",
@@ -121,13 +84,49 @@ export function GettingStartedChecklist({
   const allDone = completedCount === items.length;
   const progress = (completedCount / items.length) * 100;
 
+  useEffect(() => {
+    const wasDismissed = localStorage.getItem(DISMISSED_KEY) === "true";
+    const wasCollapsed = localStorage.getItem(COLLAPSED_KEY) === "true";
+
+    if (wasDismissed) {
+      setDismissed(true);
+      return;
+    }
+
+    const createdAt = new Date(communityCreatedAt);
+    const hoursSinceCreation =
+      (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+    if (hoursSinceCreation > 24) {
+      setDismissed(true);
+      return;
+    }
+
+    setDismissed(false);
+    setCollapsed(wasCollapsed);
+  }, [communityCreatedAt]);
+
   // Auto-collapse when all done
   useEffect(() => {
-    if (allDone && !collapsed) {
+    if (allDone && !collapsed && !dismissed) {
       localStorage.setItem(COLLAPSED_KEY, "true");
       setCollapsed(true);
     }
-  }, [allDone, collapsed]);
+  }, [allDone, collapsed, dismissed]);
+
+  const handleDismiss = useCallback(() => {
+    localStorage.setItem(DISMISSED_KEY, "true");
+    setDismissed(true);
+  }, []);
+
+  const toggleCollapse = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(COLLAPSED_KEY, String(next));
+      return next;
+    });
+  }, []);
+
+  if (dismissed) return null;
 
   return (
     <div

@@ -130,6 +130,7 @@ function OnboardingContent() {
 
       const { error } = await supabase.from("communities").insert({
         property_manager_id: pmId,
+        building_name: data.name,
         name: fullName,
         community_code: data.community_code,
         street_address: data.street_address,
@@ -151,7 +152,14 @@ function OnboardingContent() {
 
       setComplete(true);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Setup failed. Please try again.");
+      console.error("Onboarding error:", err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as { message: unknown }).message)
+            : "Setup failed. Please try again.";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

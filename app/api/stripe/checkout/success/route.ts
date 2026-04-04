@@ -88,6 +88,7 @@ export async function GET(request: Request) {
 
     const { error: communityError } = await supabase.from("communities").insert({
       property_manager_id: pmId,
+      building_name: onboardingData.name,
       name: fullName,
       community_code: onboardingData.community_code,
       street_address: onboardingData.street_address,

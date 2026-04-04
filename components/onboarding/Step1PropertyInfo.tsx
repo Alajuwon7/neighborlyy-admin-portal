@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -38,19 +41,68 @@ const inputStyle = {
   color: "var(--nly-text-primary)",
 };
 
+const errorInputStyle = {
+  ...inputStyle,
+  borderColor: "var(--nly-error, #ef4444)",
+};
+
 const labelStyle = { color: "var(--nly-text-primary)" };
 
 export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onNext();
-  };
+  const [validating, setValidating] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; community_code?: string }>({});
 
   const autoCode = (name: string) =>
     name
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "")
       .slice(0, 8);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+    setValidating(true);
+
+    try {
+      const supabase = createClient();
+      const newErrors: typeof errors = {};
+
+      // Check building_name uniqueness
+      const { data: existingName } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("building_name", data.name)
+        .limit(1);
+
+      if (existingName && existingName.length > 0) {
+        newErrors.name = "A community with this property name already exists.";
+      }
+
+      // Check community_code uniqueness
+      const { data: existingCode } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("community_code", data.community_code)
+        .limit(1);
+
+      if (existingCode && existingCode.length > 0) {
+        newErrors.community_code = "This community code is already taken. Try a different one.";
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        const messages = Object.values(newErrors);
+        toast.error(messages.join(" "));
+        return;
+      }
+
+      onNext();
+    } catch {
+      toast.error("Could not validate. Please try again.");
+    } finally {
+      setValidating(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -73,14 +125,21 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
                   name: e.target.value,
                   community_code: autoCode(e.target.value),
                 });
+                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
               }}
               className="pl-[115px]"
-              style={inputStyle}
+              style={errors.name ? errorInputStyle : inputStyle}
             />
           </div>
-          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-            Will display as &quot;Neighborlyy @ {data.name || "Your Property"}&quot;
-          </p>
+          {errors.name ? (
+            <p className="text-xs font-medium" style={{ color: "var(--nly-error, #ef4444)" }}>
+              {errors.name}
+            </p>
+          ) : (
+            <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+              Will display as &quot;Neighborlyy @ {data.name || "Your Property"}&quot;
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -90,16 +149,23 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
             placeholder="SUNSET"
             maxLength={8}
             value={data.community_code}
-            onChange={(e) =>
+            onChange={(e) => {
               onChange({
                 community_code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
-              })
-            }
-            style={inputStyle}
+              });
+              if (errors.community_code) setErrors((prev) => ({ ...prev, community_code: undefined }));
+            }}
+            style={errors.community_code ? errorInputStyle : inputStyle}
           />
-          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-            Residents use this code to join. Max 8 characters.
-          </p>
+          {errors.community_code ? (
+            <p className="text-xs font-medium" style={{ color: "var(--nly-error, #ef4444)" }}>
+              {errors.community_code}
+            </p>
+          ) : (
+            <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+              Residents use this code to join. Max 8 characters.
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -193,10 +259,11 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
 
       <button
         type="submit"
-        className="w-full h-11 rounded-lg font-semibold text-sm transition-opacity hover:opacity-90"
+        disabled={validating}
+        className="w-full h-11 rounded-lg font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
         style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
       >
-        Continue →
+        {validating ? "Checking availability…" : "Continue →"}
       </button>
     </form>
   );
