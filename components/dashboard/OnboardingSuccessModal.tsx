@@ -34,10 +34,14 @@ export function OnboardingSuccessModal({
     }
   }, []);
 
-  const handleClose = () => {
+  const handleClose = (autoTour = true) => {
     localStorage.setItem(MODAL_DISMISSED_KEY, "true");
     setVisible(false);
     router.replace("/dashboard", { scroll: false });
+    // Auto-start tour after modal dismisses
+    if (autoTour && localStorage.getItem("nly-product-tour-completed") !== "true") {
+      setTimeout(() => onStartTour(), 500);
+    }
   };
 
   const handleCopyCode = async () => {
@@ -50,7 +54,7 @@ export function OnboardingSuccessModal({
   };
 
   const handleStartTour = () => {
-    handleClose();
+    handleClose(false);
     onStartTour();
   };
 
@@ -61,7 +65,7 @@ export function OnboardingSuccessModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose();
+        if (e.target === e.currentTarget) handleClose(true);
       }}
     >
       <div
@@ -201,7 +205,7 @@ export function OnboardingSuccessModal({
         {/* Action buttons */}
         <div className="space-y-2">
           <button
-            onClick={handleClose}
+            onClick={() => handleClose(true)}
             className="w-full h-11 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
             style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
           >

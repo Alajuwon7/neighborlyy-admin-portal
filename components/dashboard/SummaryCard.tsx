@@ -19,10 +19,11 @@ export function SummaryCard({
 }: SummaryCardProps) {
   return (
     <div
-      className="rounded-2xl border p-5 flex flex-col gap-3"
+      className="rounded-2xl border p-5 flex flex-col gap-3 transition-all duration-200 hover:translate-y-[-1px]"
       style={{
         backgroundColor: "var(--nly-surface)",
         borderColor: "var(--nly-border)",
+        boxShadow: "var(--nly-shadow-sm)",
       }}
     >
       <div className="flex items-start justify-between">

@@ -6,6 +6,7 @@ import { Header } from "@/components/dashboard/Header";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { DashboardClientShell } from "@/components/dashboard/DashboardClientShell";
+import { CommunityThemeProvider } from "@/components/dashboard/CommunityThemeProvider";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export default async function DashboardPage({
   // Fetch communities (includes migrated communities that may have null admin fields)
   const { data: communitiesRaw } = await supabase
     .from("communities")
-    .select("id, name, status, unit_count, trial_ends_at, onboarding_completed, property_manager_id, community_code, created_at")
+    .select("id, name, status, unit_count, trial_ends_at, onboarding_completed, property_manager_id, community_code, created_at, primary_color, accent_color")
     .eq("property_manager_id", pm.id);
 
   const communities = (
@@ -51,6 +52,8 @@ export default async function DashboardPage({
           property_manager_id: string | null;
           community_code: string;
           created_at: string;
+          primary_color: string | null;
+          accent_color: string | null;
         }[]
       | null
   ) ?? [];
@@ -90,6 +93,11 @@ export default async function DashboardPage({
         title={`${greeting}, ${firstName} 👋`}
         subtitle="Here's what's happening across your communities"
         trialDaysLeft={firstCommunity.status === "trial" ? trialDaysLeft : null}
+      />
+
+      <CommunityThemeProvider
+        primaryColor={firstCommunity.primary_color}
+        accentColor={firstCommunity.accent_color}
       />
 
       <main className="flex-1 p-6 space-y-6">

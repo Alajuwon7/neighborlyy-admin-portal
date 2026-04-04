@@ -15,6 +15,7 @@ export function Header({ title, subtitle, trialDaysLeft }: HeaderProps) {
       style={{
         backgroundColor: "var(--nly-surface)",
         borderColor: "var(--nly-border)",
+        boxShadow: "var(--nly-shadow-sm)",
       }}
     >
       <div>
@@ -55,7 +56,7 @@ export function Header({ title, subtitle, trialDaysLeft }: HeaderProps) {
 
         {/* Notifications */}
         <button
-          className="relative w-9 h-9 flex items-center justify-center rounded-xl transition-opacity hover:opacity-80"
+          className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all hover:opacity-80"
           style={{ color: "var(--nly-text-secondary)" }}
         >
           <Bell size={18} />

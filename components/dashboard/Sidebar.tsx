@@ -92,7 +92,7 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -105,7 +105,7 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group"
+                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all group"
                 style={{
                   backgroundColor: isActive
                     ? "rgba(230, 92, 79, 0.1)"
@@ -113,6 +113,12 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
                   color: isActive
                     ? "var(--nly-brand)"
                     : "var(--nly-text-secondary)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = "var(--nly-surface-hover)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
                 <Icon size={17} />
