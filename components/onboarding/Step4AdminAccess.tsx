@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -21,6 +22,7 @@ const inputStyle = {
 
 export function Step4AdminAccess({ data, onChange, onNext, onBack }: Props) {
   const [showCode, setShowCode] = useState(false);
+  const [error, setError] = useState("");
 
   const generateCode = () => {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -29,11 +31,22 @@ export function Step4AdminAccess({ data, onChange, onNext, onBack }: Props) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     onChange({ admin_code: code });
+    setError("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (data.admin_code.length < 6) return;
+    if (!data.admin_code) {
+      setError("Admin code is required.");
+      toast.error("Please enter an admin code.");
+      return;
+    }
+    if (data.admin_code.length < 6) {
+      setError(`Admin code must be at least 6 characters (currently ${data.admin_code.length}).`);
+      toast.error("Admin code must be at least 6 characters.");
+      return;
+    }
+    setError("");
     onNext();
   };
 
@@ -67,11 +80,12 @@ export function Step4AdminAccess({ data, onChange, onNext, onBack }: Props) {
               maxLength={12}
               placeholder="e.g. SUNSET24"
               value={data.admin_code}
-              onChange={(e) =>
+              onChange={(e) => {
                 onChange({
                   admin_code: e.target.value.toUpperCase().replace(/\s/g, ""),
-                })
-              }
+                });
+                if (error) setError("");
+              }}
               style={{ ...inputStyle, letterSpacing: showCode ? "0.1em" : "0.25em" }}
               className="font-mono pr-12"
             />
@@ -100,6 +114,11 @@ export function Step4AdminAccess({ data, onChange, onNext, onBack }: Props) {
         <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
           Min 6 characters. Letters and numbers only.
         </p>
+        {error && (
+          <p className="text-xs font-medium" style={{ color: "var(--nly-error, #ef4444)" }}>
+            {error}
+          </p>
+        )}
       </div>
 
       {data.admin_code && (

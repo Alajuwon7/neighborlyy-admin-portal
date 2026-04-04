@@ -1,12 +1,22 @@
 import { useRouter } from "next/navigation";
+import { CheckCircle } from "lucide-react";
 
 interface Props {
   communityName: string;
   adminCode: string;
+  paymentCompleted?: boolean;
+  plan?: string | null;
 }
 
-export function SetupComplete({ communityName, adminCode }: Props) {
+const PLAN_LABELS: Record<string, string> = {
+  starter: "Starter",
+  professional: "Professional",
+  enterprise: "Enterprise",
+};
+
+export function SetupComplete({ communityName, adminCode, paymentCompleted, plan }: Props) {
   const router = useRouter();
+  const planLabel = plan ? PLAN_LABELS[plan] || plan : null;
 
   return (
     <div className="text-center space-y-6 py-4">
@@ -27,6 +37,23 @@ export function SetupComplete({ communityName, adminCode }: Props) {
           Your community portal is ready. Your 14-day free trial has started.
         </p>
       </div>
+
+      {/* Payment confirmation banner */}
+      {paymentCompleted && (
+        <div
+          className="flex items-center justify-center gap-2 rounded-xl p-3 border"
+          style={{
+            backgroundColor: "rgba(16, 185, 129, 0.08)",
+            borderColor: "rgba(16, 185, 129, 0.2)",
+          }}
+        >
+          <CheckCircle size={16} style={{ color: "var(--nly-success, #10b981)" }} />
+          <p className="text-sm font-medium" style={{ color: "var(--nly-success, #10b981)" }}>
+            Payment confirmed
+            {planLabel && <> — {planLabel} subscription is active</>}
+          </p>
+        </div>
+      )}
 
       <div
         className="rounded-xl p-4 border text-left space-y-3"
@@ -57,7 +84,7 @@ export function SetupComplete({ communityName, adminCode }: Props) {
       </div>
 
       <button
-        onClick={() => router.push("/dashboard")}
+        onClick={() => router.push("/dashboard?onboarding=complete")}
         className="w-full h-12 rounded-xl font-bold text-base transition-opacity hover:opacity-90"
         style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
       >

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { StepProgress } from "@/components/onboarding/StepProgress";
@@ -27,6 +28,7 @@ const defaultData: OnboardingData = {
   facilities: [],
   admin_code: "",
   subscription_tier: "professional",
+  billing_cycle: "monthly",
 };
 
 const STEP_TITLES = [
@@ -37,16 +39,72 @@ const STEP_TITLES = [
   "Choose a Plan",
 ];
 
+const ERROR_MESSAGES: Record<string, string> = {
+  no_session: "Checkout session not found. Please try again.",
+  payment_incomplete: "Payment was not completed. Please try again.",
+  missing_data: "Onboarding data was lost. Please try again.",
+  session_expired: "Your session expired. Please fill out the form again.",
+  no_profile: "Property manager profile not found. Please contact support.",
+  setup_failed: "Community setup failed. Please try again.",
+  stripe_error: "A payment error occurred. Please try again.",
+};
+
 export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingContent />
+    </Suspense>
+  );
+}
+
+function OnboardingContent() {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>(defaultData);
   const [loading, setLoading] = useState(false);
   const [complete, setComplete] = useState(false);
+  const [paymentPlan, setPaymentPlan] = useState<string | null>(null);
+
+  // Handle return from Stripe checkout or error redirects
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    const error = searchParams.get("error");
+    const cancelled = searchParams.get("cancelled");
+    const stepParam = searchParams.get("step");
+
+    if (payment === "completed") {
+      // Returning from successful Stripe checkout
+      setData((prev) => ({
+        ...prev,
+        name: searchParams.get("community") || prev.name,
+        admin_code: searchParams.get("admin_code") || prev.admin_code,
+      }));
+      setPaymentPlan(searchParams.get("plan"));
+      setComplete(true);
+      return;
+    }
+
+    if (error) {
+      const message = ERROR_MESSAGES[error] || "Something went wrong. Please try again.";
+      toast.error(message);
+    }
+
+    if (cancelled) {
+      toast("Checkout cancelled. You can try again when you're ready.");
+    }
+
+    if (stepParam) {
+      const stepNum = parseInt(stepParam, 10);
+      if (stepNum >= 1 && stepNum <= 5) {
+        setStep(stepNum);
+      }
+    }
+  }, [searchParams]);
 
   const update = (partial: Partial<OnboardingData>) =>
     setData((prev) => ({ ...prev, ...partial }));
 
-  const handleFinish = async () => {
+  const handleFinish = async (skipPayment = false) => {
     setLoading(true);
     const supabase = createClient();
 
@@ -68,6 +126,8 @@ export default function OnboardingPage() {
 
       const fullName = `Neighborlyy @ ${data.name}`;
 
+      const tier = skipPayment ? "professional" : data.subscription_tier;
+
       const { error } = await supabase.from("communities").insert({
         property_manager_id: pmId,
         name: fullName,
@@ -81,7 +141,7 @@ export default function OnboardingPage() {
         primary_color: data.primary_color,
         accent_color: data.accent_color,
         admin_code: data.admin_code,
-        subscription_tier: data.subscription_tier as SubscriptionTier,
+        subscription_tier: tier as SubscriptionTier,
         status: "trial",
         onboarding_completed: true,
         trial_ends_at: trialEndsAt.toISOString(),
@@ -95,6 +155,22 @@ export default function OnboardingPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Collect all onboarding data to pass through Stripe checkout
+  const onboardingPayload = {
+    name: data.name,
+    community_code: data.community_code,
+    street_address: data.street_address,
+    city: data.city,
+    state: data.state,
+    zip_code: data.zip_code,
+    unit_count: data.unit_count,
+    property_type: data.property_type,
+    primary_color: data.primary_color,
+    accent_color: data.accent_color,
+    admin_code: data.admin_code,
+    subscription_tier: data.subscription_tier,
   };
 
   return (
@@ -121,7 +197,12 @@ export default function OnboardingPage() {
               borderColor: "var(--nly-border)",
             }}
           >
-            <SetupComplete communityName={data.name} adminCode={data.admin_code} />
+            <SetupComplete
+              communityName={data.name}
+              adminCode={data.admin_code}
+              paymentCompleted={!!paymentPlan}
+              plan={paymentPlan}
+            />
           </div>
         ) : (
           <div
@@ -182,10 +263,12 @@ export default function OnboardingPage() {
             {step === 5 && (
               <Step5Billing
                 data={data}
+                onboardingData={onboardingPayload}
                 onChange={update}
-                onSubmit={handleFinish}
+                onSubmit={() => handleFinish(false)}
                 onBack={() => setStep(4)}
                 loading={loading}
+                onSkipPayment={() => handleFinish(true)}
               />
             )}
           </div>

@@ -1,14 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, differenceInHours } from "date-fns";
 import { Building2, Users, Clock, AlertTriangle } from "lucide-react";
 import { Header } from "@/components/dashboard/Header";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { DashboardClientShell } from "@/components/dashboard/DashboardClientShell";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const resolvedSearchParams = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -30,7 +36,7 @@ export default async function DashboardPage() {
   // Fetch communities (includes migrated communities that may have null admin fields)
   const { data: communitiesRaw } = await supabase
     .from("communities")
-    .select("id, name, status, unit_count, trial_ends_at, onboarding_completed, property_manager_id")
+    .select("id, name, status, unit_count, trial_ends_at, onboarding_completed, property_manager_id, community_code, created_at")
     .eq("property_manager_id", pm.id);
 
   const communities = (
@@ -43,6 +49,8 @@ export default async function DashboardPage() {
           trial_ends_at: string | null;
           onboarding_completed: boolean;
           property_manager_id: string | null;
+          community_code: string;
+          created_at: string;
         }[]
       | null
   ) ?? [];
@@ -60,6 +68,16 @@ export default async function DashboardPage() {
   const totalUnits = communities.reduce((sum, c) => sum + (c.unit_count ?? 0), 0);
   const activeCommunities = communities.filter((c) => c.status !== "cancelled").length;
 
+  // Determine if this is a new user (community created within last 24 hours)
+  const hoursSinceCreation = differenceInHours(
+    new Date(),
+    new Date(firstCommunity.created_at)
+  );
+  const isNewUser = hoursSinceCreation <= 24;
+
+  // Check for onboarding=complete query param
+  const showOnboardingModal = resolvedSearchParams.onboarding === "complete";
+
   // Greeting
   const hour = new Date().getHours();
   const greeting =
@@ -75,8 +93,20 @@ export default async function DashboardPage() {
       />
 
       <main className="flex-1 p-6 space-y-6">
+        {/* Client-side onboarding shell (checklist, modals) */}
+        <DashboardClientShell
+          showOnboardingModal={showOnboardingModal}
+          isNewUser={isNewUser}
+          communityName={firstCommunity.name}
+          communityCode={firstCommunity.community_code}
+          communityCreatedAt={firstCommunity.created_at}
+          hasResidents={false}
+          hasEvents={false}
+          hasPendingUsers={false}
+        />
+
         {/* Summary cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <SummaryCard
             label="Active Communities"
             value={activeCommunities}
@@ -87,21 +117,33 @@ export default async function DashboardPage() {
           <SummaryCard
             label="Total Units"
             value={totalUnits.toLocaleString()}
-            subtext="Across all properties"
+            subtext={
+              totalUnits === 0
+                ? "No residents yet — share your community code"
+                : "Across all properties"
+            }
             icon={Users}
             accentColor="var(--nly-accent)"
           />
           <SummaryCard
             label="Pending Approvals"
             value={0}
-            subtext="Residents awaiting access"
+            subtext={
+              isNewUser
+                ? "Help requests from residents will appear here"
+                : "Residents awaiting access"
+            }
             icon={Clock}
             accentColor="var(--nly-warning)"
           />
           <SummaryCard
             label="Open Alerts"
             value={0}
-            subtext="Unresolved community alerts"
+            subtext={
+              isNewUser
+                ? "Create your first event to engage residents"
+                : "Unresolved community alerts"
+            }
             icon={AlertTriangle}
             accentColor="var(--nly-error)"
           />
@@ -111,6 +153,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Communities */}
           <div
+            data-tour="community-card"
             className="xl:col-span-2 rounded-2xl border"
             style={{
               backgroundColor: "var(--nly-surface)",
@@ -187,7 +230,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Activity feed */}
-          <div className="xl:col-span-3">
+          <div data-tour="activity-feed" className="xl:col-span-3">
             <ActivityFeed items={[]} />
           </div>
         </div>

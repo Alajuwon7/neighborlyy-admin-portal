@@ -29,6 +29,42 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Testing
+
+### E2E Tests with Playwright
+
+Run all tests:
+```bash
+npm run test:e2e
+```
+
+Run tests in UI mode (interactive):
+```bash
+npm run test:e2e:ui
+```
+
+Run tests in headed mode (see browser):
+```bash
+npm run test:e2e:headed
+```
+
+### Payment Bypass for Testing
+
+When Stripe is not configured, the onboarding flow includes a "Skip Payment for Now" option that allows completing setup without payment integration. This creates a trial account with:
+- 14-day trial period
+- Professional tier (default)
+- All features enabled
+
+This is intended for:
+- Local development
+- Demo environments
+- E2E testing
+- QA verification
+
+> **Note:** This option is automatically hidden when Stripe environment variables are properly configured.
+
+See [tests/README.md](tests/README.md) for full testing documentation.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and fill in your values. See below for details on keys that require extra care.
