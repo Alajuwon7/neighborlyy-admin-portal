@@ -176,7 +176,7 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
             onChange={(e) =>
               onChange({ property_type: e.target.value as Step1Data["property_type"] })
             }
-            className="flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm"
+            className="flex h-10 w-full rounded-xl border px-3.5 py-2 text-sm"
             style={inputStyle}
           >
             {PROPERTY_TYPES.map((t) => (
@@ -216,7 +216,7 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
               required
               value={data.state}
               onChange={(e) => onChange({ state: e.target.value })}
-              className="flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-sm"
+              className="flex h-10 w-full rounded-xl border px-3.5 py-2 text-sm"
               style={inputStyle}
             >
               <option value="">—</option>

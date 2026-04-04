@@ -32,7 +32,7 @@ export function EventFormDialog({
     setLoading(false);
     if (result.error) toast.error(result.error);
     else {
-      toast.success("Event created");
+      toast.success("Event created — visible to residents in the app");
       setOpen(false);
     }
   }
@@ -64,6 +64,9 @@ export function EventFormDialog({
             Create Event
           </DialogTitle>
         </DialogHeader>
+        <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+          This event will appear in the resident mobile app.
+        </p>
         <form action={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
             <Label style={{ color: "var(--nly-text-secondary)" }}>Title</Label>
@@ -100,10 +103,10 @@ export function EventFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label style={{ color: "var(--nly-text-secondary)" }}>
-                Start Time
+                Date & Time
               </Label>
               <Input
-                name="start_time"
+                name="event_date"
                 type="datetime-local"
                 required
                 className="border"
@@ -112,11 +115,13 @@ export function EventFormDialog({
             </div>
             <div className="space-y-2">
               <Label style={{ color: "var(--nly-text-secondary)" }}>
-                End Time
+                Max Attendees
               </Label>
               <Input
-                name="end_time"
-                type="datetime-local"
+                name="max_attendees"
+                type="number"
+                min="1"
+                placeholder="Optional"
                 className="border"
                 style={inputStyle}
               />

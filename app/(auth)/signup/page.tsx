@@ -2,20 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { toast } from "sonner";
+import { Mail, User, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { Button } from "@/components/ui/button";
+import { AuthToggleTabs } from "@/components/auth/AuthToggleTabs";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export default function SignupPage() {
   const [loading, setLoading] = useState(false);
@@ -90,141 +84,145 @@ export default function SignupPage() {
 
   return (
     <AuthLayout>
-      <Card
-        style={{
-          backgroundColor: "var(--nly-surface)",
-          borderColor: "var(--nly-border)",
-        }}
-      >
-        <CardHeader>
-          <CardTitle
-            className="text-2xl"
+      <AuthToggleTabs />
+
+      <div className="space-y-2 mb-8">
+        <h2
+          className="text-2xl font-bold"
+          style={{ color: "var(--nly-text-primary)" }}
+        >
+          Create Account
+        </h2>
+        <p style={{ color: "var(--nly-text-secondary)" }} className="text-sm">
+          Start your 14-day free trial. No credit card required.
+        </p>
+      </div>
+
+      <form onSubmit={handleSignup} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="fullName" style={{ color: "var(--nly-text-primary)" }}>
+            Full Name *
+          </Label>
+          <div className="relative">
+            <User
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2"
+              style={{ color: "var(--nly-text-tertiary)" }}
+            />
+            <Input
+              id="fullName"
+              type="text"
+              required
+              placeholder="John Smith"
+              value={formData.fullName}
+              onChange={(e) =>
+                setFormData({ ...formData, fullName: e.target.value })
+              }
+              className="pl-10"
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email" style={{ color: "var(--nly-text-primary)" }}>
+            Email *
+          </Label>
+          <div className="relative">
+            <Mail
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2"
+              style={{ color: "var(--nly-text-tertiary)" }}
+            />
+            <Input
+              id="email"
+              type="email"
+              required
+              placeholder="john@property.com"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              className="pl-10"
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone" style={{ color: "var(--nly-text-secondary)" }}>
+            Phone (optional)
+          </Label>
+          <div className="relative">
+            <Phone
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2"
+              style={{ color: "var(--nly-text-tertiary)" }}
+            />
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="(555) 123-4567"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+              className="pl-10"
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password" style={{ color: "var(--nly-text-primary)" }}>
+            Password *
+          </Label>
+          <PasswordInput
+            id="password"
+            required
+            placeholder="Create a password"
+            value={formData.password}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setFormData({ ...formData, password: e.target.value })
+            }
+            style={inputStyle}
+          />
+          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+            Minimum 8 characters
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label
+            htmlFor="confirmPassword"
             style={{ color: "var(--nly-text-primary)" }}
           >
-            Create Account
-          </CardTitle>
-          <CardDescription style={{ color: "var(--nly-text-secondary)" }}>
-            Start your 14-day free trial. No credit card required.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" style={{ color: "var(--nly-text-primary)" }}>
-                Full Name *
-              </Label>
-              <Input
-                id="fullName"
-                type="text"
-                required
-                placeholder="John Smith"
-                value={formData.fullName}
-                onChange={(e) =>
-                  setFormData({ ...formData, fullName: e.target.value })
-                }
-                style={inputStyle}
-              />
-            </div>
+            Confirm Password *
+          </Label>
+          <PasswordInput
+            id="confirmPassword"
+            required
+            placeholder="Confirm your password"
+            value={formData.confirmPassword}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setFormData({ ...formData, confirmPassword: e.target.value })
+            }
+            style={inputStyle}
+          />
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" style={{ color: "var(--nly-text-primary)" }}>
-                Email *
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                placeholder="john@property.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                style={inputStyle}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone" style={{ color: "var(--nly-text-secondary)" }}>
-                Phone (optional)
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                style={inputStyle}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" style={{ color: "var(--nly-text-primary)" }}>
-                Password *
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                style={inputStyle}
-              />
-              <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-                Minimum 8 characters
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="confirmPassword"
-                style={{ color: "var(--nly-text-primary)" }}
-              >
-                Confirm Password *
-              </Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
-                style={inputStyle}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full touch-target font-semibold"
-              disabled={loading}
-              style={{
-                backgroundColor: "var(--nly-brand)",
-                color: "#fff",
-              }}
-            >
-              {loading ? "Creating account…" : "Create Account & Continue"}
-            </Button>
-          </form>
-
-          <p
-            className="mt-6 text-center text-sm"
-            style={{ color: "var(--nly-text-secondary)" }}
-          >
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="hover:underline"
-              style={{ color: "var(--nly-accent)" }}
-            >
-              Sign in
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+        <button
+          type="submit"
+          className="w-full h-12 rounded-xl font-semibold text-base transition-opacity hover:opacity-90 disabled:opacity-50"
+          disabled={loading}
+          style={{
+            background: "var(--nly-brand-gradient)",
+            color: "#fff",
+          }}
+        >
+          {loading ? "Creating account..." : "Create Account"}
+        </button>
+      </form>
     </AuthLayout>
   );
 }

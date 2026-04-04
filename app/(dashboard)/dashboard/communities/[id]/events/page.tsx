@@ -1,6 +1,6 @@
 import { getCommunityWithAuth } from "@/lib/queries";
 import { EventFormDialog } from "@/components/community/EventFormDialog";
-import { Calendar, MapPin, Users, Trash2 } from "lucide-react";
+import { Calendar, MapPin, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +14,9 @@ export default async function EventsPage({
 
   const { data: eventsRaw } = await supabase
     .from("events")
-    .select("*")
+    .select("id, title, description, location, event_date, max_attendees, image_url, created_at")
     .eq("community_code", community.community_code)
-    .order("start_time", { ascending: true });
+    .order("event_date", { ascending: true });
 
   const events =
     (eventsRaw as {
@@ -24,15 +24,15 @@ export default async function EventsPage({
       title: string;
       description: string | null;
       location: string | null;
-      start_time: string;
-      end_time: string | null;
-      rsvp_count: number;
+      event_date: string;
+      max_attendees: number | null;
+      image_url: string | null;
       created_at: string;
     }[]) ?? [];
 
   const now = new Date();
-  const upcoming = events.filter((e) => new Date(e.start_time) >= now);
-  const past = events.filter((e) => new Date(e.start_time) < now);
+  const upcoming = events.filter((e) => new Date(e.event_date) >= now);
+  const past = events.filter((e) => new Date(e.event_date) < now);
 
   return (
     <main className="flex-1 p-6 space-y-6">
@@ -59,14 +59,18 @@ export default async function EventsPage({
 
       {events.length === 0 ? (
         <div
-          className="rounded-2xl border p-12 text-center"
+          className="rounded-2xl border p-12 text-center space-y-3"
           style={{
             backgroundColor: "var(--nly-surface)",
             borderColor: "var(--nly-border)",
           }}
         >
-          <p className="text-sm" style={{ color: "var(--nly-text-tertiary)" }}>
-            No events yet. Create one to engage your community.
+          <p className="text-3xl">📅</p>
+          <p className="text-sm font-medium" style={{ color: "var(--nly-text-primary)" }}>
+            No events yet
+          </p>
+          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+            Create one to engage your community. Events show up in the resident app immediately.
           </p>
         </div>
       ) : (
@@ -115,12 +119,12 @@ function EventCard({
     title: string;
     description: string | null;
     location: string | null;
-    start_time: string;
-    end_time: string | null;
-    rsvp_count: number;
+    event_date: string;
+    max_attendees: number | null;
+    image_url: string | null;
   };
 }) {
-  const startDate = new Date(event.start_time);
+  const eventDate = new Date(event.event_date);
 
   return (
     <div
@@ -130,6 +134,13 @@ function EventCard({
         borderColor: "var(--nly-border)",
       }}
     >
+      {event.image_url && (
+        <img
+          src={event.image_url}
+          alt={event.title}
+          className="w-full h-32 object-cover rounded-xl"
+        />
+      )}
       <h4
         className="text-sm font-semibold"
         style={{ color: "var(--nly-text-primary)" }}
@@ -148,8 +159,8 @@ function EventCard({
         <div className="flex items-center gap-1.5">
           <Calendar size={12} style={{ color: "var(--nly-accent)" }} />
           <span className="text-xs" style={{ color: "var(--nly-text-secondary)" }}>
-            {startDate.toLocaleDateString()} at{" "}
-            {startDate.toLocaleTimeString([], {
+            {eventDate.toLocaleDateString()} at{" "}
+            {eventDate.toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             })}
@@ -166,15 +177,17 @@ function EventCard({
             </span>
           </div>
         )}
-        <div className="flex items-center gap-1.5">
-          <Users size={12} style={{ color: "var(--nly-text-tertiary)" }} />
-          <span
-            className="text-xs"
-            style={{ color: "var(--nly-text-secondary)" }}
-          >
-            {event.rsvp_count} RSVPs
-          </span>
-        </div>
+        {event.max_attendees && (
+          <div className="flex items-center gap-1.5">
+            <Users size={12} style={{ color: "var(--nly-text-tertiary)" }} />
+            <span
+              className="text-xs"
+              style={{ color: "var(--nly-text-secondary)" }}
+            >
+              Max {event.max_attendees}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

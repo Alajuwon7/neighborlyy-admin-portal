@@ -14,18 +14,18 @@ export async function createEvent(formData: FormData, communityCode: string, com
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
   const location = formData.get("location") as string;
-  const startTime = formData.get("start_time") as string;
-  const endTime = formData.get("end_time") as string;
+  const eventDate = formData.get("event_date") as string;
+  const maxAttendees = formData.get("max_attendees") as string;
 
-  if (!title || !startTime) return { error: "Title and start time are required" };
+  if (!title || !eventDate) return { error: "Title and date are required" };
 
   const { error } = await supabase.from("events").insert({
     community_code: communityCode,
     title,
     description: description || null,
     location: location || null,
-    start_time: startTime,
-    end_time: endTime || null,
+    event_date: eventDate,
+    max_attendees: maxAttendees ? parseInt(maxAttendees, 10) : null,
     created_by: user.id,
   });
 

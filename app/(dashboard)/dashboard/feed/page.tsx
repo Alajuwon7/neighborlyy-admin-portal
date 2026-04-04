@@ -21,22 +21,23 @@ export default async function FeedPage() {
   const community = (communities as { id: string; community_code: string; name: string }[] | null)?.[0];
   if (!community) redirect("/onboarding");
 
-  // Fetch posts
+  // Fetch posts using mobile app schema
   const { data: postsRaw } = await supabase
     .from("posts")
-    .select("*")
+    .select("id, community_code, user_id, content, image_url, is_hidden, created_at, updated_at")
     .eq("community_code", community.community_code)
-    .order("pinned", { ascending: false })
+    .eq("is_hidden", false)
     .order("created_at", { ascending: false });
 
   const posts = (postsRaw as {
     id: string;
-    title: string;
-    body: string;
-    type: string;
-    pinned: boolean;
+    community_code: string;
+    user_id: string;
+    content: string;
+    image_url: string | null;
+    is_hidden: boolean;
     created_at: string;
-    author_id: string;
+    updated_at: string;
   }[]) ?? [];
 
   return (

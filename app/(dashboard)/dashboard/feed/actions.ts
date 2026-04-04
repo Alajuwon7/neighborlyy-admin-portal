@@ -14,18 +14,14 @@ export async function createPost(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const title = formData.get("title") as string;
-  const body = formData.get("body") as string;
-  const type = (formData.get("type") as string) || "announcement";
+  const content = formData.get("content") as string;
 
-  if (!title || !body) return { error: "Title and body are required" };
+  if (!content) return { error: "Message content is required" };
 
   const { error } = await supabase.from("posts").insert({
     community_code: communityCode,
-    author_id: user.id,
-    title,
-    body,
-    type,
+    user_id: user.id,
+    content,
   });
 
   if (error) return { error: error.message };
@@ -46,7 +42,7 @@ export async function deletePost(postId: string) {
     .from("posts")
     .delete()
     .eq("id", postId)
-    .eq("author_id", user.id);
+    .eq("user_id", user.id);
 
   if (error) return { error: error.message };
 

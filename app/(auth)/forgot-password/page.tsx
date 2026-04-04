@@ -3,19 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// asChild not available in base-ui Button — using Link directly for nav buttons
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -43,87 +35,98 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const inputStyle = {
+    backgroundColor: "var(--nly-input-bg)",
+    borderColor: "var(--nly-input-border)",
+    color: "var(--nly-text-primary)",
+  };
+
   return (
     <AuthLayout>
-      <Card
-        style={{
-          backgroundColor: "var(--nly-surface)",
-          borderColor: "var(--nly-border)",
-        }}
-      >
-        <CardHeader>
-          <CardTitle className="text-2xl" style={{ color: "var(--nly-text-primary)" }}>
-            Reset Password
-          </CardTitle>
-          <CardDescription style={{ color: "var(--nly-text-secondary)" }}>
-            Enter your email and we&apos;ll send you a reset link.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {sent ? (
-            <div className="space-y-4 text-center">
-              <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
-                Check your inbox for a password reset link. It may take a minute
-                to arrive.
-              </p>
-              <Link
-                href="/login"
-                className="touch-target flex items-center justify-center w-full rounded-lg border text-sm font-medium transition-colors hover:opacity-80"
-                style={{
-                  borderColor: "var(--nly-border)",
-                  color: "var(--nly-text-primary)",
-                  backgroundColor: "transparent",
-                }}
-              >
-                Back to Sign In
-              </Link>
+      <div className="space-y-2 mb-8">
+        <h2
+          className="text-2xl font-bold"
+          style={{ color: "var(--nly-text-primary)" }}
+        >
+          Reset Password
+        </h2>
+        <p style={{ color: "var(--nly-text-secondary)" }} className="text-sm">
+          Enter your email and we&apos;ll send you a reset link.
+        </p>
+      </div>
+
+      {sent ? (
+        <div className="space-y-6 text-center">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl"
+            style={{ backgroundColor: "var(--nly-success-bg)" }}
+          >
+            ✉
+          </div>
+          <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
+            Check your inbox for a password reset link. It may take a minute
+            to arrive.
+          </p>
+          <Link
+            href="/login"
+            className="flex items-center justify-center w-full h-11 rounded-xl border text-sm font-medium transition-opacity hover:opacity-80"
+            style={{
+              borderColor: "var(--nly-border)",
+              color: "var(--nly-text-primary)",
+              backgroundColor: "transparent",
+            }}
+          >
+            Back to Sign In
+          </Link>
+        </div>
+      ) : (
+        <form onSubmit={handleReset} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="email" style={{ color: "var(--nly-text-primary)" }}>
+              Email
+            </Label>
+            <div className="relative">
+              <Mail
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2"
+                style={{ color: "var(--nly-text-tertiary)" }}
+              />
+              <Input
+                id="email"
+                type="email"
+                required
+                placeholder="john@property.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10"
+                style={inputStyle}
+              />
             </div>
-          ) : (
-            <form onSubmit={handleReset} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" style={{ color: "var(--nly-text-primary)" }}>
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  required
-                  placeholder="john@property.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{
-                    backgroundColor: "var(--nly-input-bg)",
-                    borderColor: "var(--nly-input-border)",
-                    color: "var(--nly-text-primary)",
-                  }}
-                />
-              </div>
+          </div>
 
-              <Button
-                type="submit"
-                className="w-full touch-target font-semibold"
-                disabled={loading}
-                style={{
-                  backgroundColor: "var(--nly-brand)",
-                  color: "#fff",
-                }}
-              >
-                {loading ? "Sending…" : "Send Reset Link"}
-              </Button>
+          <button
+            type="submit"
+            className="w-full h-12 rounded-xl font-semibold text-base transition-opacity hover:opacity-90 disabled:opacity-50"
+            disabled={loading}
+            style={{
+              background: "var(--nly-brand-gradient)",
+              color: "#fff",
+            }}
+          >
+            {loading ? "Sending..." : "Send Reset Link"}
+          </button>
 
-              <p className="text-center text-sm" style={{ color: "var(--nly-text-secondary)" }}>
-                <Link
-                  href="/login"
-                  className="hover:underline"
-                  style={{ color: "var(--nly-accent)" }}
-                >
-                  Back to Sign In
-                </Link>
-              </p>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+          <p className="text-center text-sm" style={{ color: "var(--nly-text-secondary)" }}>
+            <Link
+              href="/login"
+              className="hover:underline"
+              style={{ color: "var(--nly-accent)" }}
+            >
+              Back to Sign In
+            </Link>
+          </p>
+        </form>
+      )}
     </AuthLayout>
   );
 }

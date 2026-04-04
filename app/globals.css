@@ -140,6 +140,7 @@
   --nly-brand: #E65C4F;
   --nly-brand-hover: #D84A3D;
   --nly-brand-active: #C93C2F;
+  --nly-brand-text: #FFFFFF;
 
   --nly-accent: #78A6C8;
   --nly-accent-hover: #6A98BA;
@@ -163,10 +164,23 @@
   --nly-divider: rgba(233, 238, 244, 0.08);
   --nly-overlay: rgba(11, 21, 32, 0.85);
 
-  --nly-input-bg: #1A2433;
-  --nly-input-border: rgba(233, 238, 244, 0.12);
+  --nly-input-bg: #1F2B3A;
+  --nly-input-border: rgba(233, 238, 244, 0.16);
   --nly-input-border-focus: #78A6C8;
   --nly-input-border-error: #EF4444;
+  --nly-input-focus-glow: rgba(120, 166, 200, 0.15);
+
+  /* Elevated surfaces */
+  --nly-surface-elevated: #1E2A3B;
+
+  /* Brand gradient */
+  --nly-brand-gradient: linear-gradient(135deg, #E65C4F 0%, #D84A3D 100%);
+
+  /* Shadows */
+  --nly-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --nly-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --nly-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --nly-shadow-glow-brand: 0 0 20px rgba(230, 92, 79, 0.15);
 }
 
 .dark {
@@ -242,5 +256,11 @@
   /* Minimum 44px touch target for accessibility */
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Input focus glow */
+  [data-slot="input"]:focus-visible {
+    border-color: var(--nly-input-border-focus) !important;
+    box-shadow: 0 0 0 3px var(--nly-input-focus-glow) !important;
   }
 }

@@ -21,11 +21,11 @@ export function StepProgress({ currentStep }: StepProgressProps) {
       <div className="flex items-center justify-between relative">
         {/* Connector line */}
         <div
-          className="absolute top-4 left-0 right-0 h-px"
+          className="absolute top-5 left-0 right-0 h-0.5"
           style={{ backgroundColor: "var(--nly-border)" }}
         />
         <div
-          className="absolute top-4 left-0 h-px transition-all duration-500"
+          className="absolute top-5 left-0 h-0.5 transition-all duration-500"
           style={{
             backgroundColor: "var(--nly-brand)",
             width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%`,
@@ -39,7 +39,7 @@ export function StepProgress({ currentStep }: StepProgressProps) {
           return (
             <div key={step.number} className="flex flex-col items-center z-10 gap-2">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300"
                 style={{
                   backgroundColor: isDone
                     ? "var(--nly-brand)"
@@ -50,6 +50,7 @@ export function StepProgress({ currentStep }: StepProgressProps) {
                   border: `2px solid ${
                     isDone || isActive ? "var(--nly-brand)" : "var(--nly-border)"
                   }`,
+                  boxShadow: isActive ? "0 0 12px rgba(230, 92, 79, 0.3)" : "none",
                 }}
               >
                 {isDone ? "✓" : step.number}

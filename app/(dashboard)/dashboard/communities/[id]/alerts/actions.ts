@@ -18,9 +18,11 @@ export async function createAlert(
   const title = formData.get("title") as string;
   const message = formData.get("message") as string;
   const priority = formData.get("priority") as string;
+  const validUntil = formData.get("valid_until") as string;
+  const isPinned = formData.get("is_pinned") === "true";
 
   if (!title || !message || !priority) {
-    return { error: "All fields are required" };
+    return { error: "Title, message, and priority are required" };
   }
 
   const { error } = await supabase.from("alerts").insert({
@@ -29,6 +31,9 @@ export async function createAlert(
     message,
     priority: priority as "urgent" | "high" | "medium" | "low",
     created_by: user.id,
+    is_active: true,
+    is_pinned: isPinned,
+    valid_until: validUntil || null,
   });
 
   if (error) return { error: error.message };
