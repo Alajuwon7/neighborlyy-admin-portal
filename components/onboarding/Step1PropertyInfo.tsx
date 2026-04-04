@@ -111,35 +111,30 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
         {/* Property Name — stacked label on mobile, inline prefix on desktop */}
         <div className="sm:col-span-2 space-y-2">
           <Label style={labelStyle}>Property Name *</Label>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+          <p className="text-xs sm:hidden" style={{ color: "var(--nly-brand)" }}>
+            Neighborlyy @
+          </p>
+          <div className="relative">
             <span
-              className="text-sm font-medium sm:absolute sm:left-3 sm:top-1/2 sm:-translate-y-1/2 sm:pointer-events-none whitespace-nowrap"
+              className="hidden sm:block absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none whitespace-nowrap"
               style={{ color: "var(--nly-brand)" }}
             >
               Neighborlyy @
             </span>
-            <div className="relative w-full">
-              <span
-                className="hidden sm:block absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none whitespace-nowrap"
-                style={{ color: "var(--nly-brand)" }}
-              >
-                Neighborlyy @
-              </span>
-              <Input
-                required
-                placeholder="The Reserve"
-                value={data.name}
-                onChange={(e) => {
-                  onChange({
-                    name: e.target.value,
-                    community_code: autoCode(e.target.value),
-                  });
-                  if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
-                }}
-                className="sm:pl-[115px]"
-                style={errors.name ? errorInputStyle : inputStyle}
-              />
-            </div>
+            <Input
+              required
+              placeholder="The Reserve"
+              value={data.name}
+              onChange={(e) => {
+                onChange({
+                  name: e.target.value,
+                  community_code: autoCode(e.target.value),
+                });
+                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+              }}
+              className="sm:pl-[115px]"
+              style={errors.name ? errorInputStyle : inputStyle}
+            />
           </div>
           {errors.name ? (
             <p className="text-xs font-medium" style={{ color: "var(--nly-error, #ef4444)" }}>
@@ -150,6 +145,20 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
               Will display as &quot;Neighborlyy @ {data.name || "Your Property"}&quot;
             </p>
           )}
+        </div>
+
+        <div className="sm:col-span-2 space-y-2">
+          <Label style={{ color: "var(--nly-text-secondary)" }}>Property Website</Label>
+          <Input
+            type="url"
+            placeholder="https://yourproperty.com"
+            value={data.website_url}
+            onChange={(e) => onChange({ website_url: e.target.value })}
+            style={inputStyle}
+          />
+          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+            Optional — helps us learn more about your community
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -266,19 +275,6 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
           />
         </div>
 
-        <div className="space-y-2">
-          <Label style={{ color: "var(--nly-text-secondary)" }}>Property Website</Label>
-          <Input
-            type="url"
-            placeholder="https://yourproperty.com"
-            value={data.website_url}
-            onChange={(e) => onChange({ website_url: e.target.value })}
-            style={inputStyle}
-          />
-          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-            Optional — helps us learn more about your community
-          </p>
-        </div>
       </div>
 
       <button
