@@ -27,6 +27,7 @@ export interface Step1Data {
   zip_code: string;
   unit_count: string;
   property_type: "apartment" | "condo" | "student" | "senior";
+  website_url: string;
 }
 
 interface Props {
@@ -48,6 +49,8 @@ const errorInputStyle = {
 
 const labelStyle = { color: "var(--nly-text-primary)" };
 
+const selectStyle = "flex h-10 w-full rounded-xl border px-3.5 py-2 text-sm";
+
 export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
   const [validating, setValidating] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; community_code?: string }>({});
@@ -67,7 +70,6 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
       const supabase = createClient();
       const newErrors: typeof errors = {};
 
-      // Check building_name uniqueness
       const { data: existingName } = await supabase
         .from("communities")
         .select("id")
@@ -78,7 +80,6 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
         newErrors.name = "A community with this property name already exists.";
       }
 
-      // Check community_code uniqueness
       const { data: existingCode } = await supabase
         .from("communities")
         .select("id")
@@ -107,29 +108,38 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Property Name — stacked label on mobile, inline prefix on desktop */}
         <div className="sm:col-span-2 space-y-2">
           <Label style={labelStyle}>Property Name *</Label>
-          <div className="relative">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
             <span
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none whitespace-nowrap"
+              className="text-sm font-medium sm:absolute sm:left-3 sm:top-1/2 sm:-translate-y-1/2 sm:pointer-events-none whitespace-nowrap"
               style={{ color: "var(--nly-brand)" }}
             >
               Neighborlyy @
             </span>
-            <Input
-              required
-              placeholder="The Reserve"
-              value={data.name}
-              onChange={(e) => {
-                onChange({
-                  name: e.target.value,
-                  community_code: autoCode(e.target.value),
-                });
-                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
-              }}
-              className="pl-[115px]"
-              style={errors.name ? errorInputStyle : inputStyle}
-            />
+            <div className="relative w-full">
+              <span
+                className="hidden sm:block absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none whitespace-nowrap"
+                style={{ color: "var(--nly-brand)" }}
+              >
+                Neighborlyy @
+              </span>
+              <Input
+                required
+                placeholder="The Reserve"
+                value={data.name}
+                onChange={(e) => {
+                  onChange({
+                    name: e.target.value,
+                    community_code: autoCode(e.target.value),
+                  });
+                  if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                }}
+                className="sm:pl-[115px]"
+                style={errors.name ? errorInputStyle : inputStyle}
+              />
+            </div>
           </div>
           {errors.name ? (
             <p className="text-xs font-medium" style={{ color: "var(--nly-error, #ef4444)" }}>
@@ -176,7 +186,7 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
             onChange={(e) =>
               onChange({ property_type: e.target.value as Step1Data["property_type"] })
             }
-            className="flex h-10 w-full rounded-xl border px-3.5 py-2 text-sm"
+            className={selectStyle}
             style={inputStyle}
           >
             {PROPERTY_TYPES.map((t) => (
@@ -209,14 +219,14 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label style={labelStyle}>State *</Label>
             <select
               required
               value={data.state}
               onChange={(e) => onChange({ state: e.target.value })}
-              className="flex h-10 w-full rounded-xl border px-3.5 py-2 text-sm"
+              className={selectStyle}
               style={inputStyle}
             >
               <option value="">—</option>
@@ -255,12 +265,26 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
             style={inputStyle}
           />
         </div>
+
+        <div className="space-y-2">
+          <Label style={{ color: "var(--nly-text-secondary)" }}>Property Website</Label>
+          <Input
+            type="url"
+            placeholder="https://yourproperty.com"
+            value={data.website_url}
+            onChange={(e) => onChange({ website_url: e.target.value })}
+            style={inputStyle}
+          />
+          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+            Optional — helps us learn more about your community
+          </p>
+        </div>
       </div>
 
       <button
         type="submit"
         disabled={validating}
-        className="w-full h-11 rounded-lg font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="w-full h-11 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
         style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
       >
         {validating ? "Checking availability…" : "Continue →"}

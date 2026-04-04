@@ -2,7 +2,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: "var(--nly-background)" }}>
       {/* Left side — Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center px-4 py-6 sm:px-6 sm:py-8 md:p-8">
         <div className="w-full max-w-md">
           <div className="mb-8">
             <h1
@@ -57,7 +57,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Bottom — Stats */}
-          <div className="flex gap-8">
+          <div className="flex flex-wrap gap-4 xl:gap-8">
             {[
               { label: "Avg. Engagement", value: "68%" },
               { label: "Renewal Lift", value: "+12%" },

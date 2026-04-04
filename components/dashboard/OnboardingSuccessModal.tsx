@@ -69,7 +69,7 @@ export function OnboardingSuccessModal({
       }}
     >
       <div
-        className="w-full max-w-md rounded-2xl border p-6 space-y-6"
+        className="w-full max-w-md rounded-2xl border p-4 sm:p-6 space-y-5 sm:space-y-6"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",
@@ -141,7 +141,7 @@ export function OnboardingSuccessModal({
           >
             QUICK ACTIONS
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             <button
               onClick={() => {
                 handleClose();

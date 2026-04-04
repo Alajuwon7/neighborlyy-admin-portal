@@ -138,7 +138,7 @@ export function GettingStartedChecklist({
     >
       {/* Header */}
       <div
-        className="px-5 py-4 flex items-center justify-between cursor-pointer"
+        className="px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between cursor-pointer"
         onClick={toggleCollapse}
       >
         <div className="flex items-center gap-3">
@@ -193,7 +193,7 @@ export function GettingStartedChecklist({
 
       {/* Progress bar */}
       <div
-        className="mx-5 h-1 rounded-full overflow-hidden"
+        className="mx-4 sm:mx-5 h-1 rounded-full overflow-hidden"
         style={{ backgroundColor: "var(--nly-border)" }}
       >
         <div
@@ -209,7 +209,7 @@ export function GettingStartedChecklist({
 
       {/* Checklist items */}
       {!collapsed && (
-        <div className="px-5 py-3 space-y-1">
+        <div className="px-3 sm:px-5 py-3 space-y-1">
           {items.map((item) => {
             const Icon = item.icon;
             const isClickable = !item.completed && (item.href || item.action);

@@ -105,7 +105,7 @@ Welcome to ${communityName}!`;
       }}
     >
       <div
-        className="w-full max-w-md rounded-2xl border p-6 space-y-5 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md rounded-2xl border p-4 sm:p-6 space-y-4 sm:space-y-5 max-h-[90vh] overflow-y-auto"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",
@@ -131,7 +131,7 @@ Welcome to ${communityName}!`;
 
         {/* Section 1: Code display + copy */}
         <div
-          className="rounded-xl p-5 text-center border"
+          className="rounded-xl p-4 sm:p-5 text-center border"
           style={{
             backgroundColor: "var(--nly-input-bg)",
             borderColor: "var(--nly-border)",
@@ -144,7 +144,7 @@ Welcome to ${communityName}!`;
             COMMUNITY CODE
           </p>
           <p
-            className="text-3xl font-mono font-bold tracking-widest"
+            className="text-2xl sm:text-3xl font-mono font-bold tracking-widest"
             style={{ color: "var(--nly-brand)" }}
           >
             {communityCode}
@@ -188,13 +188,11 @@ Welcome to ${communityName}!`;
               <img
                 src={qrDataURL}
                 alt={`QR code to join ${communityName}`}
-                width={180}
-                height={180}
-                className="rounded-lg"
+                className="rounded-lg w-36 h-36 sm:w-44 sm:h-44"
               />
             ) : (
               <div
-                className="w-[180px] h-[180px] rounded-lg flex items-center justify-center"
+                className="w-36 h-36 sm:w-44 sm:h-44 rounded-lg flex items-center justify-center"
                 style={{ backgroundColor: "var(--nly-border)" }}
               >
                 <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>

@@ -100,7 +100,7 @@ export default async function DashboardPage({
         accentColor={firstCommunity.accent_color}
       />
 
-      <main className="flex-1 p-6 space-y-6">
+      <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Client-side onboarding shell (checklist, modals) */}
         <DashboardClientShell
           showOnboardingModal={showOnboardingModal}
@@ -114,7 +114,7 @@ export default async function DashboardPage({
         />
 
         {/* Summary cards */}
-        <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           <SummaryCard
             label="Active Communities"
             value={activeCommunities}
@@ -158,11 +158,11 @@ export default async function DashboardPage({
         </div>
 
         {/* Communities list + Activity feed */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
           {/* Communities */}
           <div
             data-tour="community-card"
-            className="xl:col-span-2 rounded-2xl border"
+            className="lg:col-span-2 rounded-2xl border"
             style={{
               backgroundColor: "var(--nly-surface)",
               borderColor: "var(--nly-border)",
@@ -238,7 +238,7 @@ export default async function DashboardPage({
           </div>
 
           {/* Activity feed */}
-          <div data-tour="activity-feed" className="xl:col-span-3">
+          <div data-tour="activity-feed" className="lg:col-span-3">
             <ActivityFeed items={[]} />
           </div>
         </div>

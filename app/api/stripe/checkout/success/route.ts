@@ -100,6 +100,7 @@ export async function GET(request: Request) {
       primary_color: onboardingData.primary_color,
       accent_color: onboardingData.accent_color,
       admin_code: onboardingData.admin_code,
+      website_url: onboardingData.website_url || null,
       subscription_tier: plan,
       status: "trial",
       onboarding_completed: true,

@@ -23,6 +23,7 @@ const defaultData: OnboardingData = {
   zip_code: "",
   unit_count: "",
   property_type: "apartment",
+  website_url: "",
   primary_color: "#E65C4F",
   accent_color: "#78A6C8",
   facilities: [],
@@ -142,6 +143,7 @@ function OnboardingContent() {
         primary_color: data.primary_color,
         accent_color: data.accent_color,
         admin_code: data.admin_code,
+        website_url: data.website_url || null,
         subscription_tier: tier as SubscriptionTier,
         status: "trial",
         onboarding_completed: true,
@@ -178,6 +180,7 @@ function OnboardingContent() {
     primary_color: data.primary_color,
     accent_color: data.accent_color,
     admin_code: data.admin_code,
+    website_url: data.website_url,
     subscription_tier: data.subscription_tier,
   };
 
