@@ -17,7 +17,7 @@ export default async function CommunityLayout({
     <div className="flex flex-col flex-1">
       {/* Community header */}
       <div
-        className="flex items-center gap-3 px-6 py-4 border-b"
+        className="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",

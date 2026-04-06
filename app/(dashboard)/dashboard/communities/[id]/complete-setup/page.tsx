@@ -138,7 +138,7 @@ export default function CompleteSetupPage({
   };
 
   return (
-    <main className="flex-1 p-6">
+    <main className="flex-1 p-4 sm:p-6 max-w-5xl">
       <div className="max-w-xl mx-auto space-y-6">
         <Link
           href="/dashboard/communities"

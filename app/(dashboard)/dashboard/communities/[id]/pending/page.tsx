@@ -28,7 +28,7 @@ export default async function PendingPage({
     }[]) ?? [];
 
   return (
-    <main className="flex-1 p-6 space-y-4">
+    <main className="flex-1 p-4 sm:p-6 space-y-4 max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
           <h2

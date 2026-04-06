@@ -30,7 +30,7 @@ export function CommunitySubNav({ communityId }: CommunitySubNavProps) {
 
   return (
     <nav
-      className="flex items-center gap-1 px-6 border-b overflow-x-auto"
+      className="flex items-center gap-1 px-4 sm:px-6 border-b overflow-x-auto"
       style={{
         backgroundColor: "var(--nly-surface)",
         borderColor: "var(--nly-border)",
