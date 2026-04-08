@@ -1,3 +1,13 @@
+import { useState, useEffect } from "react";
+import { OnboardingTip } from "@/components/onboarding/OnboardingTip";
+
+const SMART_DEFAULTS: Record<string, string[]> = {
+  apartment: ["pool", "gym", "clubhouse", "parking", "laundry", "package_room"],
+  student: ["gym", "coworking", "laundry", "bike_storage", "package_room"],
+  senior: ["clubhouse", "spa", "conference", "parking", "package_room"],
+  condo: ["pool", "gym", "rooftop", "parking", "ev_charging", "conference"],
+};
+
 const FACILITY_OPTIONS = [
   { id: "pool", label: "Swimming Pool", icon: "🏊" },
   { id: "gym", label: "Fitness Center", icon: "🏋️" },
@@ -25,12 +35,24 @@ export interface Step3Data {
 
 interface Props {
   data: Step3Data;
+  propertyType?: string;
   onChange: (data: Partial<Step3Data>) => void;
   onNext: () => void;
   onBack: () => void;
 }
 
-export function Step3Facilities({ data, onChange, onNext, onBack }: Props) {
+export function Step3Facilities({ data, propertyType, onChange, onNext, onBack }: Props) {
+  const [autoApplied, setAutoApplied] = useState(false);
+
+  // Auto-select smart defaults based on property type (only on first mount if no selections yet)
+  useEffect(() => {
+    if (autoApplied || data.facilities.length > 0 || !propertyType) return;
+    const defaults = SMART_DEFAULTS[propertyType];
+    if (defaults) {
+      onChange({ facilities: defaults });
+      setAutoApplied(true);
+    }
+  }, [propertyType, autoApplied, data.facilities.length, onChange]);
   const toggle = (id: string) => {
     const current = data.facilities;
     onChange({
@@ -72,6 +94,11 @@ export function Step3Facilities({ data, onChange, onNext, onBack }: Props) {
       <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
         {data.facilities.length} selected · You can add more later in settings.
       </p>
+
+      <OnboardingTip
+        text={`Communities with 5+ amenities see 2x resident engagement. Similar ${propertyType || "apartment"} properties typically list 6-8 amenities.`}
+        visible={data.facilities.length < 5}
+      />
 
       <div className="flex gap-3">
         <button

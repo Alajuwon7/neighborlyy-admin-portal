@@ -1,5 +1,6 @@
 import { getCommunityWithAuth } from "@/lib/queries";
 import { EventFormDialog } from "@/components/community/EventFormDialog";
+import { EventCardActions } from "@/components/community/EventCardActions";
 import { Calendar, MapPin, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -85,7 +86,7 @@ export default async function EventsPage({
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {upcoming.map((e) => (
-                  <EventCard key={e.id} event={e} />
+                  <EventCard key={e.id} event={e} communityId={id} />
                 ))}
               </div>
             </div>
@@ -100,7 +101,7 @@ export default async function EventsPage({
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-60">
                 {past.map((e) => (
-                  <EventCard key={e.id} event={e} />
+                  <EventCard key={e.id} event={e} communityId={id} />
                 ))}
               </div>
             </div>
@@ -113,6 +114,7 @@ export default async function EventsPage({
 
 function EventCard({
   event,
+  communityId,
 }: {
   event: {
     id: string;
@@ -123,17 +125,23 @@ function EventCard({
     max_attendees: number | null;
     image_url: string | null;
   };
+  communityId: string;
 }) {
   const eventDate = new Date(event.event_date);
 
   return (
     <div
-      className="rounded-2xl border p-4 space-y-3"
+      className="nly-card-hover rounded-2xl border p-4 space-y-3 group relative"
       style={{
         backgroundColor: "var(--nly-surface)",
         borderColor: "var(--nly-border)",
       }}
     >
+      {/* Edit/Delete actions */}
+      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        <EventCardActions event={event} communityId={communityId} />
+      </div>
+
       {event.image_url && (
         <img
           src={event.image_url}

@@ -2,9 +2,11 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { StepProgress } from "@/components/onboarding/StepProgress";
+import { StepOrganization, type StepOrgData } from "@/components/onboarding/StepOrganization";
 import { Step1PropertyInfo, type Step1Data } from "@/components/onboarding/Step1PropertyInfo";
 import { Step2Branding, type Step2Data } from "@/components/onboarding/Step2Branding";
 import { Step3Facilities, type Step3Data } from "@/components/onboarding/Step3Facilities";
@@ -12,9 +14,11 @@ import { Step4AdminAccess, type Step4Data } from "@/components/onboarding/Step4A
 import { Step5Billing, type Step5Data, type SubscriptionTier } from "@/components/onboarding/Step5Billing";
 import { SetupComplete } from "@/components/onboarding/SetupComplete";
 
-interface OnboardingData extends Step1Data, Step2Data, Step3Data, Step4Data, Step5Data {}
+interface OnboardingData extends StepOrgData, Step1Data, Step2Data, Step3Data, Step4Data, Step5Data {}
 
 const defaultData: OnboardingData = {
+  org_type: "individual",
+  org_name: "",
   name: "",
   community_code: "",
   street_address: "",
@@ -33,6 +37,7 @@ const defaultData: OnboardingData = {
 };
 
 const STEP_TITLES = [
+  "Organization Type",
   "Property Information",
   "Community Branding",
   "Facilities & Amenities",
@@ -96,7 +101,7 @@ function OnboardingContent() {
 
     if (stepParam) {
       const stepNum = parseInt(stepParam, 10);
-      if (stepNum >= 1 && stepNum <= 5) {
+      if (stepNum >= 1 && stepNum <= 6) {
         setStep(stepNum);
       }
     }
@@ -113,14 +118,58 @@ function OnboardingContent() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data: pmData } = await supabase
+      let { data: pmData } = await supabase
         .from("property_managers")
-        .select("id")
+        .select("id, organization_id, full_name")
         .eq("user_id", user.id)
         .single();
 
-      const pmId = (pmData as { id: string } | null)?.id;
-      if (!pmId) throw new Error("Property manager profile not found");
+      // Create PM record if it doesn't exist (e.g., signup insert failed due to RLS)
+      if (!pmData) {
+        const meta = user.user_metadata ?? {};
+        const { data: newPm, error: pmError } = await supabase
+          .from("property_managers")
+          .insert({
+            user_id: user.id,
+            full_name: meta.full_name || user.email?.split("@")[0] || "Manager",
+            email: user.email!,
+            phone: meta.phone || null,
+          })
+          .select("id, organization_id, full_name")
+          .single();
+
+        if (pmError) throw new Error(`Could not create profile: ${pmError.message}`);
+        pmData = newPm;
+      }
+
+      const pm = pmData as { id: string; organization_id: string | null; full_name: string };
+      if (!pm) throw new Error("Property manager profile not found");
+
+      // Create or reuse organization
+      let orgId = pm.organization_id;
+      if (!orgId) {
+        const orgName =
+          data.org_type === "company" && data.org_name.trim()
+            ? data.org_name.trim()
+            : pm.full_name;
+
+        const { data: orgData, error: orgError } = await supabase
+          .from("organizations")
+          .insert({ name: orgName, type: data.org_type })
+          .select("id")
+          .single();
+
+        if (orgError) throw new Error(`Org creation failed: ${orgError.message || orgError.code || JSON.stringify(orgError)}`);
+        orgId = (orgData as { id: string }).id;
+
+        // Link PM to organization
+        const { error: linkError } = await supabase
+          .from("property_managers")
+          .update({ organization_id: orgId, company_name: data.org_type === "company" ? orgName : null })
+          .eq("id", pm.id);
+
+        if (linkError) throw new Error(`PM link failed: ${linkError.message || linkError.code || JSON.stringify(linkError)}`);
+      }
 
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 14);
@@ -130,7 +179,8 @@ function OnboardingContent() {
       const tier = skipPayment ? "professional" : data.subscription_tier;
 
       const { error } = await supabase.from("communities").insert({
-        property_manager_id: pmId,
+        property_manager_id: pm.id,
+        organization_id: orgId,
         building_name: data.name,
         name: fullName,
         community_code: data.community_code,
@@ -150,17 +200,19 @@ function OnboardingContent() {
         trial_ends_at: trialEndsAt.toISOString(),
       });
 
-      if (error) throw error;
+      if (error) throw new Error(`Community creation failed: ${error.message || error.code || JSON.stringify(error)}`);
 
       setComplete(true);
     } catch (err: unknown) {
       console.error("Onboarding error:", err);
-      const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "object" && err !== null && "message" in err
-            ? String((err as { message: unknown }).message)
-            : "Setup failed. Please try again.";
+      let message = "Setup failed. Please try again.";
+      if (err instanceof Error) {
+        message = err.message;
+      } else if (typeof err === "object" && err !== null) {
+        // Supabase errors are plain objects with a message property
+        const obj = err as Record<string, unknown>;
+        message = String(obj.message || obj.details || obj.hint || JSON.stringify(err));
+      }
       toast.error(message);
     } finally {
       setLoading(false);
@@ -169,6 +221,8 @@ function OnboardingContent() {
 
   // Collect all onboarding data to pass through Stripe checkout
   const onboardingPayload = {
+    org_type: data.org_type,
+    org_name: data.org_name,
     name: data.name,
     community_code: data.community_code,
     street_address: data.street_address,
@@ -228,60 +282,84 @@ function OnboardingContent() {
               <StepProgress currentStep={step} />
             </div>
 
-            {/* Step title */}
-            <div className="mb-6">
-              <p className="text-xs font-medium mb-1" style={{ color: "var(--nly-text-tertiary)" }}>
-                STEP {step} OF 5
+            {/* Step title + time estimate */}
+            <div className="mb-6 flex items-end justify-between">
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: "var(--nly-text-tertiary)" }}>
+                  STEP {step} OF 6
+                </p>
+                <h2 className="text-xl font-bold" style={{ color: "var(--nly-text-primary)" }}>
+                  {STEP_TITLES[step - 1]}
+                </h2>
+              </div>
+              <p className="text-xs" style={{ color: "var(--nly-text-placeholder)" }}>
+                ~{Math.max(1, 7 - step)} min left
               </p>
-              <h2 className="text-xl font-bold" style={{ color: "var(--nly-text-primary)" }}>
-                {STEP_TITLES[step - 1]}
-              </h2>
             </div>
 
-            {/* Step content */}
-            {step === 1 && (
-              <Step1PropertyInfo
-                data={data}
-                onChange={update}
-                onNext={() => setStep(2)}
-              />
-            )}
-            {step === 2 && (
-              <Step2Branding
-                data={data}
-                communityName={data.name}
-                onChange={update}
-                onNext={() => setStep(3)}
-                onBack={() => setStep(1)}
-              />
-            )}
-            {step === 3 && (
-              <Step3Facilities
-                data={data}
-                onChange={update}
-                onNext={() => setStep(4)}
-                onBack={() => setStep(2)}
-              />
-            )}
-            {step === 4 && (
-              <Step4AdminAccess
-                data={data}
-                onChange={update}
-                onNext={() => setStep(5)}
-                onBack={() => setStep(3)}
-              />
-            )}
-            {step === 5 && (
-              <Step5Billing
-                data={data}
-                onboardingData={onboardingPayload}
-                onChange={update}
-                onSubmit={() => handleFinish(false)}
-                onBack={() => setStep(4)}
-                loading={loading}
-                onSkipPayment={() => handleFinish(true)}
-              />
-            )}
+            {/* Step content with animated transitions */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+              >
+                {step === 1 && (
+                  <StepOrganization
+                    data={data}
+                    onChange={update}
+                    onNext={() => setStep(2)}
+                  />
+                )}
+                {step === 2 && (
+                  <Step1PropertyInfo
+                    data={data}
+                    onChange={update}
+                    onNext={() => setStep(3)}
+                  />
+                )}
+                {step === 3 && (
+                  <Step2Branding
+                    data={data}
+                    communityName={data.name}
+                    websiteUrl={data.website_url}
+                    onChange={update}
+                    onNext={() => setStep(4)}
+                    onBack={() => setStep(2)}
+                  />
+                )}
+                {step === 4 && (
+                  <Step3Facilities
+                    data={data}
+                    propertyType={data.property_type}
+                    onChange={update}
+                    onNext={() => setStep(5)}
+                    onBack={() => setStep(3)}
+                  />
+                )}
+                {step === 5 && (
+                  <Step4AdminAccess
+                    data={data}
+                    onChange={update}
+                    onNext={() => setStep(6)}
+                    onBack={() => setStep(4)}
+                  />
+                )}
+                {step === 6 && (
+                  <Step5Billing
+                    data={data}
+                    onboardingData={onboardingPayload}
+                    onChange={update}
+                    onSubmit={() => handleFinish(false)}
+                    onBack={() => setStep(5)}
+                    loading={loading}
+                    onSkipPayment={() => handleFinish(true)}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         )}
       </div>

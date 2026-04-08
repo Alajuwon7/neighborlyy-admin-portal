@@ -17,14 +17,21 @@ export default async function CommunityLayout({
     <div className="flex flex-col flex-1">
       {/* Community header */}
       <div
-        className="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b"
+        className="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b relative overflow-hidden"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",
         }}
       >
+        {/* Subtle accent gradient */}
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
+          className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          style={{
+            background: `radial-gradient(ellipse 60% 100% at 0% 50%, ${community.primary_color ?? "var(--nly-brand)"} 0%, transparent 70%)`,
+          }}
+        />
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0 relative"
           style={{ backgroundColor: community.primary_color ?? "var(--nly-brand)" }}
         >
           {community.name.charAt(0)}

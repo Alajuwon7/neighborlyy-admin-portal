@@ -12,7 +12,7 @@ export async function getAuthenticatedPM() {
 
   const { data: pm } = await supabase
     .from("property_managers")
-    .select("id, full_name, email, phone, company_name")
+    .select("id, full_name, email, phone, company_name, organization_id")
     .eq("user_id", user.id)
     .single();
 
@@ -27,6 +27,7 @@ export async function getAuthenticatedPM() {
       email: string;
       phone: string | null;
       company_name: string | null;
+      organization_id: string | null;
     },
   };
 }
@@ -34,11 +35,20 @@ export async function getAuthenticatedPM() {
 export async function getCommunityWithAuth(communityId: string) {
   const { supabase, pm } = await getAuthenticatedPM();
 
-  const { data: community } = await supabase
+  // Use organization_id for access check when available (allows org-level access),
+  // fall back to property_manager_id for PMs without an org yet.
+  let query = supabase
     .from("communities")
     .select("*")
-    .eq("id", communityId)
-    .single();
+    .eq("id", communityId);
+
+  if (pm.organization_id) {
+    query = query.eq("organization_id", pm.organization_id);
+  } else {
+    query = query.eq("property_manager_id", pm.id);
+  }
+
+  const { data: community } = await query.single();
 
   if (!community) redirect("/dashboard/communities");
 

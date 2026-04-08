@@ -1,4 +1,8 @@
+import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
+import { OnboardingTip } from "@/components/onboarding/OnboardingTip";
+import { extractFromUrl } from "@/lib/url-extract";
+import { CheckCircle2, Loader2 } from "lucide-react";
 
 export interface Step2Data {
   primary_color: string;
@@ -8,12 +12,35 @@ export interface Step2Data {
 interface Props {
   data: Step2Data;
   communityName: string;
+  websiteUrl?: string;
   onChange: (data: Partial<Step2Data>) => void;
   onNext: () => void;
   onBack: () => void;
 }
 
-export function Step2Branding({ data, communityName, onChange, onNext, onBack }: Props) {
+export function Step2Branding({ data, communityName, websiteUrl, onChange, onNext, onBack }: Props) {
+  const [extracting, setExtracting] = useState(false);
+  const [extracted, setExtracted] = useState(false);
+
+  // Auto-extract colors from website URL if available
+  useEffect(() => {
+    if (!websiteUrl || !websiteUrl.startsWith("http") || extracted) return;
+    let cancelled = false;
+    setExtracting(true);
+    extractFromUrl(websiteUrl).then((site) => {
+      if (cancelled) return;
+      const updates: Partial<Step2Data> = {};
+      if (site.primaryColor) updates.primary_color = site.primaryColor;
+      if (site.accentColor) updates.accent_color = site.accentColor;
+      if (Object.keys(updates).length > 0) {
+        onChange(updates);
+        setExtracted(true);
+      }
+      setExtracting(false);
+    }).catch(() => { if (!cancelled) setExtracting(false); });
+    return () => { cancelled = true; };
+  }, [websiteUrl]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onNext();
@@ -128,6 +155,23 @@ export function Step2Branding({ data, communityName, onChange, onNext, onBack }:
           </p>
         </div>
       </div>
+
+      {/* Extraction status */}
+      {extracting && (
+        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--nly-accent)" }}>
+          <Loader2 size={13} className="animate-spin" />
+          Extracting colors from your website...
+        </div>
+      )}
+      {extracted && !extracting && (
+        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--nly-success)" }}>
+          <CheckCircle2 size={13} />
+          Extracted from your website — feel free to adjust
+        </div>
+      )}
+      {!extracted && !extracting && (
+        <OnboardingTip text="Most communities use their brand colors for a cohesive feel across the app" />
+      )}
 
       {/* Quick presets */}
       <div className="space-y-2">

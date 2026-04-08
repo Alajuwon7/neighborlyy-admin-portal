@@ -3,6 +3,9 @@ import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OnboardingTip } from "@/components/onboarding/OnboardingTip";
+import { extractFromUrl } from "@/lib/url-extract";
+import { Globe, Loader2, CheckCircle2 } from "lucide-react";
 
 const PROPERTY_TYPES = [
   { value: "apartment", label: "Apartment Complex" },
@@ -54,6 +57,37 @@ const selectStyle = "flex h-10 w-full rounded-xl border px-3.5 py-2 text-sm";
 export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
   const [validating, setValidating] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; community_code?: string }>({});
+  const [extracting, setExtracting] = useState(false);
+  const [extracted, setExtracted] = useState(false);
+
+  const handleUrlExtract = async (url: string) => {
+    if (!url || !url.startsWith("http")) return;
+    setExtracting(true);
+    setExtracted(false);
+    try {
+      const site = await extractFromUrl(url);
+      const updates: Partial<Step1Data> = {};
+      if (site.name && !data.name) {
+        updates.name = site.name;
+        updates.community_code = site.name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+      }
+      if (site.address && !data.street_address) updates.street_address = site.address;
+      if (site.city && !data.city) updates.city = site.city;
+      if (site.state && !data.state) updates.state = site.state;
+      if (site.zip && !data.zip_code) updates.zip_code = site.zip;
+      if (Object.keys(updates).length > 0) {
+        onChange(updates);
+        setExtracted(true);
+        toast.success("Auto-filled from your website!");
+      }
+      // Store colors for Step 2 (branding) — pass via parent state
+      if (site.primaryColor) onChange({ website_url: url } as Partial<Step1Data>);
+    } catch {
+      // Silent fail — user can fill manually
+    } finally {
+      setExtracting(false);
+    }
+  };
 
   const autoCode = (name: string) =>
     name
@@ -148,17 +182,50 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
         </div>
 
         <div className="sm:col-span-2 space-y-2">
-          <Label style={{ color: "var(--nly-text-secondary)" }}>Property Website</Label>
-          <Input
-            type="url"
-            placeholder="https://yourproperty.com"
-            value={data.website_url}
-            onChange={(e) => onChange({ website_url: e.target.value })}
-            style={inputStyle}
-          />
-          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-            Optional — helps us learn more about your community
-          </p>
+          <Label style={{ color: "var(--nly-text-secondary)" }}>
+            Property Website
+          </Label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Globe
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: "var(--nly-text-placeholder)" }}
+              />
+              <Input
+                type="url"
+                placeholder="https://yourproperty.com"
+                value={data.website_url}
+                onChange={(e) => {
+                  onChange({ website_url: e.target.value });
+                  setExtracted(false);
+                }}
+                onBlur={(e) => handleUrlExtract(e.target.value)}
+                className="pl-9"
+                style={inputStyle}
+              />
+            </div>
+            {extracting && (
+              <div className="flex items-center px-3">
+                <Loader2 size={16} className="animate-spin" style={{ color: "var(--nly-accent)" }} />
+              </div>
+            )}
+            {extracted && !extracting && (
+              <div className="flex items-center px-3">
+                <CheckCircle2 size={16} style={{ color: "var(--nly-success)" }} />
+              </div>
+            )}
+          </div>
+          {extracted ? (
+            <p className="text-xs font-medium" style={{ color: "var(--nly-success)" }}>
+              Auto-filled from your website ✓
+            </p>
+          ) : (
+            <OnboardingTip
+              text="Properties with a website get 2x more resident signups"
+              visible={!data.website_url}
+            />
+          )}
         </div>
 
         <div className="space-y-2">

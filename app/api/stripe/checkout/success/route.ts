@@ -56,18 +56,42 @@ export async function GET(request: Request) {
 
     const onboardingData = onboardingSession.data as Record<string, string>;
 
-    // 4. Get property manager ID
+    // 4. Get property manager
     const { data: pmData } = await supabase
       .from("property_managers")
-      .select("id")
+      .select("id, organization_id, full_name")
       .eq("user_id", userId)
       .single();
 
-    const pmId = (pmData as { id: string } | null)?.id;
-    if (!pmId) {
+    const pm = pmData as { id: string; organization_id: string | null; full_name: string } | null;
+    if (!pm) {
       return NextResponse.redirect(
         `${origin}/onboarding?step=5&error=no_profile`
       );
+    }
+
+    // 4b. Create or reuse organization
+    let orgId = pm.organization_id;
+    if (!orgId) {
+      const orgType = onboardingData.org_type || "individual";
+      const orgName =
+        orgType === "company" && onboardingData.org_name?.trim()
+          ? onboardingData.org_name.trim()
+          : pm.full_name;
+
+      const { data: orgData } = await supabase
+        .from("organizations")
+        .insert({ name: orgName, type: orgType })
+        .select("id")
+        .single();
+
+      if (orgData) {
+        orgId = (orgData as { id: string }).id;
+        await supabase
+          .from("property_managers")
+          .update({ organization_id: orgId })
+          .eq("id", pm.id);
+      }
     }
 
     // 5. Extract Stripe subscription details
@@ -87,7 +111,8 @@ export async function GET(request: Request) {
     const fullName = `Neighborlyy @ ${onboardingData.name}`;
 
     const { error: communityError } = await supabase.from("communities").insert({
-      property_manager_id: pmId,
+      property_manager_id: pm.id,
+      organization_id: orgId,
       building_name: onboardingData.name,
       name: fullName,
       community_code: onboardingData.community_code,

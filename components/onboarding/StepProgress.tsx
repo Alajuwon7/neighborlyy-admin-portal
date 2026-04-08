@@ -4,11 +4,12 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { number: 1, label: "Property Info" },
-  { number: 2, label: "Branding" },
-  { number: 3, label: "Facilities" },
-  { number: 4, label: "Admin Access" },
-  { number: 5, label: "Billing" },
+  { number: 1, label: "Organization" },
+  { number: 2, label: "Property Info" },
+  { number: 3, label: "Branding" },
+  { number: 4, label: "Facilities" },
+  { number: 5, label: "Admin Access" },
+  { number: 6, label: "Billing" },
 ];
 
 interface StepProgressProps {

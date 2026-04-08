@@ -48,7 +48,8 @@ export function CommunitySubNav({ communityId }: CommunitySubNavProps) {
           <Link
             key={tab.href}
             href={fullHref}
-            className="flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap"
+            className="nly-tab-indicator flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-all duration-200 whitespace-nowrap group"
+            data-active={isActive}
             style={{
               borderColor: isActive ? "var(--nly-brand)" : "transparent",
               color: isActive
@@ -56,7 +57,10 @@ export function CommunitySubNav({ communityId }: CommunitySubNavProps) {
                 : "var(--nly-text-tertiary)",
             }}
           >
-            <Icon size={14} />
+            <Icon
+              size={14}
+              className="transition-transform duration-200 group-hover:scale-110"
+            />
             {tab.label}
           </Link>
         );

@@ -1,24 +1,39 @@
 "use client";
 
 import { Bell } from "lucide-react";
+import { motion } from "motion/react";
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
   trialDaysLeft?: number | null;
+  activeResidents?: number | null;
 }
 
-export function Header({ title, subtitle, trialDaysLeft }: HeaderProps) {
+export function Header({ title, subtitle, trialDaysLeft, activeResidents }: HeaderProps) {
   return (
     <header
-      className="h-16 flex items-center justify-between px-6 border-b shrink-0"
+      className="relative h-16 flex items-center justify-between px-6 border-b shrink-0 overflow-hidden"
       style={{
         backgroundColor: "var(--nly-surface)",
         borderColor: "var(--nly-border)",
         boxShadow: "var(--nly-shadow-sm)",
       }}
     >
-      <div>
+      {/* Subtle gradient accent line at top */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[1px]"
+        style={{
+          background: "linear-gradient(90deg, transparent 0%, var(--nly-brand) 30%, var(--nly-accent) 70%, transparent 100%)",
+          opacity: 0.3,
+        }}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
         <h1 className="text-lg font-semibold" style={{ color: "var(--nly-text-primary)" }}>
           {title}
         </h1>
@@ -27,12 +42,36 @@ export function Header({ title, subtitle, trialDaysLeft }: HeaderProps) {
             {subtitle}
           </p>
         )}
-      </div>
+      </motion.div>
 
       <div className="flex items-center gap-3">
+        {/* Active residents indicator */}
+        {activeResidents != null && activeResidents > 0 && (
+          <div
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+            style={{
+              backgroundColor: "rgba(16, 185, 129, 0.08)",
+              color: "var(--nly-success)",
+            }}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                backgroundColor: "var(--nly-success)",
+                boxShadow: "0 0 6px rgba(16, 185, 129, 0.4)",
+                animation: "nly-glow-pulse 3s ease-in-out infinite",
+              }}
+            />
+            {activeResidents} active today
+          </div>
+        )}
+
         {/* Trial badge */}
         {trialDaysLeft !== null && trialDaysLeft !== undefined && (
-          <div
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
             style={{
               backgroundColor:
@@ -49,18 +88,28 @@ export function Header({ title, subtitle, trialDaysLeft }: HeaderProps) {
                   : "var(--nly-success)",
             }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-current"
+              style={{
+                animation: trialDaysLeft <= 3 ? "nly-glow-pulse 2s ease-in-out infinite" : undefined,
+              }}
+            />
             {trialDaysLeft > 0 ? `${trialDaysLeft}d trial` : "Trial ended"}
-          </div>
+          </motion.div>
         )}
 
         {/* Notifications */}
-        <button
-          className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all hover:opacity-80"
+        <motion.button
+          className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all"
           style={{ color: "var(--nly-text-secondary)" }}
+          whileHover={{
+            scale: 1.05,
+            backgroundColor: "var(--nly-surface-hover)",
+          }}
+          whileTap={{ scale: 0.95 }}
         >
           <Bell size={18} />
-        </button>
+        </motion.button>
       </div>
     </header>
   );

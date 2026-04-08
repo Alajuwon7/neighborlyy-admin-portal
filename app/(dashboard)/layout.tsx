@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { PageTransitionLoader } from "@/components/ui/page-transition";
 import { Menu } from "lucide-react";
 
 export default function DashboardLayout({
@@ -13,9 +14,10 @@ export default function DashboardLayout({
 
   return (
     <div
-      className="flex min-h-screen"
+      className="nly-grain flex min-h-screen"
       style={{ backgroundColor: "var(--nly-background)" }}
     >
+      <PageTransitionLoader />
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main content — offset by sidebar width on desktop */}
