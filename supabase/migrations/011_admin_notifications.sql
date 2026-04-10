@@ -124,6 +124,15 @@ DECLARE
   v_facility_name text;
 BEGIN
   IF TG_TABLE_NAME = 'profiles' THEN
+    -- Only notify for pending status; skip if column missing or status differs
+    BEGIN
+      IF NEW.status IS DISTINCT FROM 'pending' THEN
+        RETURN NEW;
+      END IF;
+    EXCEPTION WHEN undefined_column THEN
+      -- status column doesn't exist, proceed anyway
+      NULL;
+    END;
     v_type := 'pending_resident';
     v_community_code := NEW.community_code;
     v_reference_id := NEW.id;
@@ -144,6 +153,14 @@ BEGIN
     v_body := v_actor || ' responded to ' || COALESCE(v_event_title, 'an event');
 
   ELSIF TG_TABLE_NAME = 'reservations' THEN
+    -- Only notify for pending reservations if status column exists
+    BEGIN
+      IF NEW.status IS DISTINCT FROM 'pending' THEN
+        RETURN NEW;
+      END IF;
+    EXCEPTION WHEN undefined_column THEN
+      NULL;
+    END;
     v_type := 'facility_reservation';
     v_community_code := NEW.community_code;
     v_reference_id := NEW.id;
@@ -185,18 +202,19 @@ END;
 $$;
 
 -- 7. Attach triggers
+
+-- Profiles: fire on all inserts, trigger function checks status internally
 DROP TRIGGER IF EXISTS trg_notify_pending_resident ON profiles;
 CREATE TRIGGER trg_notify_pending_resident
   AFTER INSERT ON profiles
   FOR EACH ROW
-  WHEN (NEW.status = 'pending')
   EXECUTE FUNCTION fn_notify_admin();
 
+-- Reservations: fire on all inserts, trigger function handles filtering
 DROP TRIGGER IF EXISTS trg_notify_reservation ON reservations;
 CREATE TRIGGER trg_notify_reservation
   AFTER INSERT ON reservations
   FOR EACH ROW
-  WHEN (NEW.status = 'pending')
   EXECUTE FUNCTION fn_notify_admin();
 
 DO $$
