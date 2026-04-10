@@ -97,8 +97,8 @@ export default async function DashboardPage({
   const communityCodes = communities.map((c) => c.community_code).filter(Boolean);
   const [{ count: eventCount }, { count: residentCount }, { count: pendingCount }, { count: alertCount }] = await Promise.all([
     supabase.from("events").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "approved"),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
+    supabase.from("pending_users").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
     supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
   ]);
 
@@ -106,28 +106,42 @@ export default async function DashboardPage({
   const communityNameByCode = new Map(communities.map((c) => [c.community_code, c.name]));
   const activityItems: ActivityItem[] = [];
 
-  // Recent pending/approved residents
+  // Recent approved residents
   const { data: recentProfiles } = await supabase
     .from("profiles")
-    .select("id, full_name, status, community_code, created_at")
+    .select("id, full_name, community_code, created_at")
     .in("community_code", communityCodes)
-    .in("status", ["pending", "approved"])
     .order("created_at", { ascending: false })
     .limit(10);
 
-  for (const p of (recentProfiles ?? []) as { id: string; full_name: string; status: string; community_code: string; created_at: string }[]) {
+  for (const p of (recentProfiles ?? []) as { id: string; full_name: string; community_code: string; created_at: string }[]) {
     activityItems.push({
       id: `profile-${p.id}`,
       type: "resident_joined",
-      message: p.status === "pending"
-        ? `${p.full_name} requested to join`
-        : `${p.full_name} joined the community`,
+      message: `${p.full_name} joined the community`,
       community_name: communityNameByCode.get(p.community_code),
       created_at: p.created_at,
-      actionHref: p.status === "pending"
-        ? `/dashboard/communities/${communities.find((c) => c.community_code === p.community_code)?.id}/pending`
-        : undefined,
-      actionLabel: p.status === "pending" ? "Review" : undefined,
+    });
+  }
+
+  // Recent pending join requests
+  const { data: recentPending } = await supabase
+    .from("pending_users")
+    .select("id, full_name, community_code, created_at")
+    .in("community_code", communityCodes)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  for (const p of (recentPending ?? []) as { id: string; full_name: string; community_code: string; created_at: string }[]) {
+    activityItems.push({
+      id: `pending-${p.id}`,
+      type: "resident_joined",
+      message: `${p.full_name} requested to join`,
+      community_name: communityNameByCode.get(p.community_code),
+      created_at: p.created_at,
+      actionHref: `/dashboard/communities/${communities.find((c) => c.community_code === p.community_code)?.id}/pending`,
+      actionLabel: "Review",
     });
   }
 

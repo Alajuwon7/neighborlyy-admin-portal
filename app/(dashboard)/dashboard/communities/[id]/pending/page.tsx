@@ -13,7 +13,7 @@ export default async function PendingPage({
   const { supabase, community } = await getCommunityWithAuth(id);
 
   const { data: pendingRaw } = await supabase
-    .from("profiles")
+    .from("pending_users")
     .select("id, full_name, email, unit_number, created_at")
     .eq("community_code", community.community_code)
     .eq("status", "pending")

@@ -11,13 +11,22 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, X } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   approveResident,
   denyResident,
   bulkApproveResidents,
 } from "@/app/(dashboard)/dashboard/communities/[id]/pending/actions";
 import { toast } from "sonner";
+
+const DENY_REASONS = [
+  "Does not live in this community",
+  "Incorrect unit number",
+  "Duplicate account",
+  "Unverifiable identity",
+  "Other",
+] as const;
 
 interface PendingUser {
   id: string;
@@ -37,6 +46,7 @@ export function PendingUsersTable({
   const [users, setUsers] = useState(initialUsers);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string | null>(null);
+  const [denyTarget, setDenyTarget] = useState<PendingUser | null>(null);
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -67,9 +77,12 @@ export function PendingUsersTable({
     }
   }
 
-  async function handleDeny(id: string) {
+  async function handleDenyWithReason(reason: string) {
+    if (!denyTarget) return;
+    const id = denyTarget.id;
     setLoading(id);
-    const result = await denyResident(id, communityId);
+    setDenyTarget(null);
+    const result = await denyResident(id, communityId, reason);
     setLoading(null);
     if (result.error) toast.error(result.error);
     else {
@@ -225,7 +238,7 @@ export function PendingUsersTable({
                       <CheckCircle size={18} />
                     </button>
                     <button
-                      onClick={() => handleDeny(u.id)}
+                      onClick={() => setDenyTarget(u)}
                       disabled={loading === u.id}
                       className="p-1.5 rounded-lg transition-opacity hover:opacity-80"
                       style={{ color: "var(--nly-error)" }}
@@ -240,6 +253,71 @@ export function PendingUsersTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Deny Reason Modal */}
+      <AnimatePresence>
+        {denyTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setDenyTarget(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.15 }}
+              className="w-full max-w-md mx-4 rounded-2xl border p-6"
+              style={{
+                backgroundColor: "var(--nly-surface)",
+                borderColor: "var(--nly-border)",
+                boxShadow: "0 8px 30px rgba(0, 0, 0, 0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3
+                  className="text-sm font-semibold"
+                  style={{ color: "var(--nly-text-primary)" }}
+                >
+                  Deny {denyTarget.full_name}?
+                </h3>
+                <button
+                  onClick={() => setDenyTarget(null)}
+                  className="p-1 rounded-lg transition-opacity hover:opacity-70"
+                  style={{ color: "var(--nly-text-tertiary)" }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <p
+                className="text-xs mb-4"
+                style={{ color: "var(--nly-text-secondary)" }}
+              >
+                Select a reason for denying this request:
+              </p>
+              <div className="space-y-2">
+                {DENY_REASONS.map((reason) => (
+                  <button
+                    key={reason}
+                    onClick={() => handleDenyWithReason(reason)}
+                    disabled={loading === denyTarget.id}
+                    className="w-full text-left px-4 py-3 rounded-xl text-sm transition-all hover:brightness-110"
+                    style={{
+                      backgroundColor: "var(--nly-surface-hover)",
+                      color: "var(--nly-text-primary)",
+                    }}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

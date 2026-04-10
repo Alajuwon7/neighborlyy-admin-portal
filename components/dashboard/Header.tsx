@@ -58,7 +58,7 @@ export function Header({
 
   return (
     <header
-      className="relative h-16 flex items-center justify-between px-6 border-b shrink-0 overflow-hidden"
+      className="relative h-16 flex items-center justify-between px-6 border-b shrink-0 z-30"
       style={{
         backgroundColor: "var(--nly-surface)",
         borderColor: "var(--nly-border)",
