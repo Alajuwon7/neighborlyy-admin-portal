@@ -19,6 +19,9 @@ interface NotificationDropdownProps {
   communityMap: Record<string, string>;
   communityNameMap: Record<string, string>;
   unreadCount: number;
+  latestNotification?: AdminNotification | null;
+  onNotificationRead?: (amount?: number) => void;
+  onAllRead?: () => void;
 }
 
 export function NotificationDropdown({
@@ -26,6 +29,9 @@ export function NotificationDropdown({
   communityMap,
   communityNameMap,
   unreadCount,
+  latestNotification,
+  onNotificationRead,
+  onAllRead,
 }: NotificationDropdownProps) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
@@ -44,6 +50,15 @@ export function NotificationDropdown({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
+  useEffect(() => {
+    if (latestNotification && open) {
+      setNotifications((prev) => {
+        if (prev.some((n) => n.id === latestNotification.id)) return prev;
+        return [latestNotification, ...prev].slice(0, 8);
+      });
+    }
+  }, [latestNotification, open]);
+
   async function handleOpen() {
     setOpen((prev) => !prev);
     if (!open) {
@@ -60,6 +75,7 @@ export function NotificationDropdown({
       setNotifications((prev) =>
         prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n)),
       );
+      onNotificationRead?.();
     }
     setOpen(false);
     const map = new Map(Object.entries(communityMap));
@@ -70,6 +86,7 @@ export function NotificationDropdown({
   async function handleMarkAllRead() {
     await markAllNotificationsRead(communityCodes);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    onAllRead?.();
     toast.success("All notifications marked as read");
   }
 

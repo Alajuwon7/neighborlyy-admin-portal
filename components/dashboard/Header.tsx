@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { Bell } from "lucide-react";
 import { motion } from "motion/react";
 import { NotificationDropdown } from "@/components/dashboard/NotificationDropdown";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import type { AdminNotification } from "@/lib/notifications";
 
 interface HeaderProps {
   title: string;
@@ -25,6 +28,18 @@ export function Header({
   communityMap = {},
   communityNameMap = {},
 }: HeaderProps) {
+  const [latestNotification, setLatestNotification] = useState<AdminNotification | null>(null);
+
+  const handleNewNotification = useCallback((notification: AdminNotification) => {
+    setLatestNotification(notification);
+  }, []);
+
+  const { unreadCount, decrementCount, resetCount } = useRealtimeNotifications({
+    communityCodes,
+    initialCount: notificationCount,
+    onNewNotification: handleNewNotification,
+  });
+
   return (
     <header
       className="relative h-16 flex items-center justify-between px-6 border-b shrink-0 overflow-hidden"
@@ -118,7 +133,10 @@ export function Header({
             communityCodes={communityCodes}
             communityMap={communityMap}
             communityNameMap={communityNameMap}
-            unreadCount={notificationCount}
+            unreadCount={unreadCount}
+            latestNotification={latestNotification}
+            onNotificationRead={decrementCount}
+            onAllRead={resetCount}
           />
         ) : (
           <motion.button
