@@ -190,26 +190,13 @@ export default async function DashboardPage({
     communityNames,
   );
 
-  // Greeting — enhanced with day-of-week
-  const now = new Date();
-  const hour = now.getHours();
-  const dayOfWeek = now.getDay();
-  const greeting =
-    dayOfWeek === 5
-      ? "Happy Friday"
-      : dayOfWeek === 0
-      ? "Relaxing Sunday"
-      : hour < 12
-      ? "Good morning"
-      : hour < 17
-      ? "Good afternoon"
-      : "Good evening";
   const firstName = pm.full_name?.split(" ")[0] ?? "there";
 
   return (
     <div className="flex flex-col flex-1">
       <Header
-        title={`${greeting}, ${firstName} 👋`}
+        title="Dashboard"
+        firstName={firstName}
         subtitle="Here's what's happening across your communities"
         trialDaysLeft={firstCommunity.status === "trial" ? trialDaysLeft : null}
         notificationCount={notificationCount}

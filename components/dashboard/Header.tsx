@@ -1,14 +1,26 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Bell } from "lucide-react";
 import { motion } from "motion/react";
 import { NotificationDropdown } from "@/components/dashboard/NotificationDropdown";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import type { AdminNotification } from "@/lib/notifications";
 
+function getLocalGreeting(): string {
+  const now = new Date();
+  const hour = now.getHours();
+  const dayOfWeek = now.getDay();
+  if (dayOfWeek === 5) return "Happy Friday";
+  if (dayOfWeek === 0) return "Relaxing Sunday";
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 interface HeaderProps {
   title: string;
+  firstName?: string;
   subtitle?: string;
   trialDaysLeft?: number | null;
   activeResidents?: number | null;
@@ -20,6 +32,7 @@ interface HeaderProps {
 
 export function Header({
   title,
+  firstName,
   subtitle,
   trialDaysLeft,
   activeResidents,
@@ -28,6 +41,9 @@ export function Header({
   communityMap = {},
   communityNameMap = {},
 }: HeaderProps) {
+  const greeting = useMemo(() => firstName ? getLocalGreeting() : null, [firstName]);
+  const displayTitle = greeting && firstName ? `${greeting}, ${firstName} 👋` : title;
+
   const [latestNotification, setLatestNotification] = useState<AdminNotification | null>(null);
 
   const handleNewNotification = useCallback((notification: AdminNotification) => {
@@ -64,7 +80,7 @@ export function Header({
         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
         <h1 className="text-lg font-semibold" style={{ color: "var(--nly-text-primary)" }}>
-          {title}
+          {displayTitle}
         </h1>
         {subtitle && (
           <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
