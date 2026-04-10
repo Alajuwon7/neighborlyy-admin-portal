@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Header } from "@/components/dashboard/Header";
 import { PostFormDialog } from "@/components/community/PostFormDialog";
 import { PostCard } from "@/components/community/PostCard";
+import { RefreshButton } from "@/components/dashboard/RefreshButton";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,10 @@ export default async function FeedPage() {
               {posts.length} post{posts.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <PostFormDialog communityCode={community.community_code} />
+          <div className="flex items-center gap-2">
+            <RefreshButton />
+            <PostFormDialog communityCode={community.community_code} />
+          </div>
         </div>
 
         {posts.length === 0 ? (

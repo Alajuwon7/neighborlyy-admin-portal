@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Building2,
   Users,
+  Bell,
   CreditCard,
   Settings,
   LogOut,
@@ -22,6 +23,7 @@ import { toast } from "sonner";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/communities", label: "Communities", icon: Building2 },
+  { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/team", label: "Team", icon: Users },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/account", label: "Account", icon: Settings },

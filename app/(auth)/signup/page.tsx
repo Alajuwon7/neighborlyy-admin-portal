@@ -222,6 +222,18 @@ export default function SignupPage() {
         >
           {loading ? "Creating account..." : "Create Account"}
         </button>
+
+        <p className="text-center text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+          By creating an account, you agree to our{" "}
+          <a href="/terms" className="underline hover:opacity-80" style={{ color: "var(--nly-accent)" }}>
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a href="/privacy" className="underline hover:opacity-80" style={{ color: "var(--nly-accent)" }}>
+            Privacy Policy
+          </a>
+          .
+        </p>
       </form>
     </AuthLayout>
   );

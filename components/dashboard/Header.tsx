@@ -2,15 +2,29 @@
 
 import { Bell } from "lucide-react";
 import { motion } from "motion/react";
+import { NotificationDropdown } from "@/components/dashboard/NotificationDropdown";
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
   trialDaysLeft?: number | null;
   activeResidents?: number | null;
+  notificationCount?: number;
+  communityCodes?: string[];
+  communityMap?: Record<string, string>;
+  communityNameMap?: Record<string, string>;
 }
 
-export function Header({ title, subtitle, trialDaysLeft, activeResidents }: HeaderProps) {
+export function Header({
+  title,
+  subtitle,
+  trialDaysLeft,
+  activeResidents,
+  notificationCount = 0,
+  communityCodes = [],
+  communityMap = {},
+  communityNameMap = {},
+}: HeaderProps) {
   return (
     <header
       className="relative h-16 flex items-center justify-between px-6 border-b shrink-0 overflow-hidden"
@@ -99,17 +113,23 @@ export function Header({ title, subtitle, trialDaysLeft, activeResidents }: Head
         )}
 
         {/* Notifications */}
-        <motion.button
-          className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all"
-          style={{ color: "var(--nly-text-secondary)" }}
-          whileHover={{
-            scale: 1.05,
-            backgroundColor: "var(--nly-surface-hover)",
-          }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Bell size={18} />
-        </motion.button>
+        {communityCodes.length > 0 ? (
+          <NotificationDropdown
+            communityCodes={communityCodes}
+            communityMap={communityMap}
+            communityNameMap={communityNameMap}
+            unreadCount={notificationCount}
+          />
+        ) : (
+          <motion.button
+            className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all"
+            style={{ color: "var(--nly-text-secondary)" }}
+            whileHover={{ scale: 1.05, backgroundColor: "var(--nly-surface-hover)" }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Bell size={18} />
+          </motion.button>
+        )}
       </div>
     </header>
   );

@@ -227,6 +227,35 @@ export interface Database {
         };
         Update: Record<string, never>;
       };
+      admin_notifications: {
+        Row: {
+          id: string;
+          community_code: string;
+          type: "pending_resident" | "event_rsvp" | "facility_reservation" | "help_request";
+          title: string;
+          body: string | null;
+          actor_name: string | null;
+          reference_id: string | null;
+          reference_table: string | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          community_code: string;
+          type: "pending_resident" | "event_rsvp" | "facility_reservation" | "help_request";
+          title: string;
+          body?: string | null;
+          actor_name?: string | null;
+          reference_id?: string | null;
+          reference_table?: string | null;
+          is_read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          is_read?: boolean;
+        };
+      };
       // Mobile app tables (shared database)
       profiles: {
         Row: {

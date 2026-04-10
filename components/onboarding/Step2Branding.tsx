@@ -37,7 +37,7 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
         setExtracted(true);
       }
       setExtracting(false);
-    }).catch(() => { if (!cancelled) setExtracting(false); });
+    }).catch(() => { if (!cancelled) { setExtracting(false); } });
     return () => { cancelled = true; };
   }, [websiteUrl]);
 

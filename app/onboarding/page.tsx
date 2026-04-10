@@ -318,6 +318,7 @@ function OnboardingContent() {
                     data={data}
                     onChange={update}
                     onNext={() => setStep(3)}
+                    onBack={() => setStep(1)}
                   />
                 )}
                 {step === 3 && (

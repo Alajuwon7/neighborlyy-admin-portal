@@ -28,12 +28,13 @@ interface PendingUser {
 }
 
 export function PendingUsersTable({
-  users,
+  users: initialUsers,
   communityId,
 }: {
   users: PendingUser[];
   communityId: string;
 }) {
+  const [users, setUsers] = useState(initialUsers);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -59,7 +60,11 @@ export function PendingUsersTable({
     const result = await approveResident(id, communityId);
     setLoading(null);
     if (result.error) toast.error(result.error);
-    else toast.success("Resident approved");
+    else {
+      toast.success("Resident approved");
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      setSelected((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
   }
 
   async function handleDeny(id: string) {
@@ -67,20 +72,23 @@ export function PendingUsersTable({
     const result = await denyResident(id, communityId);
     setLoading(null);
     if (result.error) toast.error(result.error);
-    else toast.success("Resident denied");
+    else {
+      toast.success("Resident denied");
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      setSelected((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
   }
 
   async function handleBulkApprove() {
     if (selected.size === 0) return;
+    const ids = Array.from(selected);
     setLoading("bulk");
-    const result = await bulkApproveResidents(
-      Array.from(selected),
-      communityId
-    );
+    const result = await bulkApproveResidents(ids, communityId);
     setLoading(null);
     if (result.error) toast.error(result.error);
     else {
-      toast.success(`${selected.size} residents approved`);
+      toast.success(`${ids.length} residents approved`);
+      setUsers((prev) => prev.filter((u) => !ids.includes(u.id)));
       setSelected(new Set());
     }
   }

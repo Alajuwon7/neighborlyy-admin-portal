@@ -37,6 +37,7 @@ interface Props {
   data: Step1Data;
   onChange: (data: Partial<Step1Data>) => void;
   onNext: () => void;
+  onBack: () => void;
 }
 
 const inputStyle = {
@@ -54,7 +55,7 @@ const labelStyle = { color: "var(--nly-text-primary)" };
 
 const selectStyle = "flex h-10 w-full rounded-xl border px-3.5 py-2 text-sm";
 
-export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
+export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
   const [validating, setValidating] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; community_code?: string }>({});
   const [extracting, setExtracting] = useState(false);
@@ -80,10 +81,8 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
         setExtracted(true);
         toast.success("Auto-filled from your website!");
       }
-      // Store colors for Step 2 (branding) — pass via parent state
-      if (site.primaryColor) onChange({ website_url: url } as Partial<Step1Data>);
     } catch {
-      // Silent fail — user can fill manually
+      toast.error("Couldn't reach that website — you can fill in details manually.");
     } finally {
       setExtracting(false);
     }
@@ -344,14 +343,28 @@ export function Step1PropertyInfo({ data, onChange, onNext }: Props) {
 
       </div>
 
-      <button
-        type="submit"
-        disabled={validating}
-        className="w-full h-11 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
-        style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
-      >
-        {validating ? "Checking availability…" : "Continue →"}
-      </button>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex-1 h-11 rounded-lg font-semibold text-sm border transition-opacity hover:opacity-80"
+          style={{
+            borderColor: "var(--nly-border)",
+            color: "var(--nly-text-secondary)",
+            backgroundColor: "transparent",
+          }}
+        >
+          ← Back
+        </button>
+        <button
+          type="submit"
+          disabled={validating}
+          className="flex-1 h-11 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+          style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
+        >
+          {validating ? "Checking availability…" : "Continue →"}
+        </button>
+      </div>
     </form>
   );
 }

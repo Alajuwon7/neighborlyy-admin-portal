@@ -4,12 +4,14 @@ import { differenceInDays, differenceInHours } from "date-fns";
 import { Building2, Users, Clock, AlertTriangle } from "lucide-react";
 import { Header } from "@/components/dashboard/Header";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
-import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { ActivityFeed, type ActivityItem } from "@/components/dashboard/ActivityFeed";
 import { DashboardClientShell } from "@/components/dashboard/DashboardClientShell";
 import { CommunityThemeProvider } from "@/components/dashboard/CommunityThemeProvider";
 import { DashboardAnimatedShell, DashboardSection } from "@/components/dashboard/DashboardAnimatedShell";
 import { computeNudges } from "@/lib/nudges";
+import { getNotificationCount } from "@/app/(dashboard)/dashboard/notifications/actions";
 import { NudgeCards } from "@/components/dashboard/NudgeCards";
+import { RefreshButton } from "@/components/dashboard/RefreshButton";
 
 export const dynamic = "force-dynamic";
 
@@ -93,11 +95,92 @@ export default async function DashboardPage({
 
   // Check if user has events, residents, pending users (for getting started checklist)
   const communityCodes = communities.map((c) => c.community_code).filter(Boolean);
-  const [{ count: eventCount }, { count: residentCount }, { count: pendingCount }] = await Promise.all([
+  const [{ count: eventCount }, { count: residentCount }, { count: pendingCount }, { count: alertCount }] = await Promise.all([
     supabase.from("events").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
     supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "approved"),
     supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
+    supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
   ]);
+
+  // Build activity feed from recent events across tables
+  const communityNameByCode = new Map(communities.map((c) => [c.community_code, c.name]));
+  const activityItems: ActivityItem[] = [];
+
+  // Recent pending/approved residents
+  const { data: recentProfiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, status, community_code, created_at")
+    .in("community_code", communityCodes)
+    .in("status", ["pending", "approved"])
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  for (const p of (recentProfiles ?? []) as { id: string; full_name: string; status: string; community_code: string; created_at: string }[]) {
+    activityItems.push({
+      id: `profile-${p.id}`,
+      type: "resident_joined",
+      message: p.status === "pending"
+        ? `${p.full_name} requested to join`
+        : `${p.full_name} joined the community`,
+      community_name: communityNameByCode.get(p.community_code),
+      created_at: p.created_at,
+      actionHref: p.status === "pending"
+        ? `/dashboard/communities/${communities.find((c) => c.community_code === p.community_code)?.id}/pending`
+        : undefined,
+      actionLabel: p.status === "pending" ? "Review" : undefined,
+    });
+  }
+
+  // Recent events
+  const { data: recentEvents } = await supabase
+    .from("events")
+    .select("id, title, community_code, created_at")
+    .in("community_code", communityCodes)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  for (const e of (recentEvents ?? []) as { id: string; title: string; community_code: string; created_at: string }[]) {
+    activityItems.push({
+      id: `event-${e.id}`,
+      type: "event_created",
+      message: `Event created: ${e.title}`,
+      community_name: communityNameByCode.get(e.community_code),
+      created_at: e.created_at,
+    });
+  }
+
+  // Recent alerts
+  const { data: recentAlerts } = await supabase
+    .from("alerts")
+    .select("id, title, community_code, created_at")
+    .in("community_code", communityCodes)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  for (const a of (recentAlerts ?? []) as { id: string; title: string; community_code: string; created_at: string }[]) {
+    activityItems.push({
+      id: `alert-${a.id}`,
+      type: "alert_sent",
+      message: `Alert: ${a.title}`,
+      community_name: communityNameByCode.get(a.community_code),
+      created_at: a.created_at,
+    });
+  }
+
+  // Sort all activity by date descending, limit to 20
+  activityItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const recentActivity = activityItems.slice(0, 20);
+
+  // Notification count for bell badge
+  const notificationCount = await getNotificationCount(communityCodes);
+
+  // Build maps for notification deep links
+  const communityMap: Record<string, string> = {};
+  const communityNameMap: Record<string, string> = {};
+  for (const c of communities) {
+    communityMap[c.community_code] = c.id;
+    communityNameMap[c.community_code] = c.name;
+  }
 
   // Compute smart nudges
   const communityNames = new Map(communities.map((c) => [c.id, c.name]));
@@ -129,6 +212,10 @@ export default async function DashboardPage({
         title={`${greeting}, ${firstName} 👋`}
         subtitle="Here's what's happening across your communities"
         trialDaysLeft={firstCommunity.status === "trial" ? trialDaysLeft : null}
+        notificationCount={notificationCount}
+        communityCodes={communityCodes}
+        communityMap={communityMap}
+        communityNameMap={communityNameMap}
       />
 
       <CommunityThemeProvider
@@ -151,6 +238,9 @@ export default async function DashboardPage({
 
         {/* Summary cards */}
         <DashboardSection delay={0}>
+          <div className="flex justify-end mb-2">
+            <RefreshButton />
+          </div>
           <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             <SummaryCard
               label="Active Communities"
@@ -174,10 +264,10 @@ export default async function DashboardPage({
             />
             <SummaryCard
               label="Pending Approvals"
-              value={0}
+              value={pendingCount ?? 0}
               subtext={
                 isNewUser
-                  ? "Help requests from residents will appear here"
+                  ? "Resident requests will appear here"
                   : "Residents awaiting access"
               }
               icon={<Clock size={22} style={{ color: "var(--nly-warning)" }} />}
@@ -186,11 +276,11 @@ export default async function DashboardPage({
             />
             <SummaryCard
               label="Open Alerts"
-              value={0}
+              value={alertCount ?? 0}
               subtext={
                 isNewUser
                   ? "Create your first event to engage residents"
-                  : "Unresolved community alerts"
+                  : "Community alerts"
               }
               icon={<AlertTriangle size={22} style={{ color: "var(--nly-error)" }} />}
               accentColor="var(--nly-error)"
@@ -289,7 +379,7 @@ export default async function DashboardPage({
 
             {/* Activity feed */}
             <div data-tour="activity-feed" className="lg:col-span-3">
-              <ActivityFeed items={[]} />
+              <ActivityFeed items={recentActivity} />
             </div>
           </div>
         </DashboardSection>

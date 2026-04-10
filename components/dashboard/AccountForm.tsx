@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { updateProfile, changePassword } from "@/app/(dashboard)/dashboard/account/actions";
 import { toast } from "sonner";
+import { DeleteAccountDialog } from "@/components/dashboard/DeleteAccountDialog";
 
 interface AccountFormProps {
   pm: {
@@ -179,6 +180,26 @@ export function AccountForm({ pm }: AccountFormProps) {
             {passwordLoading ? "Updating..." : "Update Password"}
           </Button>
         </form>
+      </section>
+
+      {/* Danger zone */}
+      <section
+        className="rounded-2xl border p-5 space-y-4"
+        style={{
+          backgroundColor: "var(--nly-surface)",
+          borderColor: "rgba(239, 68, 68, 0.2)",
+        }}
+      >
+        <h2
+          className="text-sm font-semibold"
+          style={{ color: "var(--nly-error)" }}
+        >
+          Danger Zone
+        </h2>
+        <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+          Permanently delete your account and all associated data. This action cannot be undone.
+        </p>
+        <DeleteAccountDialog />
       </section>
     </div>
   );

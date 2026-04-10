@@ -1,5 +1,6 @@
 import { getCommunityWithAuth } from "@/lib/queries";
 import { PendingUsersTable } from "@/components/community/PendingUsersTable";
+import { RefreshButton } from "@/components/dashboard/RefreshButton";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export default async function PendingPage({
             {pendingUsers.length} {pendingUsers.length === 1 ? "request" : "requests"} waiting
           </p>
         </div>
+        <RefreshButton />
       </div>
 
       <PendingUsersTable users={pendingUsers} communityId={id} />
