@@ -1,6 +1,15 @@
 import { getCommunityWithAuth } from "@/lib/queries";
 import { FacilityFormDialog } from "@/components/community/FacilityFormDialog";
-import { CheckCircle, XCircle, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Users, Clock } from "lucide-react";
+
+function formatTime(t: string | null): string | null {
+  if (!t) return null;
+  const [h, m] = t.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${m.toString().padStart(2, "0")} ${period}`;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +32,11 @@ export default async function FacilitiesPage({
       id: string;
       name: string;
       description: string | null;
-      type: string;
-      is_available: boolean;
-      hours: string | null;
-      rules: string | null;
+      capacity: number | null;
+      image_url: string | null;
+      open_time: string | null;
+      close_time: string | null;
+      available: boolean;
     }[]) ?? [];
 
   // Get reservation counts for each facility
@@ -88,6 +98,10 @@ export default async function FacilitiesPage({
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {facilities.map((f) => {
             const upcomingReservations = reservationCounts.get(f.id) ?? 0;
+            const openLabel = formatTime(f.open_time);
+            const closeLabel = formatTime(f.close_time);
+            const hoursLabel =
+              openLabel && closeLabel ? `${openLabel} – ${closeLabel}` : null;
 
             return (
               <div
@@ -106,15 +120,9 @@ export default async function FacilitiesPage({
                     >
                       {f.name}
                     </h4>
-                    <p
-                      className="text-xs capitalize mt-0.5"
-                      style={{ color: "var(--nly-text-tertiary)" }}
-                    >
-                      {f.type.replace(/_/g, " ")}
-                    </p>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    {f.is_available ? (
+                    {f.available ? (
                       <>
                         <CheckCircle
                           size={14}
@@ -157,7 +165,21 @@ export default async function FacilitiesPage({
                   className="flex items-center gap-4 pt-3 border-t"
                   style={{ borderColor: "var(--nly-divider)" }}
                 >
-                  {f.hours && (
+                  {f.capacity != null && (
+                    <div className="flex items-center gap-1.5">
+                      <Users
+                        size={12}
+                        style={{ color: "var(--nly-text-tertiary)" }}
+                      />
+                      <span
+                        className="text-xs"
+                        style={{ color: "var(--nly-text-secondary)" }}
+                      >
+                        Capacity {f.capacity}
+                      </span>
+                    </div>
+                  )}
+                  {hoursLabel && (
                     <div className="flex items-center gap-1.5">
                       <Clock
                         size={12}
@@ -167,7 +189,7 @@ export default async function FacilitiesPage({
                         className="text-xs"
                         style={{ color: "var(--nly-text-secondary)" }}
                       >
-                        {f.hours}
+                        {hoursLabel}
                       </span>
                     </div>
                   )}

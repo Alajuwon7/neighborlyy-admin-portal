@@ -16,20 +16,25 @@ export async function createFacility(
   if (!user) return { error: "Not authenticated" };
 
   const name = formData.get("name") as string;
-  const type = formData.get("type") as string;
   const description = formData.get("description") as string;
-  const hours = formData.get("hours") as string;
-  const rules = formData.get("rules") as string;
+  const capacityRaw = formData.get("capacity") as string;
+  const imageUrl = formData.get("image_url") as string;
+  const openTime = formData.get("open_time") as string;
+  const closeTime = formData.get("close_time") as string;
 
-  if (!name || !type) return { error: "Name and type are required" };
+  if (!name) return { error: "Name is required" };
+
+  const capacity = capacityRaw ? parseInt(capacityRaw, 10) : null;
 
   const { error } = await supabase.from("facilities").insert({
     community_code: communityCode,
     name,
-    type,
     description: description || null,
-    hours: hours || null,
-    rules: rules || null,
+    capacity,
+    image_url: imageUrl || null,
+    open_time: openTime || null,
+    close_time: closeTime || null,
+    available: true,
   });
 
   if (error) return { error: error.message };
@@ -52,7 +57,7 @@ export async function toggleFacilityAvailability(
 
   const { error } = await supabase
     .from("facilities")
-    .update({ is_available: isAvailable, updated_at: new Date().toISOString() })
+    .update({ available: isAvailable })
     .eq("id", facilityId);
 
   if (error) return { error: error.message };

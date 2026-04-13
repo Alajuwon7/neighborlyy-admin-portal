@@ -364,36 +364,31 @@ export interface Database {
           community_code: string;
           name: string;
           description: string | null;
-          type: string;
-          is_available: boolean;
-          hours: string | null;
-          rules: string | null;
+          capacity: number | null;
           image_url: string | null;
-          created_at: string;
-          updated_at: string;
+          open_time: string | null;
+          close_time: string | null;
+          available: boolean;
         };
         Insert: {
           id?: string;
           community_code: string;
           name: string;
           description?: string | null;
-          type: string;
-          is_available?: boolean;
-          hours?: string | null;
-          rules?: string | null;
+          capacity?: number | null;
           image_url?: string | null;
-          created_at?: string;
-          updated_at?: string;
+          open_time?: string | null;
+          close_time?: string | null;
+          available?: boolean;
         };
         Update: {
           name?: string;
           description?: string | null;
-          type?: string;
-          is_available?: boolean;
-          hours?: string | null;
-          rules?: string | null;
+          capacity?: number | null;
           image_url?: string | null;
-          updated_at?: string;
+          open_time?: string | null;
+          close_time?: string | null;
+          available?: boolean;
         };
       };
       reservations: {

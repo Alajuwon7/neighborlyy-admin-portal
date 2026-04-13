@@ -23,7 +23,7 @@ import { Plus } from "lucide-react";
 import { createFacility } from "@/app/(dashboard)/dashboard/communities/[id]/facilities/actions";
 import { toast } from "sonner";
 
-const FACILITY_TYPES = [
+const FACILITY_PRESETS = [
   "Pool",
   "Gym",
   "Clubhouse",
@@ -47,14 +47,25 @@ export function FacilityFormDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [preset, setPreset] = useState<string>("");
+  const [customName, setCustomName] = useState<string>("");
 
   async function handleSubmit(formData: FormData) {
+    const name = preset === "Other" ? customName.trim() : preset;
+    if (!name) {
+      toast.error("Please select a facility");
+      return;
+    }
+    formData.set("name", name);
+
     setLoading(true);
     const result = await createFacility(formData, communityCode, communityId);
     setLoading(false);
     if (result.error) toast.error(result.error);
     else {
       toast.success("Facility added");
+      setPreset("");
+      setCustomName("");
       setOpen(false);
     }
   }
@@ -88,20 +99,12 @@ export function FacilityFormDialog({
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
-            <Label style={{ color: "var(--nly-text-secondary)" }}>Name</Label>
-            <Input
-              name="name"
-              required
-              placeholder="Main Pool"
-              className="border"
-              style={inputStyle}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label style={{ color: "var(--nly-text-secondary)" }}>Type</Label>
-            <Select name="type" required>
+            <Label style={{ color: "var(--nly-text-secondary)" }}>
+              Facility
+            </Label>
+            <Select value={preset} onValueChange={setPreset}>
               <SelectTrigger className="border" style={inputStyle}>
-                <SelectValue placeholder="Select type" />
+                <SelectValue placeholder="Select facility" />
               </SelectTrigger>
               <SelectContent
                 style={{
@@ -109,13 +112,22 @@ export function FacilityFormDialog({
                   borderColor: "var(--nly-border)",
                 }}
               >
-                {FACILITY_TYPES.map((t) => (
-                  <SelectItem key={t} value={t.toLowerCase().replace(/ /g, "_")}>
+                {FACILITY_PRESETS.map((t) => (
+                  <SelectItem key={t} value={t}>
                     {t}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {preset === "Other" && (
+              <Input
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder="Enter facility name"
+                className="border mt-2"
+                style={inputStyle}
+              />
+            )}
           </div>
           <div className="space-y-2">
             <Label style={{ color: "var(--nly-text-secondary)" }}>
@@ -129,22 +141,53 @@ export function FacilityFormDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label style={{ color: "var(--nly-text-secondary)" }}>Hours</Label>
+            <Label style={{ color: "var(--nly-text-secondary)" }}>
+              Capacity
+            </Label>
             <Input
-              name="hours"
-              placeholder="6:00 AM - 10:00 PM"
+              name="capacity"
+              type="number"
+              min="1"
+              placeholder="20"
               className="border"
               style={inputStyle}
             />
           </div>
           <div className="space-y-2">
-            <Label style={{ color: "var(--nly-text-secondary)" }}>Rules</Label>
-            <Textarea
-              name="rules"
-              placeholder="No glass, towels required..."
-              className="border min-h-[60px]"
+            <Label style={{ color: "var(--nly-text-secondary)" }}>
+              Image URL
+            </Label>
+            <Input
+              name="image_url"
+              type="url"
+              placeholder="https://..."
+              className="border"
               style={inputStyle}
             />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label style={{ color: "var(--nly-text-secondary)" }}>
+                Opens
+              </Label>
+              <Input
+                name="open_time"
+                type="time"
+                className="border"
+                style={inputStyle}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label style={{ color: "var(--nly-text-secondary)" }}>
+                Closes
+              </Label>
+              <Input
+                name="close_time"
+                type="time"
+                className="border"
+                style={inputStyle}
+              />
+            </div>
           </div>
           <Button
             type="submit"
