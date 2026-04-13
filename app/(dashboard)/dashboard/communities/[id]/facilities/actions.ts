@@ -66,6 +66,47 @@ export async function toggleFacilityAvailability(
   return { success: true };
 }
 
+export async function updateFacility(
+  facilityId: string,
+  formData: FormData,
+  communityId: string
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const name = formData.get("name") as string;
+  const description = formData.get("description") as string;
+  const capacityRaw = formData.get("capacity") as string;
+  const imageUrl = formData.get("image_url") as string;
+  const openTime = formData.get("open_time") as string;
+  const closeTime = formData.get("close_time") as string;
+
+  if (!name) return { error: "Name is required" };
+
+  const capacity = capacityRaw ? parseInt(capacityRaw, 10) : null;
+
+  const { error } = await supabase
+    .from("facilities")
+    .update({
+      name,
+      description: description || null,
+      capacity,
+      image_url: imageUrl || null,
+      open_time: openTime || null,
+      close_time: closeTime || null,
+    })
+    .eq("id", facilityId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/dashboard/communities/${communityId}/facilities`);
+  return { success: true };
+}
+
 export async function deleteFacility(facilityId: string, communityId: string) {
   const supabase = await createClient();
 

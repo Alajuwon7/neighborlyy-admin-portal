@@ -1,5 +1,6 @@
 import { getCommunityWithAuth } from "@/lib/queries";
 import { FacilityFormDialog } from "@/components/community/FacilityFormDialog";
+import { FacilityRowActions } from "@/components/community/FacilityRowActions";
 import { CheckCircle, XCircle, Users, Clock } from "lucide-react";
 
 function formatTime(t: string | null): string | null {
@@ -112,44 +113,45 @@ export default async function FacilitiesPage({
                   borderColor: "var(--nly-border)",
                 }}
               >
-                <div className="flex items-start justify-between">
-                  <div>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
                     <h4
                       className="text-sm font-semibold"
                       style={{ color: "var(--nly-text-primary)" }}
                     >
                       {f.name}
                     </h4>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {f.available ? (
+                        <>
+                          <CheckCircle
+                            size={12}
+                            style={{ color: "var(--nly-success)" }}
+                          />
+                          <span
+                            className="text-xs font-medium"
+                            style={{ color: "var(--nly-success)" }}
+                          >
+                            Open
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle
+                            size={12}
+                            style={{ color: "var(--nly-error)" }}
+                          />
+                          <span
+                            className="text-xs font-medium"
+                            style={{ color: "var(--nly-error)" }}
+                          >
+                            Unavailable
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    {f.available ? (
-                      <>
-                        <CheckCircle
-                          size={14}
-                          style={{ color: "var(--nly-success)" }}
-                        />
-                        <span
-                          className="text-xs font-medium"
-                          style={{ color: "var(--nly-success)" }}
-                        >
-                          Open
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle
-                          size={14}
-                          style={{ color: "var(--nly-error)" }}
-                        />
-                        <span
-                          className="text-xs font-medium"
-                          style={{ color: "var(--nly-error)" }}
-                        >
-                          Closed
-                        </span>
-                      </>
-                    )}
-                  </div>
+                  <FacilityRowActions facility={f} communityId={id} />
                 </div>
 
                 {f.description && (
