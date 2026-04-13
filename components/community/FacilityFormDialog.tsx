@@ -102,7 +102,7 @@ export function FacilityFormDialog({
             <Label style={{ color: "var(--nly-text-secondary)" }}>
               Facility
             </Label>
-            <Select value={preset} onValueChange={setPreset}>
+            <Select value={preset} onValueChange={(v) => setPreset(v ?? "")}>
               <SelectTrigger className="border" style={inputStyle}>
                 <SelectValue placeholder="Select facility" />
               </SelectTrigger>
