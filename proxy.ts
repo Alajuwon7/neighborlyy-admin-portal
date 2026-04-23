@@ -41,6 +41,19 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Dashboard — also require property_managers membership
+  if (pathname.startsWith("/dashboard") && user) {
+    const { data: pmData } = await supabase
+      .from("property_managers")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!pmData) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
   // Auth routes — redirect authenticated users
   if (pathname.startsWith("/login") || pathname.startsWith("/signup")) {
     if (user) {
