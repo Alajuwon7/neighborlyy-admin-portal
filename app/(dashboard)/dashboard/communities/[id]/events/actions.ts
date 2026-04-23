@@ -24,7 +24,6 @@ export async function createEvent(formData: FormData, communityCode: string, com
     description: description || null,
     location: location || null,
     event_date: eventDate,
-    created_by: user.id,
   });
 
   if (error) return { error: error.message };
