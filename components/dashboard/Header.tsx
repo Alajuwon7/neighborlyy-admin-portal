@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { motion } from "motion/react";
 import { NotificationDropdown } from "@/components/dashboard/NotificationDropdown";
@@ -41,7 +41,10 @@ export function Header({
   communityMap = {},
   communityNameMap = {},
 }: HeaderProps) {
-  const greeting = useMemo(() => firstName ? getLocalGreeting() : null, [firstName]);
+  const [greeting, setGreeting] = useState<string | null>(null);
+  useEffect(() => {
+    if (firstName) setGreeting(getLocalGreeting());
+  }, [firstName]);
   const displayTitle = greeting && firstName ? `${greeting}, ${firstName} 👋` : title;
 
   const [latestNotification, setLatestNotification] = useState<AdminNotification | null>(null);
