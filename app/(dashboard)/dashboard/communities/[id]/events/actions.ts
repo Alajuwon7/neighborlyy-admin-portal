@@ -15,7 +15,6 @@ export async function createEvent(formData: FormData, communityCode: string, com
   const description = formData.get("description") as string;
   const location = formData.get("location") as string;
   const eventDate = formData.get("event_date") as string;
-  const maxAttendees = formData.get("max_attendees") as string;
 
   if (!title || !eventDate) return { error: "Title and date are required" };
 
@@ -25,7 +24,7 @@ export async function createEvent(formData: FormData, communityCode: string, com
     description: description || null,
     location: location || null,
     event_date: eventDate,
-    max_attendees: maxAttendees ? parseInt(maxAttendees, 10) : null,
+    created_by: user.id,
   });
 
   if (error) return { error: error.message };

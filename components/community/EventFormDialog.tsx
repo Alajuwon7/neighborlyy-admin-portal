@@ -28,6 +28,26 @@ export function EventFormDialog({
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
+
+    const date = formData.get("event_date") as string;
+    const timeStart = formData.get("event_time_start") as string;
+    const timeEnd = formData.get("event_time_end") as string;
+
+    const startLocal = new Date(`${date}T${timeStart}`);
+    formData.set("event_date", startLocal.toISOString());
+
+    if (timeEnd) {
+      const endLocal = new Date(`${date}T${timeEnd}`);
+      const endFormatted = endLocal.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const existing = ((formData.get("description") as string) || "").trim();
+      formData.set("description", `${existing}\n\nEnds at: ${endFormatted}`);
+    }
+
     const result = await createEvent(formData, communityCode, communityId);
     setLoading(false);
     if (result.error) toast.error(result.error);
@@ -102,12 +122,10 @@ export function EventFormDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label style={{ color: "var(--nly-text-secondary)" }}>
-                Date & Time
-              </Label>
+              <Label style={{ color: "var(--nly-text-secondary)" }}>Date</Label>
               <Input
                 name="event_date"
-                type="datetime-local"
+                type="date"
                 required
                 className="border"
                 style={inputStyle}
@@ -115,17 +133,30 @@ export function EventFormDialog({
             </div>
             <div className="space-y-2">
               <Label style={{ color: "var(--nly-text-secondary)" }}>
-                Max Attendees
+                Start Time
               </Label>
               <Input
-                name="max_attendees"
-                type="number"
-                min="1"
-                placeholder="Optional"
+                name="event_time_start"
+                type="time"
+                required
                 className="border"
                 style={inputStyle}
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label style={{ color: "var(--nly-text-secondary)" }}>
+              End Time{" "}
+              <span style={{ color: "var(--nly-text-tertiary)" }}>
+                (optional)
+              </span>
+            </Label>
+            <Input
+              name="event_time_end"
+              type="time"
+              className="border"
+              style={inputStyle}
+            />
           </div>
           <Button
             type="submit"
