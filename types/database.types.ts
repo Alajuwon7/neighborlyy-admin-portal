@@ -302,35 +302,59 @@ export interface Database {
           community_code: string;
           title: string;
           description: string | null;
+          event_date: string;
           location: string | null;
-          start_time: string;
-          end_time: string | null;
+          image_url: string | null;
+          max_attendees: number | null;
           created_by: string | null;
-          rsvp_count: number;
           created_at: string;
-          updated_at: string;
         };
         Insert: {
           id?: string;
           community_code: string;
           title: string;
           description?: string | null;
+          event_date: string;
           location?: string | null;
-          start_time: string;
-          end_time?: string | null;
+          image_url?: string | null;
+          max_attendees?: number | null;
           created_by?: string | null;
-          rsvp_count?: number;
           created_at?: string;
-          updated_at?: string;
         };
         Update: {
+          id?: string;
+          community_code?: string;
           title?: string;
           description?: string | null;
+          event_date?: string;
           location?: string | null;
-          start_time?: string;
-          end_time?: string | null;
-          rsvp_count?: number;
-          updated_at?: string;
+          image_url?: string | null;
+          max_attendees?: number | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
+      event_rsvps: {
+        Row: {
+          id: string;
+          event_id: string;
+          user_id: string;
+          status: "going" | "maybe" | "not_going";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          user_id: string;
+          status: "going" | "maybe" | "not_going";
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          user_id?: string;
+          status?: "going" | "maybe" | "not_going";
+          created_at?: string;
         };
       };
       alerts: {
