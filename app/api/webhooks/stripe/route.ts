@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appendAudit } from "@/lib/offboarding/audit";
+import { allCommunitiesBillingResolved } from "./fan-in";
 
 export const runtime = "nodejs";
 
@@ -158,9 +159,7 @@ async function runFanIn(
     .select("stripe_subscription_id, stripe_subscription_status")
     .eq("organization_id", community.organization_id);
 
-  const allDone = (orgCommunities ?? []).every(
-    (c) => !c.stripe_subscription_id || c.stripe_subscription_status === "canceled",
-  );
+  const allDone = allCommunitiesBillingResolved(orgCommunities ?? []);
   if (!allDone) return;
 
   const { data: req } = await admin
