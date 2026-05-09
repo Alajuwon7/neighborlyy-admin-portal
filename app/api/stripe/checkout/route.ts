@@ -1,12 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
-
-function getStripe() {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error("STRIPE_SECRET_KEY is not configured");
-  }
-  return new Stripe(process.env.STRIPE_SECRET_KEY);
-}
+import { getStripe } from "@/lib/stripe/client";
 
 const PRICE_MAP: Record<string, Record<string, string | undefined>> = {
   starter: {
