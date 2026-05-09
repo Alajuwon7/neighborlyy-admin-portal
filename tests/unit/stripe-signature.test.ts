@@ -39,7 +39,10 @@ test("constructEvent throws on tampered body", () => {
     data: { object: { id: "sub_1" } },
   });
   const tamperedBody = JSON.stringify({ id: "evt_HACKED" });
-  assert.throws(() => stripe.webhooks.constructEvent(tamperedBody, header, SECRET));
+  assert.throws(
+    () => stripe.webhooks.constructEvent(tamperedBody, header, SECRET),
+    Stripe.errors.StripeSignatureVerificationError,
+  );
 });
 
 test("constructEvent throws on wrong secret", () => {
@@ -49,7 +52,8 @@ test("constructEvent throws on wrong secret", () => {
     type: "customer.subscription.updated",
     data: { object: { id: "sub_1" } },
   });
-  assert.throws(() =>
-    stripe.webhooks.constructEvent(body, header, "whsec_wrong_" + "b".repeat(32)),
+  assert.throws(
+    () => stripe.webhooks.constructEvent(body, header, "whsec_wrong_" + "b".repeat(32)),
+    Stripe.errors.StripeSignatureVerificationError,
   );
 });
