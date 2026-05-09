@@ -85,20 +85,32 @@ async function handleSubscriptionDeleted(
   admin: ReturnType<typeof createAdminClient>,
   sub: Stripe.Subscription,
 ) {
-  await admin
+  // Mirror the idempotency pattern from handleSubscriptionUpdated.
+  // Only enter fan-in when this UPDATE actually transitioned a row —
+  // a duplicate "deleted" event won't trigger redundant fan-in queries.
+  const { data: changed } = await admin
     .from("communities")
     .update({ stripe_subscription_status: "canceled" })
-    .eq("stripe_subscription_id", sub.id);
+    .eq("stripe_subscription_id", sub.id)
+    .neq("stripe_subscription_status", "canceled")
+    .select("id");
 
-  await runFanIn(admin, sub.id);
+  if (changed && changed.length > 0) {
+    await runFanIn(admin, sub.id);
+  }
 }
 
 async function handleInvoicePaymentFailed(
   admin: ReturnType<typeof createAdminClient>,
   invoice: Stripe.Invoice,
 ) {
-  // invoice.subscription is a string id when expanded=false (default for webhooks)
-  const subId = (invoice as { subscription?: string }).subscription;
+  // invoice.subscription is `string | Stripe.Subscription | null` — webhooks
+  // arrive unexpanded so it's a string in practice, but narrow defensively
+  // in case expansion is ever enabled at the destination.
+  const rawSubRef = (invoice as Stripe.Invoice & {
+    subscription?: string | Stripe.Subscription | null;
+  }).subscription;
+  const subId = typeof rawSubRef === "string" ? rawSubRef : rawSubRef?.id;
   if (!subId) return;
 
   const { data: community } = await admin
@@ -167,6 +179,12 @@ async function runFanIn(
     .is("stripe_resolved_at", null);
   if (updErr) return;
 
+  // Fan-in audit append happens AFTER the row update commits. If this throws,
+  // the next event sees stripe_resolved_at already set and short-circuits at
+  // the .is("stripe_resolved_at", null) guard above — leaving an audit gap.
+  // Acceptable trade-off: the recorded stripe_webhook_events.payload row is
+  // the replay surface. Promote to a single SQL RPC if audit completeness
+  // becomes load-bearing.
   await appendAudit(admin, "deletion_requests", req.id, {
     actor: "system",
     actor_id: "stripe",
