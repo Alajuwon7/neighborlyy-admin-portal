@@ -145,7 +145,9 @@ function OnboardingContent() {
       const pm = pmData as { id: string; organization_id: string | null; full_name: string };
       if (!pm) throw new Error("Property manager profile not found");
 
-      // Create or reuse organization
+      // Create or reuse organization. We go through a SECURITY DEFINER RPC
+      // because PostgREST's INSERT...RETURNING evaluates the SELECT policy
+      // on the new row, which fails before the PM is linked to the org.
       let orgId = pm.organization_id;
       if (!orgId) {
         const orgName =
@@ -153,22 +155,17 @@ function OnboardingContent() {
             ? data.org_name.trim()
             : pm.full_name;
 
-        const { data: orgData, error: orgError } = await supabase
-          .from("organizations")
-          .insert({ name: orgName, type: data.org_type })
-          .select("id")
-          .single();
+        const { data: newOrgId, error: orgError } = await supabase.rpc(
+          "onboarding_create_org_and_link",
+          {
+            p_org_name: orgName,
+            p_org_type: data.org_type,
+            p_company_name: data.org_type === "company" ? orgName : null,
+          }
+        );
 
         if (orgError) throw new Error(`Org creation failed: ${orgError.message || orgError.code || JSON.stringify(orgError)}`);
-        orgId = (orgData as { id: string }).id;
-
-        // Link PM to organization
-        const { error: linkError } = await supabase
-          .from("property_managers")
-          .update({ organization_id: orgId, company_name: data.org_type === "company" ? orgName : null })
-          .eq("id", pm.id);
-
-        if (linkError) throw new Error(`PM link failed: ${linkError.message || linkError.code || JSON.stringify(linkError)}`);
+        orgId = newOrgId as string;
       }
 
       const trialEndsAt = new Date();
