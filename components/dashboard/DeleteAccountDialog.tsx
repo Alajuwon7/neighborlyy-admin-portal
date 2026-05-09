@@ -1,52 +1,103 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Trash2, X, ArrowRightLeft } from "lucide-react";
+import { AlertTriangle, Building2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { deleteAccount, getTeamMembersForTransfer } from "@/app/(dashboard)/dashboard/account/actions";
+import {
+  setCorporationContactEmail,
+  submitDeletionRequest,
+} from "@/app/(dashboard)/dashboard/account/actions";
+import type { DeletionReason } from "@/lib/offboarding/types";
 
-interface TeamMember {
-  id: string;
-  full_name: string;
-  email: string;
-  role: string;
-  community_id: string;
+interface DeleteAccountDialogProps {
+  pmEmail: string;
+  corpContactEmail: string | null;
 }
 
-export function DeleteAccountDialog() {
-  const [open, setOpen] = useState(false);
-  const [password, setPassword] = useState("");
-  const [transferTo, setTransferTo] = useState<string | null>(null);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
+const REASONS: { value: DeletionReason; label: string }[] = [
+  { value: "moving_to_other_platform", label: "Moving to a different platform" },
+  { value: "property_sold", label: "Property sold / management transferred" },
+  { value: "no_longer_managing", label: "No longer managing this property" },
+  { value: "other", label: "Other" },
+];
+
+export function DeleteAccountDialog({
+  pmEmail,
+  corpContactEmail,
+}: DeleteAccountDialogProps) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [needsCorpEmail, setNeedsCorpEmail] = useState(!corpContactEmail);
+  const [corpEmailDraft, setCorpEmailDraft] = useState("");
+  const [savingCorpEmail, setSavingCorpEmail] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      getTeamMembersForTransfer().then(setTeamMembers);
-    }
-  }, [open]);
+  const [reason, setReason] = useState<DeletionReason | null>(null);
+  const [reasonOther, setReasonOther] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  async function handleDelete() {
-    if (confirmText !== "DELETE") return;
-    if (!password) {
-      toast.error("Please enter your password");
+  function closeDialog() {
+    setOpen(false);
+    setReason(null);
+    setReasonOther("");
+    setConfirmEmail("");
+    setCorpEmailDraft("");
+    setNeedsCorpEmail(!corpContactEmail);
+  }
+
+  async function handleSaveCorpEmail() {
+    if (!corpEmailDraft.trim()) {
+      toast.error("Please enter your corporation's contact email");
       return;
     }
+    setSavingCorpEmail(true);
+    const result = await setCorporationContactEmail(corpEmailDraft);
+    setSavingCorpEmail(false);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Saved corporation contact email");
+    setNeedsCorpEmail(false);
+    router.refresh();
+  }
 
-    setLoading(true);
-    const result = await deleteAccount(password, transferTo);
-    setLoading(false);
+  async function handleSubmit() {
+    if (!reason) {
+      toast.error("Please select a reason");
+      return;
+    }
+    if (reason === "other" && !reasonOther.trim()) {
+      toast.error("Please describe your reason");
+      return;
+    }
+    if (
+      confirmEmail.trim().toLowerCase() !== pmEmail.toLowerCase()
+    ) {
+      toast.error("The email you typed doesn't match your account email");
+      return;
+    }
+    setSubmitting(true);
+    const result = await submitDeletionRequest({
+      reason,
+      reasonOther: reason === "other" ? reasonOther.trim() : null,
+      confirmEmail,
+    });
+    setSubmitting(false);
 
-    if (result.error) {
+    if (!result.ok) {
       toast.error(result.error);
       return;
     }
 
-    toast.success("Account deleted. We're sorry to see you go.");
-    router.push("/login");
+    toast.success(
+      result.alreadyExisted
+        ? "You already have a deletion request in progress."
+        : "Deletion request submitted. Your corporation will receive an email shortly.",
+    );
+    closeDialog();
+    router.refresh();
   }
 
   const inputStyle = {
@@ -58,6 +109,7 @@ export function DeleteAccountDialog() {
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
         className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
         style={{
@@ -67,19 +119,17 @@ export function DeleteAccountDialog() {
         }}
       >
         <Trash2 size={15} />
-        Delete Account
+        Delete My Account
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div
             className="absolute inset-0"
             style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
-            onClick={() => setOpen(false)}
+            onClick={() => !submitting && setOpen(false)}
           />
 
-          {/* Dialog */}
           <div
             className="relative w-full max-w-md rounded-2xl border p-6 space-y-5"
             style={{
@@ -89,14 +139,16 @@ export function DeleteAccountDialog() {
             }}
           >
             <button
-              onClick={() => setOpen(false)}
+              type="button"
+              onClick={() => {
+                if (!submitting) closeDialog();
+              }}
               className="absolute top-4 right-4 p-1 rounded-lg transition-opacity hover:opacity-70"
               style={{ color: "var(--nly-text-tertiary)" }}
             >
               <X size={18} />
             </button>
 
-            {/* Warning header */}
             <div className="flex items-start gap-3">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -105,111 +157,164 @@ export function DeleteAccountDialog() {
                 <AlertTriangle size={20} style={{ color: "var(--nly-error)" }} />
               </div>
               <div>
-                <h3 className="text-base font-bold" style={{ color: "var(--nly-text-primary)" }}>
-                  Delete Account
+                <h3
+                  className="text-base font-bold"
+                  style={{ color: "var(--nly-text-primary)" }}
+                >
+                  Delete your Neighborlyy account
                 </h3>
-                <p className="text-xs mt-1" style={{ color: "var(--nly-text-secondary)" }}>
-                  This action cannot be undone.
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "var(--nly-text-secondary)" }}
+                >
+                  Your corporation must approve before anything changes.
                 </p>
               </div>
             </div>
 
-            {/* Warning details */}
-            <div
-              className="rounded-xl p-4 space-y-2 text-xs"
-              style={{ backgroundColor: "var(--nly-error-bg)", color: "var(--nly-text-secondary)" }}
-            >
-              <p className="font-medium" style={{ color: "var(--nly-error)" }}>What will happen:</p>
-              <ul className="space-y-1.5 ml-3 list-disc">
-                <li>Your property manager profile will be permanently deleted</li>
-                <li>All your communities will be suspended</li>
-                <li>Team members will lose access</li>
-                <li>Resident data will be preserved but inactive</li>
-              </ul>
-            </div>
-
-            {/* Transfer ownership option */}
-            {teamMembers.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <ArrowRightLeft size={14} style={{ color: "var(--nly-accent)" }} />
-                  <label className="text-xs font-medium" style={{ color: "var(--nly-text-primary)" }}>
-                    Transfer ownership to a team member (optional)
-                  </label>
-                </div>
-                <select
-                  value={transferTo ?? ""}
-                  onChange={(e) => setTransferTo(e.target.value || null)}
-                  className="w-full h-9 rounded-lg border px-3 text-sm"
-                  style={inputStyle}
-                >
-                  <option value="">No transfer — suspend communities</option>
-                  {teamMembers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.full_name} ({m.email}) — {m.role}
-                    </option>
-                  ))}
-                </select>
-                {transferTo && (
-                  <p className="text-xs" style={{ color: "var(--nly-success)" }}>
-                    Communities will remain active under the new owner.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Password confirmation */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium" style={{ color: "var(--nly-text-primary)" }}>
-                Confirm your password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="w-full h-9 rounded-lg border px-3 text-sm"
-                style={inputStyle}
-              />
-            </div>
-
-            {/* Type DELETE confirmation */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium" style={{ color: "var(--nly-text-primary)" }}>
-                Type <span style={{ color: "var(--nly-error)" }}>DELETE</span> to confirm
-              </label>
-              <input
-                type="text"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder="DELETE"
-                className="w-full h-9 rounded-lg border px-3 text-sm font-mono"
-                style={inputStyle}
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-1">
-              <button
-                onClick={() => setOpen(false)}
-                className="flex-1 h-10 rounded-lg text-sm font-medium border transition-opacity hover:opacity-80"
+            {needsCorpEmail ? (
+              <div
+                className="rounded-xl p-4 space-y-3 text-xs"
                 style={{
-                  borderColor: "var(--nly-border)",
-                  color: "var(--nly-text-secondary)",
-                  backgroundColor: "transparent",
+                  backgroundColor: "var(--nly-info-bg, rgba(47,196,211,0.08))",
+                  border: "1px solid var(--nly-border)",
                 }}
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={loading || confirmText !== "DELETE" || !password}
-                className="flex-1 h-10 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-                style={{ backgroundColor: "var(--nly-error)" }}
-              >
-                {loading ? "Deleting..." : "Delete My Account"}
-              </button>
-            </div>
+                <div className="flex items-start gap-2">
+                  <Building2
+                    size={14}
+                    style={{ color: "var(--nly-brand)", marginTop: 2 }}
+                  />
+                  <p style={{ color: "var(--nly-text-secondary)" }}>
+                    First, tell us your corporation&apos;s contact email — this
+                    is who must sign off on closing your account.
+                  </p>
+                </div>
+                <input
+                  type="email"
+                  inputMode="email"
+                  placeholder="approvals@yourcompany.com"
+                  className="w-full h-9 rounded-lg border px-3 text-sm"
+                  style={inputStyle}
+                  value={corpEmailDraft}
+                  onChange={(e) => setCorpEmailDraft(e.target.value)}
+                  autoComplete="email"
+                />
+                <button
+                  type="button"
+                  disabled={savingCorpEmail}
+                  onClick={handleSaveCorpEmail}
+                  className="w-full h-9 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  style={{ backgroundColor: "var(--nly-brand)" }}
+                >
+                  {savingCorpEmail ? "Saving..." : "Save and continue"}
+                </button>
+              </div>
+            ) : (
+              <>
+                <div
+                  className="rounded-xl p-4 space-y-2 text-xs"
+                  style={{
+                    backgroundColor: "var(--nly-error-bg)",
+                    color: "var(--nly-text-secondary)",
+                  }}
+                >
+                  <ul className="space-y-1.5 ml-3 list-disc">
+                    <li>Your communities will be reviewed and handed off, suspended, or closed.</li>
+                    <li>Your residents&apos; accounts and history are never affected.</li>
+                    <li>Your corporation must approve before anything changes.</li>
+                    <li>Your personal data will be wiped after a 30-day window.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-medium"
+                    style={{ color: "var(--nly-text-primary)" }}
+                  >
+                    Why are you leaving? (required)
+                  </label>
+                  <div className="space-y-1.5">
+                    {REASONS.map((r) => (
+                      <label
+                        key={r.value}
+                        className="flex items-center gap-2 text-xs cursor-pointer"
+                        style={{ color: "var(--nly-text-secondary)" }}
+                      >
+                        <input
+                          type="radio"
+                          name="deletion-reason"
+                          value={r.value}
+                          checked={reason === r.value}
+                          onChange={() => setReason(r.value)}
+                        />
+                        <span>{r.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {reason === "other" && (
+                    <input
+                      type="text"
+                      placeholder="Tell us briefly..."
+                      maxLength={500}
+                      className="w-full h-9 rounded-lg border px-3 text-sm"
+                      style={inputStyle}
+                      value={reasonOther}
+                      onChange={(e) => setReasonOther(e.target.value)}
+                    />
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className="text-xs font-medium"
+                    style={{ color: "var(--nly-text-primary)" }}
+                  >
+                    To confirm, type your account email
+                  </label>
+                  <input
+                    type="email"
+                    inputMode="email"
+                    placeholder={pmEmail}
+                    className="w-full h-9 rounded-lg border px-3 text-sm font-mono"
+                    style={inputStyle}
+                    value={confirmEmail}
+                    onChange={(e) => setConfirmEmail(e.target.value)}
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={closeDialog}
+                    disabled={submitting}
+                    className="flex-1 h-10 rounded-lg text-sm font-medium border transition-opacity hover:opacity-80 disabled:opacity-50"
+                    style={{
+                      borderColor: "var(--nly-border)",
+                      color: "var(--nly-text-secondary)",
+                      backgroundColor: "transparent",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      submitting ||
+                      !reason ||
+                      confirmEmail.trim().toLowerCase() !==
+                        pmEmail.toLowerCase()
+                    }
+                    onClick={handleSubmit}
+                    className="flex-1 h-10 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                    style={{ backgroundColor: "var(--nly-error)" }}
+                  >
+                    {submitting ? "Submitting..." : "Submit deletion request"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

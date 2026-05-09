@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { updateProfile, changePassword } from "@/app/(dashboard)/dashboard/account/actions";
 import { toast } from "sonner";
 import { DeleteAccountDialog } from "@/components/dashboard/DeleteAccountDialog";
+import { OffboardingStatusCard } from "@/components/dashboard/OffboardingStatusCard";
+import { ArrowRightLeft } from "lucide-react";
+import type { DeletionRequestRow } from "@/lib/offboarding/types";
 
 interface AccountFormProps {
   pm: {
@@ -15,9 +18,15 @@ interface AccountFormProps {
     phone: string | null;
     company_name: string | null;
   };
+  corpContactEmail: string | null;
+  activeDeletionRequest: DeletionRequestRow | null;
 }
 
-export function AccountForm({ pm }: AccountFormProps) {
+export function AccountForm({
+  pm,
+  corpContactEmail,
+  activeDeletionRequest,
+}: AccountFormProps) {
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
@@ -182,24 +191,60 @@ export function AccountForm({ pm }: AccountFormProps) {
         </form>
       </section>
 
-      {/* Danger zone */}
+      {/* Danger zone — Account actions */}
       <section
         className="rounded-2xl border p-5 space-y-4"
         style={{
           backgroundColor: "var(--nly-surface)",
-          borderColor: "rgba(239, 68, 68, 0.2)",
+          borderColor: activeDeletionRequest
+            ? "var(--nly-border)"
+            : "rgba(239, 68, 68, 0.2)",
         }}
       >
-        <h2
-          className="text-sm font-semibold"
-          style={{ color: "var(--nly-error)" }}
-        >
-          Danger Zone
-        </h2>
-        <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-          Permanently delete your account and all associated data. This action cannot be undone.
-        </p>
-        <DeleteAccountDialog />
+        <div>
+          <h2
+            className="text-sm font-semibold"
+            style={{
+              color: activeDeletionRequest
+                ? "var(--nly-text-primary)"
+                : "var(--nly-error)",
+            }}
+          >
+            Account actions
+          </h2>
+          <p
+            className="text-xs mt-1"
+            style={{ color: "var(--nly-text-tertiary)" }}
+          >
+            These actions require your corporation&apos;s approval. Nothing
+            changes until everyone confirms.
+          </p>
+        </div>
+
+        {activeDeletionRequest ? (
+          <OffboardingStatusCard initialRequest={activeDeletionRequest} />
+        ) : (
+          <div className="flex flex-col md:flex-row gap-3">
+            <button
+              type="button"
+              disabled
+              title="Coming soon"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium opacity-60 cursor-not-allowed"
+              style={{
+                color: "var(--nly-text-secondary)",
+                border: "1px solid var(--nly-border)",
+                backgroundColor: "transparent",
+              }}
+            >
+              <ArrowRightLeft size={15} />
+              Request Account Transfer
+            </button>
+            <DeleteAccountDialog
+              pmEmail={pm.email}
+              corpContactEmail={corpContactEmail}
+            />
+          </div>
+        )}
       </section>
     </div>
   );
