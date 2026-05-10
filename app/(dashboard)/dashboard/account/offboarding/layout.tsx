@@ -29,7 +29,7 @@ export default async function OffboardingLayout({
     .from("property_managers")
     .select("id")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
   if (!pm) redirect("/dashboard/account");
 
   // Only OPEN statuses are interesting; terminal statuses (cancelled, blocked,
@@ -46,6 +46,10 @@ export default async function OffboardingLayout({
 
   if (!req) redirect("/dashboard/account");
 
+  // proxy.ts sets x-pathname on every matched request. If somehow missing
+  // (RSC-internal call, future matcher exclusion), `path` defaults to ""
+  // and every endsWith() check returns false — the layout safely redirects
+  // to the canonical step rather than rendering the wrong page.
   const path = (await headers()).get("x-pathname") ?? "";
   const status = req.status as DeletionStatus;
 
@@ -77,6 +81,17 @@ export default async function OffboardingLayout({
   // approved — only /finalize
   if (status === "approved" && !path.endsWith("/finalize")) {
     redirect("/dashboard/account/offboarding/finalize");
+  }
+
+  // Unrecognized open status (future Phase added a new status without
+  // updating this guard). Fail closed — bounce to /account rather than
+  // exposing whatever child page the user was on.
+  if (
+    status !== "in_review" &&
+    status !== "billing_blocked" &&
+    status !== "approved"
+  ) {
+    redirect("/dashboard/account");
   }
 
   return <>{children}</>;
