@@ -1,11 +1,11 @@
 import type { CommunityDisposition } from "./types";
 
-export type DispositionAction = "transfer" | "suspend" | "close";
+const VALID_ACTIONS = ["transfer", "suspend", "close"] as const;
 
-const VALID_ACTIONS: DispositionAction[] = ["transfer", "suspend", "close"];
+export type DispositionAction = (typeof VALID_ACTIONS)[number];
 
 export function isDispositionAction(value: unknown): value is DispositionAction {
-  return typeof value === "string" && (VALID_ACTIONS as string[]).includes(value);
+  return typeof value === "string" && (VALID_ACTIONS as readonly string[]).includes(value);
 }
 
 export function canCloseCommunity(activeResidents: number): boolean {
@@ -34,6 +34,11 @@ export function allCommunitiesHaveDisposition(
   communityIds: string[],
   dispositions: CommunityDisposition[],
 ): boolean {
+  // Empty input returns false defensively. A PM with zero communities
+  // should never reach the disposition page — the layout guard short-circuits
+  // upstream. If they somehow do, we want the Continue button disabled
+  // rather than silently advancing them to account closure with nothing to
+  // disposition.
   if (communityIds.length === 0) return false;
   const decided = new Set(dispositions.map((d) => d.community_id));
   return communityIds.every((id) => decided.has(id));
