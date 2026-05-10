@@ -94,12 +94,19 @@ export async function cancelSubscription(communityId: string): Promise<ActionRes
     .update({ stripe_subscription_status: "cancel_scheduled" })
     .eq("id", communityId);
 
-  await appendAudit(admin, "deletion_requests", ctx.req.id, {
-    actor: "pm",
-    actor_id: user.id,
-    action: "subscription_cancellation_scheduled",
-    note: `community=${communityId}; subscription=${community.stripe_subscription_id}`,
-  });
+  try {
+    await appendAudit(admin, "deletion_requests", ctx.req.id, {
+      actor: "pm",
+      actor_id: user.id,
+      action: "subscription_cancellation_scheduled",
+      note: `community=${communityId}; subscription=${community.stripe_subscription_id}`,
+    });
+  } catch (err) {
+    // Audit gap. The state change already committed; surface a warning to
+    // server logs but don't fail the user's request. Replay surface is the
+    // recorded stripe_webhook_events row + the communities row mutation.
+    console.warn("[offboarding] audit append failed for cancelSubscription", err);
+  }
 
   revalidatePath("/dashboard/account/offboarding/billing");
   return { ok: true };
@@ -128,12 +135,16 @@ export async function markBillingResolved(): Promise<ActionResult> {
       .eq("id", req.id)
       .is("stripe_resolved_at", null);
 
-    await appendAudit(admin, "deletion_requests", req.id, {
-      actor: "system",
-      actor_id: "auto-pass",
-      action: "billing_resolved",
-      note: "no active subscriptions on any community",
-    });
+    try {
+      await appendAudit(admin, "deletion_requests", req.id, {
+        actor: "system",
+        actor_id: "auto-pass",
+        action: "billing_resolved",
+        note: "no active subscriptions on any community",
+      });
+    } catch (err) {
+      console.warn("[offboarding] audit append failed for markBillingResolved", err);
+    }
   }
 
   revalidatePath("/dashboard/account/offboarding/billing");

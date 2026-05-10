@@ -195,8 +195,8 @@ function buildSupportMailto(communities: CommunityRow[]): string {
   const subs = communities
     .filter((c) => c.stripe_subscription_id)
     .map((c) => `${c.name}: ${c.stripe_subscription_id}`)
-    .join("%0A");
+    .join("\n");
   const subject = encodeURIComponent("Offboarding billing stuck");
-  const body = `Stripe subscriptions:%0A${subs}`;
+  const body = encodeURIComponent(`Stripe subscriptions:\n${subs}`);
   return `mailto:support@neighborlyy.com?subject=${subject}&body=${body}`;
 }

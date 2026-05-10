@@ -42,8 +42,13 @@ export default async function BillingPage() {
 
   // Auto-pass: nothing to cancel.
   if (!hasAnyActiveSub && !req.stripe_resolved_at) {
-    await markBillingResolved();
-    redirect("/dashboard/account/offboarding/disposition");
+    const result = await markBillingResolved();
+    if (result.ok) {
+      redirect("/dashboard/account/offboarding/disposition");
+    }
+    // If result.ok is false (TOCTOU race: a sub was created between page
+    // load and action), fall through to render the billing UI so the user
+    // sees the active sub and can cancel it manually.
   }
 
   if (req.stripe_resolved_at) {
