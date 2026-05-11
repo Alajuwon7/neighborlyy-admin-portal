@@ -118,26 +118,25 @@ export async function setCommunityDisposition(
       .update({ suspended_reason: "PM offboarding" })
       .eq("id", communityId);
 
-    // CC-6: mobile-side push notification for community suspension.
-    //
-    // We previously attempted to write to `admin_notifications` here as a
-    // stub, but that table is the wrong surface for this signal:
-    //   1. Its `type` column has a CHECK constraint limited to
-    //      ('pending_resident', 'event_rsvp', 'facility_reservation',
-    //       'help_request') — adding 'community_suspended' would require
-    //      a schema migration AND coordinated UI changes in the admin
-    //      portal bell-dropdown and notifications page.
-    //   2. `admin_notifications` is admin-portal-internal (populated by
-    //      triggers on mobile-write tables and read by the PM dashboard).
-    //      The PM who just clicked Suspend would only be notifying
-    //      themselves.
-    //   3. The actual mobile push fan-out belongs in a dedicated
-    //      mechanism (Expo push tokens / FCM) targeting residents.
-    //
-    // The audit log entry below is the durable record of the suspend
-    // action; CC-6 will layer mobile push on top in a follow-up that
-    // includes the schema/UI changes the proper notification surface
-    // requires.
+    // CC-6 stub: insert admin_notifications row for the mobile workstream to
+    // consume and fan out resident push notifications. Migration 029 extended
+    // the type CHECK constraint to allow 'community_suspended'. Schema-correct
+    // shape verified against the live DB at task time. Failure is logged but
+    // non-fatal — the disposition itself committed via the RPC above.
+    const { error: notifyError } = await admin.from("admin_notifications").insert({
+      community_code: community.community_code,
+      type: "community_suspended",
+      title: `Community suspended: ${community.name}`,
+      body: "This community is being suspended because the property manager is closing their Neighborlyy account.",
+      reference_id: req.id,
+      reference_table: "deletion_requests",
+    });
+    if (notifyError) {
+      console.warn(
+        "[offboarding] admin_notifications insert failed for suspend disposition",
+        notifyError,
+      );
+    }
   }
 
   try {
