@@ -41,6 +41,30 @@ export default async function DispositionPage() {
   const communities = (summaries ?? []) as CommunitySummary[];
   const dispositions = (req.community_disposition ?? []) as CommunityDisposition[];
 
+  // Defense in depth: a PM with zero communities shouldn't reach disposition,
+  // but if they do, render an explicit empty state instead of stranding them
+  // with an indefinitely-disabled Continue button.
+  if (communities.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 space-y-4 text-center">
+        <h1 className="text-2xl font-bold" style={{ color: "var(--nly-text-primary)" }}>
+          No communities to disposition
+        </h1>
+        <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
+          Your organization has no communities. Please contact support@neighborlyy.com
+          to complete account closure.
+        </p>
+        <Link
+          href="/dashboard/account"
+          className="inline-block text-xs underline"
+          style={{ color: "var(--nly-text-tertiary)" }}
+        >
+          Return to account settings
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <header>

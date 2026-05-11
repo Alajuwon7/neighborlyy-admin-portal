@@ -167,7 +167,12 @@ function DispositionCard({
         )}
         <button
           type="button"
-          disabled={!selected || working || (selected === "transfer" && !CAN_USE_TRANSFER)}
+          disabled={
+            !selected ||
+            working ||
+            (selected === "transfer" && !CAN_USE_TRANSFER) ||
+            current?.action === selected
+          }
           onClick={() => selected && onConfirm(selected)}
           className="h-9 rounded-lg text-sm font-medium border px-3 transition-opacity hover:opacity-80 disabled:opacity-40 inline-flex items-center gap-2"
           style={{ borderColor: "var(--nly-brand)", color: "var(--nly-brand)" }}
@@ -177,6 +182,8 @@ function DispositionCard({
               <Loader2 size={14} className="animate-spin" />
               Saving...
             </>
+          ) : current && current.action === selected ? (
+            "Already confirmed"
           ) : current ? (
             "Update disposition"
           ) : (

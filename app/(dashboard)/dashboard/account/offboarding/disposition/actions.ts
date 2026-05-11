@@ -113,10 +113,19 @@ export async function setCommunityDisposition(
   }
 
   if (action === "suspend") {
-    await admin
+    const { error: suspendError } = await admin
       .from("communities")
       .update({ suspended_reason: "PM offboarding" })
       .eq("id", communityId);
+    if (suspendError) {
+      // Failure to set suspended_reason is more critical than the notification
+      // stub since it's the actual user-visible state change. Log loudly so
+      // operators see it; the disposition row was committed via the RPC above.
+      console.warn(
+        "[offboarding] communities.suspended_reason update failed",
+        { communityId, error: suspendError },
+      );
+    }
 
     // CC-6 stub: insert admin_notifications row for the mobile workstream to
     // consume and fan out resident push notifications. Migration 029 extended
