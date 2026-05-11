@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { markBillingResolved } from "./actions";
 import { BillingClient } from "./BillingClient";
 
@@ -19,8 +18,7 @@ export default async function BillingPage() {
     .maybeSingle();
   if (!pm) redirect("/dashboard/account");
 
-  const admin = createAdminClient();
-  const { data: req } = await admin
+  const { data: req } = await supabase
     .from("deletion_requests")
     .select("id, status, stripe_resolved_at")
     .eq("pm_id", pm.id)
@@ -30,7 +28,7 @@ export default async function BillingPage() {
     .maybeSingle();
   if (!req) redirect("/dashboard/account");
 
-  const { data: communities } = await admin
+  const { data: communities } = await supabase
     .from("communities")
     .select("id, name, stripe_subscription_id, stripe_subscription_status, stripe_cancel_at")
     .eq("organization_id", pm.organization_id);

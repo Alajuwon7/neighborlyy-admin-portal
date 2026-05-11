@@ -133,6 +133,7 @@ export async function markBillingResolved(): Promise<ActionResult> {
       .from("deletion_requests")
       .update({ stripe_resolved_at: new Date().toISOString() })
       .eq("id", req.id)
+      .eq("status", "in_review")
       .is("stripe_resolved_at", null);
 
     try {

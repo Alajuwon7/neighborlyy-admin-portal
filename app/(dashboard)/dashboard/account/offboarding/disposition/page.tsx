@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { DispositionCards } from "./DispositionCards";
 import type { CommunityDisposition } from "@/lib/offboarding/types";
 import type { CommunitySummary } from "@/lib/offboarding/disposition";
@@ -20,8 +19,7 @@ export default async function DispositionPage() {
     .maybeSingle();
   if (!pm) redirect("/dashboard/account");
 
-  const admin = createAdminClient();
-  const { data: req } = await admin
+  const { data: req } = await supabase
     .from("deletion_requests")
     .select("id, status, stripe_resolved_at, community_disposition")
     .eq("pm_id", pm.id)
@@ -33,7 +31,7 @@ export default async function DispositionPage() {
     redirect("/dashboard/account/offboarding/billing");
   }
 
-  const { data: summaries } = await admin
+  const { data: summaries } = await supabase
     .from("community_audit_summary")
     .select("*")
     .eq("organization_id", pm.organization_id);
