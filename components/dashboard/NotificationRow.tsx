@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { UserPlus, CalendarCheck, ClipboardList, HelpCircle, type LucideProps } from "lucide-react";
+import { Bell, UserPlus, CalendarCheck, ClipboardList, HelpCircle, type LucideProps } from "lucide-react";
 import type { AdminNotification, NotificationType } from "@/lib/notifications";
 import { NOTIFICATION_META } from "@/lib/notifications";
 
@@ -11,6 +11,16 @@ const ICON_MAP: Record<NotificationType, React.ComponentType<LucideProps>> = {
   facility_reservation: ClipboardList,
   help_request: HelpCircle,
 };
+
+// Fallbacks for unknown/future notification types (e.g. types added in DB
+// before the TS union is updated). Prevents render crashes on
+// `meta.color` / `<Icon />` when the lookup misses.
+const FALLBACK_META = {
+  label: "Notification",
+  icon: "Bell",
+  color: "var(--nly-text-secondary)",
+} as const;
+const FALLBACK_ICON = Bell;
 
 interface NotificationRowProps {
   notification: AdminNotification;
@@ -25,8 +35,10 @@ export function NotificationRow({
   showCommunity = false,
   onClick,
 }: NotificationRowProps) {
-  const meta = NOTIFICATION_META[notification.type];
-  const Icon = ICON_MAP[notification.type];
+  // Cast through `as NotificationType` because the DB CHECK constraint may
+  // permit values not yet in the TS union; the `??` handles that runtime case.
+  const meta = NOTIFICATION_META[notification.type as NotificationType] ?? FALLBACK_META;
+  const Icon = ICON_MAP[notification.type as NotificationType] ?? FALLBACK_ICON;
 
   return (
     <button
