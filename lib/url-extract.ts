@@ -101,7 +101,7 @@ export async function extractFromUrl(url: string): Promise<ExtractedSiteData> {
 
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": "Neighborlyy/1.0 (Property Setup)" },
+      headers: { "User-Agent": "Miyora/1.0 (Property Setup)" },
       signal: AbortSignal.timeout(8000),
     });
 

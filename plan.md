@@ -1,12 +1,12 @@
-# Neighborlyy Admin Web Portal - Development Plan
+# Miyora Admin Web Portal - Development Plan
 
 ## 📋 Project Overview
 
-Build a Next.js admin web portal for Neighborlyy that enables property managers to onboard communities, manage subscriptions, and oversee operations. This portal shares the same Supabase database as the mobile app and maintains consistent visual design.
+Build a Next.js admin web portal for Miyora that enables property managers to onboard communities, manage subscriptions, and oversee operations. This portal shares the same Supabase database as the mobile app and maintains consistent visual design.
 
-**Repository:** `neighborlyy-admin-portal`  
+**Repository:** `miyora-admin-portal`  
 **Tech Stack:** Next.js 14 (App Router) + Supabase + Stripe + Tailwind CSS  
-**Design System:** Aligned with Neighborlyy mobile app (React Native)  
+**Design System:** Aligned with Miyora mobile app (React Native)  
 **Database:** Shared Supabase instance with mobile app
 
 ---
@@ -135,7 +135,7 @@ const boxShadow = {
 
 ## 📁 Project Structure
 ```
-neighborlyy-admin-portal/
+miyora-admin-portal/
 ├── app/
 │   ├── (auth)/
 │   │   ├── login/page.tsx
@@ -438,14 +438,14 @@ This links the new admin portal data to all existing mobile app data.
 ### Task 1.1: Initialize Next.js Project
 ```bash
 # Create Next.js app with TypeScript and Tailwind
-npx create-next-app@latest neighborlyy-admin-portal \
+npx create-next-app@latest miyora-admin-portal \
   --typescript \
   --tailwind \
   --app \
   --no-src-dir \
   --import-alias "@/*"
 
-cd neighborlyy-admin-portal
+cd miyora-admin-portal
 
 # Install core dependencies
 npm install @supabase/supabase-js @supabase/ssr
@@ -606,11 +606,11 @@ STRIPE_PRICE_ENTERPRISE_ANNUAL=price_xxx
 
 # Email (Resend)
 RESEND_API_KEY=re_xxx
-RESEND_FROM_EMAIL=noreply@neighborlyy.com
+RESEND_FROM_EMAIL=noreply@miyora.com
 
 # App URLs
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_SITE_URL=https://neighborlyy.com
+NEXT_PUBLIC_SITE_URL=https://miyora.com
 
 # Admin Codes
 DEFAULT_ADMIN_CODE=ADMIN2025
@@ -903,7 +903,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-primary mb-2">NEIGHBORLYY</h1>
+            <h1 className="text-2xl font-bold text-primary mb-2">MIYORA</h1>
             <p className="text-text-secondary">Property Manager rtal</p>
           </div>
           {children}

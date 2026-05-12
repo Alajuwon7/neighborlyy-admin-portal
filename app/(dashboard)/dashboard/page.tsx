@@ -324,7 +324,7 @@ export default async function DashboardPage({
                   className="text-xs hover:underline transition-colors duration-200"
                   style={{ color: "var(--nly-accent)" }}
                 >
-                  View all &rarr;
+                  View all →
                 </a>
               </div>
               <div className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>

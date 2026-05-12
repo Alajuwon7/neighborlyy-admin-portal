@@ -53,3 +53,6 @@ supabase/.temp/
 /playwright/.cache/
 tests/.auth/
 .superpowers/
+
+# Claude Code local state
+.claude/

@@ -29,7 +29,7 @@ export function SetupComplete({ communityName, adminCode, paymentCompleted, plan
 
       <div className="space-y-2">
         <h2 className="text-2xl font-bold" style={{ color: "var(--nly-text-primary)" }}>
-          <span style={{ color: "var(--nly-brand)" }}>Neighborlyy</span>{" "}
+          <span style={{ color: "var(--nly-brand)" }}>Miyora</span>{" "}
           <span style={{ color: "var(--nly-text-tertiary)" }}>@</span>{" "}
           {communityName} is live!
         </h2>
@@ -66,7 +66,7 @@ export function SetupComplete({ communityName, adminCode, paymentCompleted, plan
           NEXT STEPS
         </p>
         {[
-          { icon: "📱", text: "Share the Neighborlyy app with your residents" },
+          { icon: "📱", text: "Share the Miyora app with your residents" },
           {
             icon: "🔑",
             text: `Your admin code is: ${adminCode} — share with your team, not residents`,

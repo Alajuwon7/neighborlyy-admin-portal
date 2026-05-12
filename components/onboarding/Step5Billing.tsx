@@ -181,10 +181,10 @@ export function Step5Billing({
               className="text-left rounded-xl border p-4 transition-all"
               style={{
                 backgroundColor: selected
-                  ? "rgba(230, 92, 79, 0.06)"
+                  ? "rgba(47, 196, 211, 0.06)"
                   : "var(--nly-surface)",
                 borderColor: selected ? "var(--nly-brand)" : "var(--nly-border)",
-                outline: selected ? "2px solid rgba(230, 92, 79, 0.2)" : "none",
+                outline: selected ? "2px solid rgba(47, 196, 211, 0.2)" : "none",
               }}
             >
               <div className="flex items-start justify-between gap-4">
@@ -200,7 +200,7 @@ export function Step5Billing({
                       <span
                         className="text-xs px-2 py-0.5 rounded-full font-medium"
                         style={{
-                          backgroundColor: "rgba(230, 92, 79, 0.15)",
+                          backgroundColor: "rgba(47, 196, 211, 0.15)",
                           color: "var(--nly-brand)",
                         }}
                       >

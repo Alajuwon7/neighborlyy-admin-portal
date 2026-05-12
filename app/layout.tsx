@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Neighborlyy — Property Manager Portal",
+  title: "Miyora — Property Manager Portal",
   description: "Manage your apartment communities with ease.",
 };
 

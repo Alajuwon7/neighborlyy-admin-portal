@@ -41,7 +41,7 @@ export default function DashboardLayout({
             className="text-sm font-bold tracking-wide"
             style={{ color: "var(--nly-brand)" }}
           >
-            NEIGHBORLYY
+            MIYORA
           </h1>
         </div>
 

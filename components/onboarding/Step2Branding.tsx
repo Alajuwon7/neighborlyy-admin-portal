@@ -65,7 +65,7 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
           </div>
           <div>
             <p className="font-semibold" style={{ color: "var(--nly-text-primary)" }}>
-              <span style={{ color: data.primary_color }}>Neighborlyy</span>{" "}
+              <span style={{ color: data.primary_color }}>Miyora</span>{" "}
               <span style={{ color: "var(--nly-text-tertiary)" }}>@</span>{" "}
               {communityName || "Your Property"}
             </p>
@@ -100,8 +100,8 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
               type="color"
               value={data.primary_color}
               onChange={(e) => onChange({ primary_color: e.target.value })}
-              className="w-12 h-12 rounded-lg cursor-pointer border-0 p-0.5"
-              style={{ backgroundColor: "var(--nly-input-bg)" }}
+              className="w-12 h-12 rounded-lg cursor-pointer border-0 p-0"
+              style={{ backgroundColor: "transparent" }}
             />
             <input
               type="text"
@@ -131,8 +131,8 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
               type="color"
               value={data.accent_color}
               onChange={(e) => onChange({ accent_color: e.target.value })}
-              className="w-12 h-12 rounded-lg cursor-pointer border-0 p-0.5"
-              style={{ backgroundColor: "var(--nly-input-bg)" }}
+              className="w-12 h-12 rounded-lg cursor-pointer border-0 p-0"
+              style={{ backgroundColor: "transparent" }}
             />
             <input
               type="text"

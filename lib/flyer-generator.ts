@@ -12,7 +12,7 @@ export async function generateWelcomeFlyer(
   doc.rect(0, 0, 210, 297, "F");
 
   // Brand header bar
-  doc.setFillColor(230, 92, 79); // --nly-brand
+  doc.setFillColor(47, 196, 211); // --nly-brand
   doc.rect(0, 0, 210, 8, "F");
 
   // Title
@@ -21,12 +21,12 @@ export async function generateWelcomeFlyer(
   doc.text("Welcome to", 105, 45, { align: "center" });
 
   doc.setFontSize(32);
-  doc.setTextColor(230, 92, 79); // brand
+  doc.setTextColor(47, 196, 211); // brand
   doc.text(communityName, 105, 60, { align: "center" });
 
   doc.setTextColor(233, 238, 244);
   doc.setFontSize(14);
-  doc.text("on Neighborlyy", 105, 72, { align: "center" });
+  doc.text("on Miyora", 105, 72, { align: "center" });
 
   // Divider line
   doc.setDrawColor(50, 70, 90);
@@ -42,7 +42,7 @@ export async function generateWelcomeFlyer(
   doc.setTextColor(180, 195, 210);
 
   const steps = [
-    '1.  Download "Neighborlyy" from the App Store or Google Play',
+    '1.  Download "Miyora" from the App Store or Google Play',
     "2.  Create your account",
     `3.  Enter community code:  ${communityCode}`,
     "4.  Complete your profile and get approved",
@@ -72,18 +72,18 @@ export async function generateWelcomeFlyer(
   doc.text("COMMUNITY CODE", 105, codeY + 8, { align: "center" });
 
   doc.setFontSize(18);
-  doc.setTextColor(230, 92, 79);
+  doc.setTextColor(47, 196, 211);
   doc.text(communityCode, 105, codeY + 18, { align: "center" });
 
   // Footer
   doc.setFontSize(9);
   doc.setTextColor(100, 120, 140);
-  doc.text("Powered by Neighborlyy — neighborlyy.com", 105, 285, {
+  doc.text("Powered by Miyora — miyora.com", 105, 285, {
     align: "center",
   });
 
   // Bottom brand bar
-  doc.setFillColor(230, 92, 79);
+  doc.setFillColor(47, 196, 211);
   doc.rect(0, 289, 210, 8, "F");
 
   doc.save(`${communityName.replace(/\s+/g, "-")}-welcome-flyer.pdf`);

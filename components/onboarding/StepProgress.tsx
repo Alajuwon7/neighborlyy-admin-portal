@@ -51,7 +51,7 @@ export function StepProgress({ currentStep }: StepProgressProps) {
                   border: `2px solid ${
                     isDone || isActive ? "var(--nly-brand)" : "var(--nly-border)"
                   }`,
-                  boxShadow: isActive ? "0 0 12px rgba(230, 92, 79, 0.3)" : "none",
+                  boxShadow: isActive ? "0 0 12px rgba(47, 196, 211, 0.3)" : "none",
                 }}
               >
                 {isDone ? "✓" : step.number}

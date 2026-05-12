@@ -1,6 +1,6 @@
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: "var(--nly-background)" }}>
+    <div className="min-h-screen flex nly-auth-bg">
       {/* Left side — Form */}
       <div className="flex-1 flex items-center justify-center px-4 py-6 sm:px-6 sm:py-8 md:p-8">
         <div className="w-full max-w-md">
@@ -9,7 +9,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               className="text-2xl font-bold mb-1 tracking-wide"
               style={{ color: "var(--nly-brand)" }}
             >
-              NEIGHBORLYY
+              MIYORA
             </h1>
             <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
               Property Manager Portal
@@ -33,7 +33,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(11, 21, 32, 0.75) 0%, rgba(11, 21, 32, 0.35) 40%, rgba(11, 21, 32, 0.35) 60%, rgba(11, 21, 32, 0.8) 100%)",
+              "linear-gradient(to bottom, rgba(10, 22, 40, 0.75) 0%, rgba(10, 22, 40, 0.35) 40%, rgba(10, 22, 40, 0.35) 60%, rgba(10, 22, 40, 0.8) 100%)",
           }}
         />
 
@@ -66,7 +66,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               <div
                 key={stat.label}
                 className="px-5 py-3 rounded-xl"
-                style={{ backgroundColor: "rgba(11, 21, 32, 0.6)", backdropFilter: "blur(8px)" }}
+                style={{ backgroundColor: "rgba(10, 22, 40, 0.6)", backdropFilter: "blur(8px)" }}
               >
                 <p
                   className="text-2xl font-bold"

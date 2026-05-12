@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy — Neighborlyy",
+  title: "Privacy Policy — Miyora",
 };
 
 export default function PrivacyPage() {
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             className="text-xl font-bold"
             style={{ color: "var(--nly-brand)" }}
           >
-            NEIGHBORLYY
+            MIYORA
           </Link>
         </div>
 
@@ -152,7 +152,7 @@ export default function PrivacyPage() {
               </h2>
               <p>
                 For privacy-related questions or requests, contact us at{" "}
-                <span style={{ color: "var(--nly-accent)" }}>privacy@neighborlyy.com</span>.
+                <span style={{ color: "var(--nly-accent)" }}>privacy@miyora.com</span>.
               </p>
             </section>
           </div>

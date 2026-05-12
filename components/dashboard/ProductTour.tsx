@@ -17,7 +17,7 @@ interface ProductTourProps {
 const sharedStepProps: Partial<Step> = {
   buttons: ["back", "skip", "primary"],
   showProgress: true,
-  primaryColor: "#E65C4F",
+  primaryColor: "#2FC4D3",
   backgroundColor: "#0F1923",
   textColor: "#E9EEF4",
   arrowColor: "#0F1923",
@@ -87,7 +87,7 @@ export function ProductTour({ run, onClose }: ProductTourProps) {
           textAlign: "left",
         },
         buttonPrimary: {
-          backgroundColor: "#E65C4F",
+          backgroundColor: "#2FC4D3",
           color: "#fff",
           borderRadius: 8,
           fontSize: 13,

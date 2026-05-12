@@ -4,7 +4,7 @@ export async function generateQRCodeDataURL(
   communityCode: string,
   size = 256
 ): Promise<string> {
-  const data = `neighborlyy://join/${communityCode}`;
+  const data = `miyora://join/${communityCode}`;
 
   return QRCode.toDataURL(data, {
     width: size,

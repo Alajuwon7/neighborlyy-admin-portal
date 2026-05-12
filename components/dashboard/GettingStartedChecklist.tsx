@@ -144,7 +144,7 @@ export function GettingStartedChecklist({
         <div className="flex items-center gap-3">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: "rgba(230, 92, 79, 0.12)" }}
+            style={{ backgroundColor: "rgba(47, 196, 211, 0.12)" }}
           >
             <span className="text-base">
               {allDone ? "✅" : "🚀"}
@@ -247,7 +247,7 @@ export function GettingStartedChecklist({
                   style={{
                     backgroundColor: item.completed
                       ? "rgba(16, 185, 129, 0.08)"
-                      : "rgba(230, 92, 79, 0.08)",
+                      : "rgba(47, 196, 211, 0.08)",
                   }}
                 >
                   <Icon

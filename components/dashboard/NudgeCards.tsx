@@ -67,7 +67,7 @@ export function NudgeCards({ nudges }: { nudges: Nudge[] }) {
                   className="font-medium transition-colors hover:underline"
                   style={{ color: "var(--nly-accent)" }}
                 >
-                  {nudge.actionLabel} &rarr;
+                  {nudge.actionLabel} →
                 </a>
               </p>
             </div>

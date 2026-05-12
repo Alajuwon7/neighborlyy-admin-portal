@@ -26,7 +26,7 @@ export function PostCard({ post }: PostCardProps) {
       <div className="flex items-start gap-3">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-          style={{ backgroundColor: "rgba(230, 92, 79, 0.1)" }}
+          style={{ backgroundColor: "rgba(47, 196, 211, 0.1)" }}
         >
           <Megaphone size={14} style={{ color: "var(--nly-brand)" }} />
         </div>
@@ -35,7 +35,7 @@ export function PostCard({ post }: PostCardProps) {
             <span
               className="text-xs px-1.5 py-0.5 rounded font-medium"
               style={{
-                backgroundColor: "rgba(230, 92, 79, 0.1)",
+                backgroundColor: "rgba(47, 196, 211, 0.1)",
                 color: "var(--nly-brand)",
               }}
             >

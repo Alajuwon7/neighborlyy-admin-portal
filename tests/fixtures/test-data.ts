@@ -1,5 +1,5 @@
 export const TEST_USER = {
-  email: "e2e-test@neighborlyy.com",
+  email: "e2e-test@miyora.com",
   password: "TestPassword123!",
   full_name: "E2E Test Manager",
 };

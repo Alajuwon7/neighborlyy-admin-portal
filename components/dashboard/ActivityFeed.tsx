@@ -163,7 +163,7 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
                         className="text-xs font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                         style={{ color: "var(--nly-accent)" }}
                       >
-                        {item.actionLabel ?? "View"} &rarr;
+                        {item.actionLabel ?? "View"} →
                       </a>
                     )}
                   </motion.div>

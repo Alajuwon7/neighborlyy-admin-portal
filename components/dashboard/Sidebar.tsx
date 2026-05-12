@@ -13,8 +13,6 @@ import {
   LogOut,
   ChevronRight,
   X,
-  Zap,
-  Lock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -27,7 +25,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/team", label: "Team", icon: Users },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/account", label: "Account", icon: Settings },
-  { href: "/dashboard/command-center", label: "Command Center", icon: Zap, premium: true },
 ] as const;
 
 export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => void }) {
@@ -84,7 +81,7 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
               className="text-base font-bold tracking-wide"
               style={{ color: "var(--nly-brand)" }}
             >
-              NEIGHBORLYY
+              MIYORA
             </h1>
             <p
               className="text-xs mt-0.5"
@@ -130,7 +127,7 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
                   data-active={isActive}
                   style={{
                     backgroundColor: isActive
-                      ? "rgba(230, 92, 79, 0.1)"
+                      ? "rgba(47, 196, 211, 0.1)"
                       : "transparent",
                     color: isActive
                       ? "var(--nly-brand)"
@@ -148,9 +145,6 @@ export function Sidebar({ open, onClose }: { open?: boolean; onClose?: () => voi
                     className="transition-transform duration-200 group-hover:scale-110"
                   />
                   <span className="flex-1">{item.label}</span>
-                  {"premium" in item && item.premium && (
-                    <Lock size={11} style={{ color: "var(--nly-text-placeholder)" }} />
-                  )}
                   <AnimatePresence mode="wait">
                     {isActive && (
                       <motion.div

@@ -48,7 +48,7 @@ export function StepOrganization({ data, onChange, onNext }: StepOrganizationPro
                 : "var(--nly-border)",
             backgroundColor:
               data.org_type === "individual"
-                ? "rgba(230, 92, 79, 0.06)"
+                ? "rgba(47, 196, 211, 0.06)"
                 : "transparent",
           }}
         >
@@ -57,7 +57,7 @@ export function StepOrganization({ data, onChange, onNext }: StepOrganizationPro
             style={{
               backgroundColor:
                 data.org_type === "individual"
-                  ? "rgba(230, 92, 79, 0.12)"
+                  ? "rgba(47, 196, 211, 0.12)"
                   : "rgba(233, 238, 244, 0.08)",
             }}
           >
@@ -103,7 +103,7 @@ export function StepOrganization({ data, onChange, onNext }: StepOrganizationPro
                 : "var(--nly-border)",
             backgroundColor:
               data.org_type === "company"
-                ? "rgba(230, 92, 79, 0.06)"
+                ? "rgba(47, 196, 211, 0.06)"
                 : "transparent",
           }}
         >
@@ -112,7 +112,7 @@ export function StepOrganization({ data, onChange, onNext }: StepOrganizationPro
             style={{
               backgroundColor:
                 data.org_type === "company"
-                  ? "rgba(230, 92, 79, 0.12)"
+                  ? "rgba(47, 196, 211, 0.12)"
                   : "rgba(233, 238, 244, 0.08)",
             }}
           >

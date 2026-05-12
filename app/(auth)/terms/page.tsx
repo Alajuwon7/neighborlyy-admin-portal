@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service — Neighborlyy",
+  title: "Terms of Service — Miyora",
 };
 
 export default function TermsPage() {
@@ -17,7 +17,7 @@ export default function TermsPage() {
             className="text-xl font-bold"
             style={{ color: "var(--nly-brand)" }}
           >
-            NEIGHBORLYY
+            MIYORA
           </Link>
         </div>
 
@@ -46,7 +46,7 @@ export default function TermsPage() {
                 1. Acceptance of Terms
               </h2>
               <p>
-                By accessing or using the Neighborlyy Property Manager Portal and associated mobile application
+                By accessing or using the Miyora Property Manager Portal and associated mobile application
                 (collectively, the &quot;Service&quot;), you agree to be bound by these Terms of Service. If you do not
                 agree to these terms, do not use the Service.
               </p>
@@ -57,7 +57,7 @@ export default function TermsPage() {
                 2. Description of Service
               </h2>
               <p>
-                Neighborlyy provides a community management platform for property managers and residents of
+                Miyora provides a community management platform for property managers and residents of
                 residential communities. The Service includes tools for resident management, event coordination,
                 facility reservations, community communications, and related features.
               </p>
@@ -112,7 +112,7 @@ export default function TermsPage() {
                 7. Limitation of Liability
               </h2>
               <p>
-                To the fullest extent permitted by law, Neighborlyy shall not be liable for any indirect,
+                To the fullest extent permitted by law, Miyora shall not be liable for any indirect,
                 incidental, special, consequential, or punitive damages arising from your use of the Service.
               </p>
             </section>
@@ -134,7 +134,7 @@ export default function TermsPage() {
               </h2>
               <p>
                 For questions about these Terms, contact us at{" "}
-                <span style={{ color: "var(--nly-accent)" }}>support@neighborlyy.com</span>.
+                <span style={{ color: "var(--nly-accent)" }}>support@miyora.com</span>.
               </p>
             </section>
           </div>

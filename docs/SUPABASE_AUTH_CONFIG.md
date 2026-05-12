@@ -8,13 +8,13 @@ These settings must be configured manually in the Supabase Dashboard. They canno
 
 | Setting | Value |
 |---------|-------|
-| Site URL | `https://neighborlyy-admin-portal.netlify.app` |
+| Site URL | `https://miyora-admin-portal.netlify.app` |
 
 ### Redirect URLs
 
 | URL | Purpose |
 |-----|---------|
-| `https://neighborlyy-admin-portal.netlify.app/api/auth/callback` | Production OAuth/magic link callback |
+| `https://miyora-admin-portal.netlify.app/api/auth/callback` | Production OAuth/magic link callback |
 | `http://localhost:3000/api/auth/callback` | Local development callback |
 
 ## Password Settings
@@ -31,7 +31,7 @@ These settings must be configured manually in the Supabase Dashboard. They canno
 1. Go to the [Supabase Dashboard](https://supabase.com/dashboard)
 2. Select the project
 3. Navigate to **Authentication > URL Configuration**
-   - Set **Site URL** to `https://neighborlyy-admin-portal.netlify.app`
+   - Set **Site URL** to `https://miyora-admin-portal.netlify.app`
    - Add both redirect URLs listed above
 4. Navigate to **Authentication > Providers > Email**
    - Set **Minimum password length** to `8`

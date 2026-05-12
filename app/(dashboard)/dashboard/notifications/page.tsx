@@ -67,7 +67,7 @@ export default async function NotificationsPage({
                 style={{
                   backgroundColor:
                     (filter ?? "all") === f.value
-                      ? "rgba(230, 92, 79, 0.1)"
+                      ? "rgba(47, 196, 211, 0.1)"
                       : "transparent",
                   color:
                     (filter ?? "all") === f.value

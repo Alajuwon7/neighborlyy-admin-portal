@@ -79,7 +79,7 @@ export function Step3Facilities({ data, propertyType, onChange, onNext, onBack }
               onClick={() => toggle(facility.id)}
               className="flex items-center gap-2 p-3 rounded-xl border text-left transition-all"
               style={{
-                backgroundColor: selected ? "rgba(230, 92, 79, 0.08)" : "var(--nly-surface)",
+                backgroundColor: selected ? "rgba(47, 196, 211, 0.08)" : "var(--nly-surface)",
                 borderColor: selected ? "var(--nly-brand)" : "var(--nly-border)",
                 color: selected ? "var(--nly-text-primary)" : "var(--nly-text-secondary)",
               }}

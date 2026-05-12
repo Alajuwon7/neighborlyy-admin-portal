@@ -190,7 +190,7 @@ export function NotificationDropdown({
                 className="text-xs font-medium transition-opacity hover:opacity-80"
                 style={{ color: "var(--nly-accent)" }}
               >
-                View all notifications &rarr;
+                View all notifications →
               </a>
             </div>
           </motion.div>

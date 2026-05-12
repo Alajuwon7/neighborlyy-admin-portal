@@ -64,7 +64,10 @@ export async function GET(request: Request) {
       );
     }
 
-    // 4b. Create or reuse organization
+    // 4b. Create or reuse organization. Routed through the SECURITY DEFINER
+    // RPC for the same reason as the skip-payment path: PostgREST's
+    // .insert().select() compiles to RETURNING, which makes Postgres run
+    // org_read_own's USING clause on the new row before the PM is linked.
     let orgId = pm.organization_id;
     if (!orgId) {
       const orgType = onboardingData.org_type || "individual";
@@ -73,19 +76,22 @@ export async function GET(request: Request) {
           ? onboardingData.org_name.trim()
           : pm.full_name;
 
-      const { data: orgData } = await supabase
-        .from("organizations")
-        .insert({ name: orgName, type: orgType })
-        .select("id")
-        .single();
+      const { data: newOrgId, error: orgError } = await supabase.rpc(
+        "onboarding_create_org_and_link",
+        {
+          p_org_name: orgName,
+          p_org_type: orgType,
+          p_company_name: orgType === "company" ? orgName : null,
+        }
+      );
 
-      if (orgData) {
-        orgId = (orgData as { id: string }).id;
-        await supabase
-          .from("property_managers")
-          .update({ organization_id: orgId })
-          .eq("id", pm.id);
+      if (orgError || !newOrgId) {
+        console.error("Org creation failed in stripe success:", orgError);
+        return NextResponse.redirect(
+          `${origin}/onboarding?step=5&error=setup_failed`
+        );
       }
+      orgId = newOrgId as string;
     }
 
     // 5. Extract Stripe subscription details
@@ -102,7 +108,7 @@ export async function GET(request: Request) {
       : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
     // 6. Create the community
-    const fullName = `Neighborlyy @ ${onboardingData.name}`;
+    const fullName = `Miyora @ ${onboardingData.name}`;
 
     const { error: communityError } = await supabase.from("communities").insert({
       property_manager_id: pm.id,

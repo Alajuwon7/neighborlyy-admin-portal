@@ -171,7 +171,7 @@ function OnboardingContent() {
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
-      const fullName = `Neighborlyy @ ${data.name}`;
+      const fullName = `Miyora @ ${data.name}`;
 
       const tier = skipPayment ? "professional" : data.subscription_tier;
 
@@ -237,14 +237,13 @@ function OnboardingContent() {
 
   return (
     <div
-      className="min-h-screen flex items-start justify-center p-4 pt-8 sm:pt-16"
-      style={{ backgroundColor: "var(--nly-background)" }}
+      className="min-h-screen flex items-start justify-center p-4 pt-8 sm:pt-16 nly-auth-bg"
     >
       <div className="w-full max-w-xl">
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-xl font-bold mb-1" style={{ color: "var(--nly-brand)" }}>
-            NEIGHBORLYY
+            MIYORA
           </h1>
           <p className="text-sm" style={{ color: "var(--nly-text-tertiary)" }}>
             Property Manager Portal

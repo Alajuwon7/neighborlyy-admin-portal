@@ -33,10 +33,10 @@ export function ShareCommunityCodeModal({
 
   const emailTemplate = `Hi there!
 
-I'm inviting you to join our community on Neighborlyy. It's the easiest way to stay connected with neighbors, reserve amenities, and get important updates.
+I'm inviting you to join our community on Miyora. It's the easiest way to stay connected with neighbors, reserve amenities, and get important updates.
 
 To get started:
-1. Download the Neighborlyy app
+1. Download the Miyora app
 2. Create your account
 3. Enter this community code: ${communityCode}
 
@@ -84,9 +84,9 @@ Welcome to ${communityName}!`;
   const handleNativeShare = async () => {
     try {
       await navigator.share({
-        title: `Join ${communityName} on Neighborlyy`,
-        text: `Join our community on Neighborlyy! Use code: ${communityCode}`,
-        url: "https://neighborlyy.com",
+        title: `Join ${communityName} on Miyora`,
+        text: `Join our community on Miyora! Use code: ${communityCode}`,
+        url: "https://miyora.com",
       });
     } catch (err: unknown) {
       // User cancelled share — not an error

@@ -144,15 +144,15 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
         {/* Property Name — stacked label on mobile, inline prefix on desktop */}
         <div className="sm:col-span-2 space-y-2">
           <Label style={labelStyle}>Property Name *</Label>
-          <p className="text-xs sm:hidden" style={{ color: "var(--nly-brand)" }}>
-            Neighborlyy @
+          <p className="text-xs sm:hidden" style={{ color: "var(--nly-background)" }}>
+            Miyora @
           </p>
           <div className="relative">
             <span
               className="hidden sm:block absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none whitespace-nowrap"
-              style={{ color: "var(--nly-brand)" }}
+              style={{ color: "var(--nly-background)" }}
             >
-              Neighborlyy @
+              Miyora @
             </span>
             <Input
               required
@@ -175,7 +175,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
             </p>
           ) : (
             <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-              Will display as &quot;Neighborlyy @ {data.name || "Your Property"}&quot;
+              Will display as &quot;Miyora @ {data.name || "Your Property"}&quot;
             </p>
           )}
         </div>
