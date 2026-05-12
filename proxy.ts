@@ -2,8 +2,16 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  // Forward the current pathname to server components via a request header so
+  // layouts can read it with `headers()` (used by the offboarding layout guard).
+  const requestHeaders = new Headers(request.headers);
+  // Headers.set() overwrites any client-supplied x-pathname, so the value
+  // the offboarding layout reads is always the proxy-controlled pathname —
+  // a malicious client cannot poison the layout's routing decision.
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+
   let response = NextResponse.next({
-    request: { headers: request.headers },
+    request: { headers: requestHeaders },
   });
 
   const supabase = createServerClient(
@@ -16,12 +24,12 @@ export async function proxy(request: NextRequest) {
         },
         set(name: string, value: string, options: CookieOptions) {
           request.cookies.set({ name, value, ...options });
-          response = NextResponse.next({ request: { headers: request.headers } });
+          response = NextResponse.next({ request: { headers: requestHeaders } });
           response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
           request.cookies.set({ name, value: "", ...options });
-          response = NextResponse.next({ request: { headers: request.headers } });
+          response = NextResponse.next({ request: { headers: requestHeaders } });
           response.cookies.set({ name, value: "", ...options });
         },
       },

@@ -1,13 +1,7 @@
-import Stripe from "stripe";
+import type Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-
-function getStripe() {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error("STRIPE_SECRET_KEY is not configured");
-  }
-  return new Stripe(process.env.STRIPE_SECRET_KEY);
-}
+import { getStripe } from "@/lib/stripe/client";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);

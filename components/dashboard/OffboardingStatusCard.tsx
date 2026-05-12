@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, Circle, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
@@ -192,6 +193,24 @@ export function OffboardingStatusCard({
         ))}
       </ol>
 
+      {(request.status === "in_review" || request.status === "billing_blocked") && (
+        <Link
+          href="/dashboard/account/offboarding/billing"
+          className="w-full h-9 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 inline-flex items-center justify-center"
+          style={{ backgroundColor: "var(--nly-brand)" }}
+        >
+          Continue offboarding →
+        </Link>
+      )}
+      {request.status === "approved" && (
+        <Link
+          href="/dashboard/account/offboarding/finalize"
+          className="w-full h-9 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 inline-flex items-center justify-center"
+          style={{ backgroundColor: "var(--nly-brand)" }}
+        >
+          View closure status →
+        </Link>
+      )}
       <div className="flex flex-col-reverse md:flex-row gap-2 pt-1">
         <button
           type="button"
