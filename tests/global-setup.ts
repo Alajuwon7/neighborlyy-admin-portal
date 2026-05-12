@@ -1,7 +1,7 @@
 import { chromium, type FullConfig } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
-const TEST_EMAIL = "e2e-test@neighborlyy.com";
+const TEST_EMAIL = "e2e-test@miyora.com";
 const TEST_PASSWORD = "TestPassword123!";
 const TEST_FULL_NAME = "E2E Test Manager";
 
@@ -99,7 +99,7 @@ async function globalSetup(config: FullConfig) {
   await page.goto(`${baseURL}/login`);
   await page.locator("#email").fill(TEST_EMAIL);
   await page.locator("#password").fill(TEST_PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.locator("form").getByRole("button", { name: /^sign in$/i }).click();
 
   // Wait for redirect to /onboarding (since no community exists)
   await page.waitForURL(/\/(onboarding|dashboard)/, { timeout: 15000 });

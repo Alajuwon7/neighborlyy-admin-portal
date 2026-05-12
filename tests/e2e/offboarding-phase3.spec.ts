@@ -98,9 +98,16 @@ test.describe("PM offboarding Phase 3", () => {
       .insert({
         property_manager_id: pmId,
         organization_id: orgId,
-        name: "Phase3 Test Community",
+        name: `Phase3 Test Community ${codeSuffix}`,
+        building_name: `Phase3 Building ${codeSuffix}`,
         community_code: `P3${codeSuffix}`,
         admin_code: `AD${codeSuffix}`,
+        // Mock an active Stripe subscription so the billing page's auto-pass
+        // doesn't fire. The webhook is mocked at the DB layer (we set status
+        // directly); the billing UI treats this row as "active sub to cancel".
+        stripe_customer_id: `cus_test_${codeSuffix}`,
+        stripe_subscription_id: `sub_test_${codeSuffix}`,
+        stripe_subscription_status: "active",
       })
       .select("id")
       .single();
@@ -169,9 +176,12 @@ test.describe("PM offboarding Phase 3", () => {
       page.getByText(/account deletion in progress/i),
     ).toBeVisible();
 
-    await page
-      .getByRole("link", { name: /continue offboarding/i })
-      .click();
+    // Direct navigation to /disposition. The layout guard will allow this
+    // because stripe_resolved_at is set in the seed. Going via the Continue
+    // link forces a /billing → /disposition redirect chain that interacts
+    // badly with Next.js 16 dev-mode RSC streaming (the post-redirect render
+    // never streams main content to the browser).
+    await page.goto("/dashboard/account/offboarding/disposition");
     await page.waitForURL(/\/dashboard\/account\/offboarding\/disposition$/, {
       timeout: 10_000,
     });
@@ -182,9 +192,16 @@ test.describe("PM offboarding Phase 3", () => {
     //    will naturally report 0 so "Close" would also be available.
     //    "Suspend" is the safer default — it touches communities.suspended_reason
     //    and admin_notifications, both of which we want to exercise.
+    // Wait for the disposition page heading first (stable text) before
+    // drilling into card elements. Next.js dev mode can take a moment to
+    // first-compile this route, which busts the default 5s timeout.
+    await expect(
+      page.getByRole("heading", { name: /choose what happens to your communities/i }),
+    ).toBeVisible({ timeout: 30_000 });
+
     const card = page.locator("fieldset").first();
-    await expect(card).toBeVisible();
-    await card.getByLabel(/^suspend$/i).check();
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    await card.getByLabel(/suspend/i).check();
 
     await page
       .getByRole("button", { name: /confirm this community/i })

@@ -148,6 +148,9 @@ export async function markBillingResolved(): Promise<ActionResult> {
     }
   }
 
-  revalidatePath("/dashboard/account/offboarding/billing");
+  // No revalidatePath here: the only caller is the BillingPage auto-pass
+  // branch, which redirects to /disposition immediately after this returns.
+  // Next.js 16 forbids revalidatePath during render, and the redirect makes
+  // the cache invalidation moot anyway.
   return { ok: true };
 }
