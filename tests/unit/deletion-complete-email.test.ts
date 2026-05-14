@@ -26,6 +26,8 @@ test("deletionComplete handles zero communities", () => {
   });
   assert.match(tpl.html, /No communities required handoff/);
   assert.match(tpl.text, /No communities required handoff/);
+  assert.match(tpl.html, /Hi there,/);
+  assert.match(tpl.text, /Hi there,/);
 });
 
 test("deletionComplete escapes HTML in community lines", () => {
@@ -37,4 +39,15 @@ test("deletionComplete escapes HTML in community lines", () => {
   });
   assert.doesNotMatch(tpl.html, /<script>Bad<\/script>/);
   assert.match(tpl.html, /&lt;script&gt;/);
+});
+
+test("deletionComplete escapes HTML in pmFirstName", () => {
+  const tpl = deletionComplete({
+    pmFirstName: '<img src=x onerror="alert(1)">',
+    communityLines: [],
+    hardDeleteDate: "June 13, 2026",
+    supportEmail: "support@neighborlyy.com",
+  });
+  assert.doesNotMatch(tpl.html, /<img/);
+  assert.match(tpl.html, /&lt;img/);
 });
