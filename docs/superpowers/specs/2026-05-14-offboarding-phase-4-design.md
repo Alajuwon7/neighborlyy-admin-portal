@@ -107,14 +107,17 @@ Atomic. Guarded by `WHERE status = 'approved'` so it cannot double-run or run ou
 
 ```
 1. property_managers (WHERE id = req.pm_id):
-     full_name    → NULL
+     full_name    → '[deleted]'              -- column is NOT NULL; cannot null it
      phone        → NULL
      avatar_url   → NULL
      company_name → NULL
-     email        → '[deleted]'
-   -- Note: schema has full_name, not the compliance doc's first_name/last_name.
-   -- email is set to a literal sentinel (not NULL) so re-signup with the real
-   -- address does not collide on any unique constraint.
+     email        → '[deleted]-' || id::text -- column is NOT NULL UNIQUE
+   -- Schema adaptation: the compliance doc lists first_name/last_name → null and
+   -- email → '[deleted]', but property_managers has a single NOT NULL full_name
+   -- and a NOT NULL UNIQUE email. full_name is set to the '[deleted]' sentinel;
+   -- email is set to a per-row-unique sentinel ('[deleted]-{pm_id}') so it both
+   -- satisfies the unique constraint across multiple deletions AND frees the
+   -- real address for re-signup.
 
 2. organizations (WHERE id = req.org_id):
      status     → 'deleted'
