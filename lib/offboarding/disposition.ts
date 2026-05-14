@@ -43,3 +43,14 @@ export function allCommunitiesHaveDisposition(
   const decided = new Set(dispositions.map((d) => d.community_id));
   return communityIds.every((id) => decided.has(id));
 }
+
+export function dispositionLabel(action: DispositionAction): string {
+  switch (action) {
+    case "suspend":
+      return "Suspended (awaiting a new property manager)";
+    case "close":
+      return "Closed and archived";
+    case "transfer":
+      return "Transferred to another property manager";
+  }
+}
