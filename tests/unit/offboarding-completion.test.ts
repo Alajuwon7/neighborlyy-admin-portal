@@ -25,6 +25,10 @@ test("buildStripeAnonymization produces the GDPR-safe customer shape", () => {
 });
 
 test("buildStripeAnonymization defaults the timestamp to now", () => {
+  const before = Date.now();
   const result = buildStripeAnonymization("pm-1", "req-1");
-  assert.ok(!Number.isNaN(Date.parse(result.metadata.deleted_at)));
+  const after = Date.now();
+  const ts = Date.parse(result.metadata.deleted_at);
+  assert.ok(!Number.isNaN(ts), "deleted_at must be a valid ISO string");
+  assert.ok(ts >= before && ts <= after, "deleted_at must be within the test window");
 });
