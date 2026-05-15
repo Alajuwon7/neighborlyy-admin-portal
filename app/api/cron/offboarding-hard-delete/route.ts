@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -14,8 +15,28 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  if (req.headers.get("authorization") !== `Bearer ${secret}`) {
+  // Constant-time comparison — `!==` short-circuits on the first differing
+  // byte and would leak timing info on a globally-reachable endpoint whose
+  // successful bypass triggers an irreversible bulk hard-delete.
+  const expected = Buffer.from(`Bearer ${secret}`);
+  const actual = Buffer.from(req.headers.get("authorization") ?? "");
+  if (
+    expected.length !== actual.length ||
+    !timingSafeEqual(expected, actual)
+  ) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // Vercel Cron sets this header automatically on its scheduled invocations.
+  // We don't reject on its absence (the secret check is the source of truth
+  // for auth), but log it in production so unexpected callers are visible.
+  if (
+    process.env.NODE_ENV === "production" &&
+    req.headers.get("x-vercel-cron") !== "1"
+  ) {
+    console.warn(
+      "[cron:offboarding-hard-delete] authorized request missing x-vercel-cron header",
+    );
   }
 
   const admin = createAdminClient();
@@ -27,6 +48,10 @@ export async function GET(req: NextRequest) {
 
   // The RPC returns a single row { processed, request_ids }.
   const row = Array.isArray(data) ? data[0] : data;
+  console.info(
+    `[cron:offboarding-hard-delete] processed=${row?.processed ?? 0}`,
+    { request_ids: row?.request_ids ?? [] },
+  );
   return NextResponse.json({
     ok: true,
     processed: row?.processed ?? 0,
