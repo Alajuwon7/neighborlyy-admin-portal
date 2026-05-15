@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cancelDeletionRequest } from "@/app/(dashboard)/dashboard/account/actions";
@@ -20,11 +20,21 @@ export function FinalConfirmation({ requestId }: FinalConfirmationProps) {
   const [phase, setPhase] = useState<"confirm" | "complete">("confirm");
   const [armed, setArmed] = useState(false);
   const [working, setWorking] = useState<"close" | "cancel" | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+  const armTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (armTimerRef.current) clearTimeout(armTimerRef.current);
+    },
+    [],
+  );
 
   async function handleClose() {
     if (!armed) {
       setArmed(true);
-      setTimeout(() => setArmed(false), ARM_WINDOW_MS);
+      if (armTimerRef.current) clearTimeout(armTimerRef.current);
+      armTimerRef.current = setTimeout(() => setArmed(false), ARM_WINDOW_MS);
       return;
     }
     setWorking("close");
@@ -56,6 +66,8 @@ export function FinalConfirmation({ requestId }: FinalConfirmationProps) {
   }
 
   async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
     await createClient().auth.signOut();
     router.push("/login");
   }
@@ -93,10 +105,11 @@ export function FinalConfirmation({ requestId }: FinalConfirmationProps) {
         <button
           type="button"
           onClick={handleSignOut}
-          className="w-full h-10 rounded-lg text-sm font-semibold text-white"
+          disabled={signingOut}
+          className="w-full h-10 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ backgroundColor: "var(--nly-brand)" }}
         >
-          Close this window
+          {signingOut ? "Signing out..." : "Close this window"}
         </button>
       </section>
     );
@@ -121,6 +134,7 @@ export function FinalConfirmation({ requestId }: FinalConfirmationProps) {
         type="button"
         onClick={handleClose}
         disabled={working !== null}
+        aria-pressed={armed}
         className="flex-1 h-10 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         style={{ backgroundColor: "var(--nly-error)" }}
       >
