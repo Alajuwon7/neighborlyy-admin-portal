@@ -22,9 +22,9 @@ export default async function FinalizePage() {
     .eq("user_id", user.id)
     .maybeSingle();
   if (!pm) redirect("/dashboard/account");
+  if (!pm.organization_id) redirect("/dashboard/account");
 
-  const admin = createAdminClient();
-  const { data: req } = await admin
+  const { data: req } = await supabase
     .from("deletion_requests")
     .select("id, status, community_disposition")
     .eq("pm_id", pm.id)
@@ -33,6 +33,8 @@ export default async function FinalizePage() {
     .limit(1)
     .maybeSingle();
   if (!req) redirect("/dashboard/account");
+
+  const admin = createAdminClient();
 
   const dispositions = (req.community_disposition ?? []) as CommunityDisposition[];
 
@@ -51,16 +53,34 @@ export default async function FinalizePage() {
     };
   });
 
-  const cancellingCommunity = communityRows.find((c) => c.stripe_cancel_at);
-  const billingLine = cancellingCommunity?.stripe_cancel_at
-    ? `Subscription cancelled, effective ${new Date(
-        cancellingCommunity.stripe_cancel_at,
-      ).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })}`
-    : "No active subscription";
+  // Build the billing line from ALL communities with a non-null stripe_cancel_at.
+  // For multi-community orgs we show the LATEST cancellation date (the actual
+  // "all subscriptions are gone" date) plus the count, rather than picking an
+  // arbitrary first match.
+  const cancelDates = communityRows
+    .filter((c): c is typeof c & { stripe_cancel_at: string } =>
+      typeof c.stripe_cancel_at === "string" && c.stripe_cancel_at.length > 0,
+    )
+    .sort((a, b) => Date.parse(b.stripe_cancel_at) - Date.parse(a.stripe_cancel_at));
+
+  const billingLine =
+    cancelDates.length === 0
+      ? "No active subscription"
+      : cancelDates.length === 1
+        ? `Subscription cancelled, effective ${new Date(
+            cancelDates[0].stripe_cancel_at,
+          ).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}`
+        : `${cancelDates.length} subscriptions cancelling — last effective ${new Date(
+            cancelDates[0].stripe_cancel_at,
+          ).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}`;
 
   const sectionStyle = {
     backgroundColor: "var(--nly-surface)",

@@ -52,5 +52,7 @@ export function dispositionLabel(action: DispositionAction): string {
       return "Closed and archived";
     case "transfer":
       return "Transferred to another property manager";
+    default:
+      return "Unknown disposition";
   }
 }
