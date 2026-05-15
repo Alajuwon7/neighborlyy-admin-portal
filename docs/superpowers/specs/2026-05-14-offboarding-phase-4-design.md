@@ -51,9 +51,17 @@ The subscription was already cancelled in Phase 3 (Gate 2). Phase 4's only Strip
 
 The hard-delete runs as a Vercel cron job hitting an in-repo route handler, guarded by `CRON_SECRET` (already in `.env.local`). This keeps the schedule in the admin-portal repo and out of the shared Supabase project, consistent with the project constraint that migrations/DB-scheduling on the shared DB go through the SQL editor only.
 
-### Final email — best-effort, non-fatal
+### Final email — best-effort, post-commit
 
-The final confirmation email is sent before the PM's email is nulled. If Resend fails, the action logs + audits `final_email_failed` and still proceeds: the PM has double-confirmed closure, and the 30-day window plus the support contact is the safety net. (Email send happens *before* the DB commit point, so a failure here is recorded but does not strand the request.)
+The final confirmation email is sent **after** the atomic RPC commit succeeds. The email's content is built from local variables (`pm.email`, `pm.full_name`, `communityRows`) captured before the RPC, so it doesn't need to read pre-wipe DB state. Sending post-commit eliminates a duplicate-email path: if the RPC discovers a no-op (status already advanced via a concurrent run / double-tap), no email is sent. Resend failures are logged + audited as `final_email_failed`, but the wipe is not rolled back — the PM's account is closed, the in-browser Screen 6 is the real confirmation, and the 30-day window plus support contact is the safety net.
+
+### Organization survival — kept while communities remain
+
+Gate 6 hard-deletes only the **closed** communities and the PM row. The organization is **not** hard-deleted, even after the 30-day window elapses. Rationale: a suspended community is intentionally kept ("awaiting a new PM"), and the suspended community references the org via a NO-ACTION FK — the org must survive to receive the new PM. Reclamation of an org that has lost all its communities is out of scope for this RPC and can be addressed in a future phase (likely the transfer flow, where a new PM joining the org would reset its `status`/`deleted_at`).
+
+### Per-request subtransactions in the cron — one bad request can't poison the batch
+
+`hard_delete_expired_offboarding` wraps each loop iteration in a `BEGIN…EXCEPTION` subtransaction. A failure in one request rolls back only that iteration's mutations and audits the failure (`hard_delete_failed`) on the request row; the loop continues with the next request. The cursor uses `FOR UPDATE SKIP LOCKED` so two concurrent cron invocations partition the work rather than block or double-process. This makes the plan's "next nightly run picks up the rest" claim structurally true.
 
 ---
 
@@ -99,14 +107,38 @@ vercel.json                                   NEW — daily cron schedule
 
 ## Data model — migration 031
 
-Two SECURITY DEFINER functions (search_path pinned to `public, pg_temp`, `REVOKE EXECUTE FROM anon, authenticated, public` — admin/cron only), plus one partial index.
+Two SECURITY DEFINER functions (search_path pinned to `public, pg_temp`, `REVOKE EXECUTE FROM anon, authenticated, public` — admin/cron only), one schema adjustment for `subscription_history`, and one partial index.
 
-### `complete_pm_offboarding(p_request_id uuid, p_audit jsonb)`
+### `subscription_history` retention adjustment
 
-Atomic. Guarded by `WHERE status = 'approved'` so it cannot double-run or run out of order. In a single transaction:
+`subscription_history.community_id` is currently `NOT NULL REFERENCES communities` with `NO ACTION` on delete. That would cause Gate 6's community hard-delete to fail and would force us to either delete financial records (compliance violation) or leave communities forever soft-deleted. The migration makes the column nullable and changes the FK to `ON DELETE SET NULL` — preserves the financial row, just severs its link to the deleted community.
 
 ```
-1. property_managers (WHERE id = req.pm_id):
+ALTER TABLE subscription_history ALTER COLUMN community_id DROP NOT NULL;
+ALTER TABLE subscription_history DROP CONSTRAINT IF EXISTS subscription_history_community_id_fkey;
+ALTER TABLE subscription_history
+  ADD CONSTRAINT subscription_history_community_id_fkey
+    FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE SET NULL;
+```
+
+### `complete_pm_offboarding(p_request_id uuid, p_audit jsonb) → TABLE(out_request_id, out_pm_id, out_org_id)`
+
+Atomic. Guarded by `WHERE status = 'approved'` so it cannot double-run or run out of order. OUT columns are prefixed `out_` to avoid shadowing `deletion_requests.pm_id`/`org_id` inside the function body.
+
+```
+1. Validate p_audit is a non-null JSON object; raise EXCEPTION otherwise.
+
+2. SELECT pm_id, org_id INTO v_pm_id, v_org_id FROM deletion_requests
+   WHERE id = p_request_id AND status = 'approved' FOR UPDATE.
+   IF NOT FOUND → RETURN (empty result set; caller treats as retryable no-op).
+
+3. NULL-safety guard: IF v_pm_id IS NULL OR v_org_id IS NULL → raise EXCEPTION
+   (a malformed request would otherwise silently advance to 'completed'
+   without scrubbing PII).
+
+4. Compute v_close_ids from community_disposition entries with action='close'.
+
+5. property_managers (WHERE id = v_pm_id):
      full_name    → '[deleted]'              -- column is NOT NULL; cannot null it
      phone        → NULL
      avatar_url   → NULL
@@ -115,50 +147,77 @@ Atomic. Guarded by `WHERE status = 'approved'` so it cannot double-run or run ou
    -- Schema adaptation: the compliance doc lists first_name/last_name → null and
    -- email → '[deleted]', but property_managers has a single NOT NULL full_name
    -- and a NOT NULL UNIQUE email. full_name is set to the '[deleted]' sentinel;
-   -- email is set to a per-row-unique sentinel ('[deleted]-{pm_id}') so it both
-   -- satisfies the unique constraint across multiple deletions AND frees the
-   -- real address for re-signup.
+   -- email is set to a per-row-unique sentinel so it satisfies the unique
+   -- constraint across multiple deletions AND frees the real address for re-signup.
 
-2. organizations (WHERE id = req.org_id):
+6. organizations (WHERE id = v_org_id):
      status     → 'deleted'
      deleted_at → now()
+   -- The org row stays alive (Gate 6 will not hard-delete it — see decision).
+   -- 'deleted' status here marks the org as having lost its PM; if a new PM
+   -- joins via Phase 5's transfer flow, that flow should reset status/deleted_at.
 
-3. communities — soft-delete ONLY the closed ones:
+7. communities — soft-delete ONLY the closed ones, scoped to this org:
      UPDATE communities SET deleted_at = now()
-     WHERE id IN (community_ids whose disposition action = 'close')
+     WHERE id IN (v_close_ids)
+       AND organization_id = v_org_id          -- defensive scope filter
        AND deleted_at IS NULL
    -- Suspended communities keep suspended_reason and survive — they await a new PM.
 
-4. deletion_requests (WHERE id = p_request_id AND status = 'approved'):
+8. deletion_requests (WHERE id = p_request_id AND status = 'approved'):
      pii_wiped_at    → now()
      soft_deleted_at → now()
      status          → 'completed'
-     audit_log       → audit_log || p_audit   (append, via the existing immutability trigger)
+     audit_log       → audit_log || p_audit   (append, trigger-compatible)
 
-5. RETURN the affected request row (or a row count) so the action can detect a
-   no-op (e.g. status was not 'approved').
+9. RETURN QUERY SELECT p_request_id, v_pm_id, v_org_id (one row on success).
 ```
 
-The closed-community set is derived inside the function from `deletion_requests.community_disposition` (the jsonb array of `{ community_id, action, ... }` entries written in Phase 3).
+### `hard_delete_expired_offboarding() → TABLE(processed, errored, request_ids[], errored_ids[])`
 
-### `hard_delete_expired_offboarding()`
+Called by the cron route. Cursor uses `FOR UPDATE SKIP LOCKED` over `deletion_requests` rows where `status='completed' AND soft_deleted_at < now() - interval '30 days' AND hard_deleted_at IS NULL` (concurrent invocations partition the work; double-fires are no-ops).
 
-Called by the cron route. For every `deletion_requests` row where
-`status = 'completed' AND soft_deleted_at < now() - interval '30 days' AND hard_deleted_at IS NULL`:
+Each loop iteration is wrapped in a `BEGIN…EXCEPTION WHEN OTHERS` subtransaction so a single failing request rolls back only its own DML and audits the failure on the request row; the loop continues with the next request. Inside the subtransaction:
 
 ```
-1. DELETE FROM communities    WHERE organization_id = req.org_id AND deleted_at IS NOT NULL;
-2. DELETE FROM organizations  WHERE id = req.org_id AND status = 'deleted';
-3. DELETE FROM property_managers WHERE id = req.pm_id;
-   -- deletion_requests.pm_id / org_id are ON DELETE SET NULL, so these deletes
-   -- null those FKs but leave the audit row intact. actor_id in audit_log
-   -- entries is a plain text field, so actor history survives.
-4. UPDATE deletion_requests SET hard_deleted_at = now(),
-     audit_log = audit_log || <cron audit entry>
-   WHERE id = req.id;
-   -- The deletion_requests row itself is RETAINED (7-year compliance retention).
-5. RETURN a summary: count of requests processed + affected ids.
+1. Compute v_close_ids = closed (deleted_at IS NOT NULL) communities of v_req.org_id.
+
+2. Pre-clear NO-ACTION children of the closed communities:
+     - DELETE FROM team_members      WHERE community_id = ANY(v_close_ids)
+     - DELETE FROM analytics_events  WHERE community_id = ANY(v_close_ids)
+     - subscription_history.community_id auto-NULLs via the FK above.
+     - community_settings.community_code already CASCADEs (mobile-app FK).
+
+3. Hard-delete the closed communities:
+     - DELETE FROM communities WHERE id = ANY(v_close_ids)
+
+4. Pre-clear PM references on SURVIVING (suspended) communities + team_members:
+     - UPDATE communities  SET property_manager_id = NULL WHERE property_manager_id = v_req.pm_id
+     - UPDATE team_members SET property_manager_id = NULL WHERE property_manager_id = v_req.pm_id
+   -- These FKs are NO ACTION; without nulling them the PM delete would fail.
+
+5. Hard-delete the PM row:
+     - DELETE FROM property_managers WHERE id = v_req.pm_id
+   -- deletion_requests.pm_id and transfer_requests.{incoming,outgoing}_pm_id
+   --   are ON DELETE SET NULL — audit row survives; actor_id is plain text
+   --   in audit_log entries, so actor history survives.
+
+6. The organization is intentionally NOT deleted (per the design decision —
+   suspended communities still reference it, and a future Phase 5 PM transfer
+   needs the org to exist to receive the new PM).
+
+7. UPDATE deletion_requests SET hard_deleted_at = now(),
+     audit_log = audit_log || <hard_deleted cron audit entry>
+   WHERE id = v_req.id.
+   -- The deletion_requests row itself is RETAINED (7-year compliance).
+
+On EXCEPTION WHEN OTHERS:
+   RAISE WARNING, then in a nested BEGIN…EXCEPTION block append a
+   'hard_delete_failed' audit entry (with SQLERRM in note) on the request row.
+   Increment errored count + ids. Loop continues.
 ```
+
+Returns one row: `(processed, errored, request_ids, errored_ids)`. The cron route surfaces all four fields and uses `errored > 0` to choose `console.warn` vs `console.info` and to set `ok: errored === 0` in the JSON response (still HTTP 200 — Vercel cron retries only on non-2xx, which we don't want for partial per-request failures since they're already audited).
 
 ### Index
 
@@ -172,41 +231,48 @@ CREATE INDEX IF NOT EXISTS deletion_requests_hard_delete_due_idx
 
 ## Server action — `finalize/actions.ts › completeOffboarding()`
 
-Sequenced around the atomic RPC. External calls happen first (they need pre-wipe data); the RPC is the commit point; auth deletion happens last (after status is already `completed`, so a failure there is recoverable).
+Sequenced around the atomic RPC. Stripe anonymization runs pre-commit (the Stripe customer mirrors PM/org identifying data, which the RPC scrubs); the RPC is the commit point; the email and auth deletion run post-commit (so a no-op RPC doesn't generate a duplicate confirmation email, and an auth-deletion failure is recoverable since status is already `completed`).
 
 ```
 1. Auth + load the PM's deletion request at status='approved'
    (reuse the loadPmAndRequest pattern from disposition/actions.ts).
    If none → { ok:false, "No account closure in progress" }.
 
-2. Send final email (lib/email/templates/deletion-complete.ts) to pm.email.
-   Best-effort: on failure → console.warn + appendAudit('final_email_failed'),
-   then continue. (Runs before the DB commit, so a failure is recorded but
-   does not strand the request.)
-
-3. Anonymize Stripe customer(s): for each community with a stripe_customer_id,
+2. Anonymize Stripe customer(s): hoist getStripe() once outside the loop,
+   skip with a single 'stripe_skipped' audit entry on misconfigure. For each
+   unique stripe_customer_id across the org's communities,
    stripe.customers.update(id, {
      name: 'Deleted Account',
      email: `deleted-${pm_id}@neighborlyy.internal`,
      metadata: { deleted_at, deletion_request_id },
    }).
-   Best-effort: on failure → console.warn + appendAudit('stripe_anonymize_failed'),
-   continue. On success → appendAudit('stripe_anonymized').
+   Best-effort: per-customer failure → console.warn + safeAudit('stripe_anonymize_failed').
+   Per-customer success → safeAudit('stripe_anonymized').
 
-4. Call complete_pm_offboarding(request_id, <pii_wiped audit entry>).
-   THE COMMIT POINT. If it errors or reports a no-op (status not 'approved')
-   → return { ok:false, retryable error }. Nothing irreversible has happened
-   to the DB yet (steps 2–3 only appended audit + touched Stripe).
+3. Call complete_pm_offboarding(request_id, <pii_wiped audit entry>).
+   THE COMMIT POINT. If it errors or reports a no-op (empty result set, i.e.
+   the RPC found no row at status='approved' — concurrent run / already done)
+   → return { ok:false, sanitized retryable error }. The raw rpcError.message
+   is logged + audited as 'rpc_failed' but never returned to the user.
+
+4. Send the final confirmation email (lib/email/templates/deletion-complete.ts)
+   to pm.email. Best-effort post-commit: on failure → console.warn +
+   safeAudit('final_email_failed'), continue. The email's content uses the
+   local pm/communityRows variables captured before the RPC, so it doesn't
+   need pre-wipe DB state. Running post-commit means a no-op RPC never
+   produces a duplicate "account closed" email.
 
 5. Delete the auth user: admin.auth.admin.deleteUser(user.id).
    Best-effort: status is already 'completed', so a failure is recoverable
-   (cron / manual retry). On failure → console.warn + appendAudit('auth_delete_failed').
-   On success → appendAudit('auth_deleted'). Frees the email for re-signup.
+   (cron / manual retry). On failure → console.warn + safeAudit('auth_delete_failed').
+   On success → safeAudit('auth_deleted'). Frees the email for re-signup.
+   Residual login is constrained by RLS on the wiped property_managers row
+   (a dashboard-wide layout guard for closed accounts is a separate follow-up).
 
 6. Return { ok: true }. NO revalidatePath — see "Screen 6" below.
 ```
 
-Audit entries appended throughout via the existing `append_audit_entry` RPC. The `complete_pm_offboarding` RPC takes its primary audit entry inline (`pii_wiped`, listing the nulled fields) so it commits atomically with the status change; the best-effort steps append their own entries separately.
+Audit entries appended throughout via a `safeAudit` wrapper around the existing `append_audit_entry` RPC; the wrapper swallows audit-append failures so they never abort an in-progress wipe. The `complete_pm_offboarding` RPC takes its primary audit entry inline (`pii_wiped`, listing the nulled fields) so it commits atomically with the status change; the best-effort steps append their own entries separately.
 
 ---
 
@@ -248,12 +314,19 @@ Screen 6 is rendered as a state inside `FinalConfirmation`, not a separate page.
 export const runtime = "nodejs";
 
 GET handler:
-  1. Verify Authorization: Bearer ${CRON_SECRET}
+  1. Verify Authorization: Bearer ${CRON_SECRET} via timingSafeEqual
      (Vercel Cron sends this header automatically when CRON_SECRET is set).
      Missing/mismatch → 401.
-  2. admin.rpc('hard_delete_expired_offboarding').
-  3. Return JSON summary { processed, affected }.
-  4. On RPC error → 500 + log (Vercel surfaces failed cron invocations).
+  2. Defense-in-depth: log a warning if x-vercel-cron header is absent in
+     production (does NOT reject — the secret check is the source of truth).
+  3. admin.rpc('hard_delete_expired_offboarding').
+  4. On RPC error → 500 + console.error.
+  5. Read { processed, errored, request_ids, errored_ids } from the row.
+  6. If errored > 0 → console.warn with all four fields; else console.info
+     with processed + request_ids only.
+  7. Return JSON { ok: errored === 0, processed, errored, request_ids, errored_ids }.
+     Always HTTP 200 — Vercel cron retries on non-2xx, which we don't want for
+     partial per-request failures (those are already audited per request).
 ```
 
 ### `vercel.json` (new)
