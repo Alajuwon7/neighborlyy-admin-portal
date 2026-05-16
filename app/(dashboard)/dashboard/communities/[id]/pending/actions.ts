@@ -33,7 +33,7 @@ export async function denyResident(pendingUserId: string, communityId: string, r
   const { error } = await supabase.rpc("deny_pending_user", {
     p_pending_user_id: pendingUserId,
     p_reason: reason ?? null,
-    p_rejected_by: null,
+    p_rejected_by: user.id,
   });
 
   if (error) return { error: error.message };
