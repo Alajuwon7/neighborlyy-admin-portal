@@ -1,6 +1,32 @@
 import { test, expect } from "@playwright/test";
-import { TEST_PROPERTY, TEST_ADMIN } from "../fixtures/test-data";
+import { createClient } from "@supabase/supabase-js";
+import { TEST_PROPERTY, TEST_ADMIN, TEST_USER } from "../fixtures/test-data";
 import { skipToOnboardingStep, completeOnboardingFlow } from "../helpers/auth.helper";
+
+/**
+ * Delete all communities owned by the test PM after each test so that the
+ * Step 2 uniqueness check (building_name / community_code) never sees stale
+ * rows from a previous test in this same run.
+ */
+async function cleanupTestCommunities() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) return;
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data: pm } = await supabase
+    .from("property_managers")
+    .select("id")
+    .eq("email", TEST_USER.email)
+    .single();
+
+  if (pm) {
+    await supabase.from("communities").delete().eq("property_manager_id", pm.id);
+  }
+}
 
 test.describe("Onboarding Flow", () => {
   test.beforeEach(async ({ page }) => {
@@ -10,28 +36,42 @@ test.describe("Onboarding Flow", () => {
     await page.goto("/onboarding");
   });
 
-  test("should complete full onboarding with payment skip", async ({ page }) => {
-    // Step 1: Property Info
-    await expect(page.getByText(/step 1 of 5/i)).toBeVisible();
-    await expect(page.getByText(/property information/i)).toBeVisible();
+  test.afterEach(async () => {
+    // Remove communities created during the test so the next test's
+    // Step 2 uniqueness check starts from a clean slate.
+    await cleanupTestCommunities();
+  });
 
-    await page.getByLabel(/property name/i).fill(TEST_PROPERTY.name);
-    await page.getByLabel(/community code/i).fill(TEST_PROPERTY.community_code);
-    await page.getByLabel(/property type/i).selectOption(TEST_PROPERTY.property_type);
-    await page.getByLabel(/street address/i).fill(TEST_PROPERTY.street_address);
-    await page.getByLabel(/city/i).fill(TEST_PROPERTY.city);
-    await page.getByLabel(/state/i).selectOption(TEST_PROPERTY.state);
-    await page.getByLabel(/zip/i).fill(TEST_PROPERTY.zip_code);
-    await page.getByLabel(/number of units/i).fill(TEST_PROPERTY.unit_count);
+  test("should complete full onboarding with payment skip", async ({ page }) => {
+    // Step 1: Organization Type
+    await expect(page.getByText(/step 1 of 6/i)).toBeVisible();
+    await expect(page.getByText(/organization type/i)).toBeVisible();
+    await page.getByRole("button", { name: /independent manager/i }).click();
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Step 2: Branding
-    await expect(page.getByText(/step 2 of 5/i)).toBeVisible();
+    // Step 2: Property Info
+    await expect(page.getByText(/step 2 of 6/i)).toBeVisible();
+    await expect(page.getByText(/property information/i)).toBeVisible();
+
+    // Step1PropertyInfo uses <Label> siblings (no htmlFor/id) so we target by placeholder.
+    // For <select> elements, getByRole("combobox") nth(0)=PropertyType, nth(1)=State.
+    await page.getByPlaceholder(/the reserve/i).fill(TEST_PROPERTY.name);
+    await page.getByPlaceholder(/sunset/i).fill(TEST_PROPERTY.community_code);
+    await page.getByRole("combobox").nth(0).selectOption(TEST_PROPERTY.property_type);
+    await page.getByPlaceholder(/123 main street/i).fill(TEST_PROPERTY.street_address);
+    await page.getByPlaceholder(/austin/i).fill(TEST_PROPERTY.city);
+    await page.getByRole("combobox").nth(1).selectOption(TEST_PROPERTY.state);
+    await page.getByPlaceholder(/78701/i).fill(TEST_PROPERTY.zip_code);
+    await page.getByPlaceholder(/200/i).fill(TEST_PROPERTY.unit_count);
+    await page.getByRole("button", { name: /continue/i }).click();
+
+    // Step 3: Branding
+    await expect(page.getByText(/step 3 of 6/i)).toBeVisible();
     await expect(page.getByText(/community branding/i)).toBeVisible();
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Step 3: Facilities
-    await expect(page.getByText(/step 3 of 5/i)).toBeVisible();
+    // Step 4: Facilities
+    await expect(page.getByText(/step 4 of 6/i)).toBeVisible();
     await expect(page.getByText(/facilities & amenities/i)).toBeVisible();
 
     await page.getByRole("button", { name: /fitness center/i }).click();
@@ -40,20 +80,21 @@ test.describe("Onboarding Flow", () => {
     await expect(page.getByText(/3 selected/)).toBeVisible();
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Step 4: Admin Access
-    await expect(page.getByText(/step 4 of 5/i)).toBeVisible();
-    await expect(page.getByText(/admin access/i)).toBeVisible();
-    await page.getByLabel(/admin code/i).fill(TEST_ADMIN.admin_code);
+    // Step 5: Admin Access
+    await expect(page.getByText(/step 5 of 6/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /admin access/i })).toBeVisible();
+    await page.getByPlaceholder(/sunset24/i).fill(TEST_ADMIN.admin_code);
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Step 5: Billing
-    await expect(page.getByText(/step 5 of 5/i)).toBeVisible();
+    // Step 6: Billing
+    await expect(page.getByText(/step 6 of 6/i)).toBeVisible();
     await expect(page.getByText(/choose a plan/i)).toBeVisible();
 
-    // Verify all 3 plan tiers display
-    await expect(page.getByText("Starter")).toBeVisible();
-    await expect(page.getByText("Professional")).toBeVisible();
-    await expect(page.getByText("Enterprise")).toBeVisible();
+    // Verify all 3 plan tiers display — use exact:true to avoid matching feature
+    // list items like "Everything in Starter" or "Everything in Professional".
+    await expect(page.getByText("Starter", { exact: true })).toBeVisible();
+    await expect(page.getByText("Professional", { exact: true })).toBeVisible();
+    await expect(page.getByText("Enterprise", { exact: true })).toBeVisible();
 
     // Verify pricing
     await expect(page.getByText("$99")).toBeVisible();
@@ -75,10 +116,10 @@ test.describe("Onboarding Flow", () => {
   });
 
   test("should show skip payment option when Stripe not configured", async ({ page }) => {
-    // Navigate to Step 5
-    await skipToOnboardingStep(page, 5);
+    // Navigate to Step 6 (Billing)
+    await skipToOnboardingStep(page, 6);
 
-    await expect(page.getByText(/step 5 of 5/i)).toBeVisible();
+    await expect(page.getByText(/step 6 of 6/i)).toBeVisible();
 
     // Verify skip payment button
     const skipButton = page.getByTestId("skip-payment-button");
@@ -88,8 +129,8 @@ test.describe("Onboarding Flow", () => {
     // Verify testing badge
     await expect(page.getByText(/for testing only/i)).toBeVisible();
 
-    // Verify OR divider
-    await expect(page.getByText("OR")).toBeVisible();
+    // Verify OR divider — exact:true avoids matching "OR" inside other words
+    await expect(page.getByText("OR", { exact: true })).toBeVisible();
 
     // Click and verify it completes onboarding
     await skipButton.click();
@@ -97,26 +138,30 @@ test.describe("Onboarding Flow", () => {
   });
 
   test("should navigate back and forth between steps", async ({ page }) => {
-    // Fill Step 1 and advance
-    await page.getByLabel(/property name/i).fill(TEST_PROPERTY.name);
-    await page.getByLabel(/community code/i).fill(TEST_PROPERTY.community_code);
-    await page.getByLabel(/street address/i).fill(TEST_PROPERTY.street_address);
-    await page.getByLabel(/city/i).fill(TEST_PROPERTY.city);
-    await page.getByLabel(/state/i).selectOption(TEST_PROPERTY.state);
-    await page.getByLabel(/zip/i).fill(TEST_PROPERTY.zip_code);
-    await page.getByLabel(/number of units/i).fill(TEST_PROPERTY.unit_count);
+    // Complete Step 1 (Organization Type) first
+    await page.getByRole("button", { name: /independent manager/i }).click();
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Verify Step 2
-    await expect(page.getByText(/step 2 of 5/i)).toBeVisible();
+    // Fill Step 2 (Property Info) and advance — use placeholder selectors (no htmlFor/id on inputs)
+    await page.getByPlaceholder(/the reserve/i).fill(TEST_PROPERTY.name);
+    await page.getByPlaceholder(/sunset/i).fill(TEST_PROPERTY.community_code);
+    await page.getByPlaceholder(/123 main street/i).fill(TEST_PROPERTY.street_address);
+    await page.getByPlaceholder(/austin/i).fill(TEST_PROPERTY.city);
+    await page.getByRole("combobox").nth(1).selectOption(TEST_PROPERTY.state);
+    await page.getByPlaceholder(/78701/i).fill(TEST_PROPERTY.zip_code);
+    await page.getByPlaceholder(/200/i).fill(TEST_PROPERTY.unit_count);
+    await page.getByRole("button", { name: /continue/i }).click();
 
-    // Go back to Step 1
+    // Verify Step 3 (Branding)
+    await expect(page.getByText(/step 3 of 6/i)).toBeVisible();
+
+    // Go back to Step 2 (Property Info)
     await page.getByRole("button", { name: /back/i }).click();
-    await expect(page.getByText(/step 1 of 5/i)).toBeVisible();
+    await expect(page.getByText(/step 2 of 6/i)).toBeVisible();
 
-    // Verify data persisted
-    await expect(page.getByLabel(/property name/i)).toHaveValue(TEST_PROPERTY.name);
-    await expect(page.getByLabel(/community code/i)).toHaveValue(TEST_PROPERTY.community_code);
+    // Verify data persisted — check by placeholder (inputs have no htmlFor/id)
+    await expect(page.getByPlaceholder(/the reserve/i)).toHaveValue(TEST_PROPERTY.name);
+    await expect(page.getByPlaceholder(/sunset/i)).toHaveValue(TEST_PROPERTY.community_code);
   });
 
   test("should redirect to dashboard after completing onboarding", async ({ page }) => {
