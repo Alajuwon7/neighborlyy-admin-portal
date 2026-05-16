@@ -18,6 +18,7 @@ export default async function DispositionPage() {
     .eq("user_id", user.id)
     .maybeSingle();
   if (!pm) redirect("/dashboard/account");
+  if (!pm.organization_id) redirect("/dashboard/account");
 
   const { data: req } = await supabase
     .from("deletion_requests")

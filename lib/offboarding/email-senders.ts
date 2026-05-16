@@ -3,6 +3,7 @@ import { sendEmail } from "@/lib/email/client";
 import { deletionRequestReceived } from "@/lib/email/templates/deletion-request-received";
 import { corpApprovalRequest } from "@/lib/email/templates/corp-approval-request";
 import { corpDecisionNotice } from "@/lib/email/templates/corp-decision-notice";
+import { deletionComplete } from "@/lib/email/templates/deletion-complete";
 
 const SUPPORT_EMAIL = "support@neighborlyy.com";
 
@@ -69,6 +70,29 @@ export interface SendCorpDecisionNoticeToPMArgs {
 export async function sendCorpDecisionNoticeToPM(args: SendCorpDecisionNoticeToPMArgs) {
   const tpl = corpDecisionNotice({
     ...args,
+    supportEmail: SUPPORT_EMAIL,
+  });
+  return sendEmail({
+    to: args.to,
+    subject: tpl.subject,
+    html: tpl.html,
+    text: tpl.text,
+    replyTo: SUPPORT_EMAIL,
+  });
+}
+
+export interface SendDeletionCompleteArgs {
+  to: string;
+  pmFirstName: string;
+  communityLines: string[];
+  hardDeleteDate: string;
+}
+
+export async function sendDeletionComplete(args: SendDeletionCompleteArgs) {
+  const tpl = deletionComplete({
+    pmFirstName: args.pmFirstName,
+    communityLines: args.communityLines,
+    hardDeleteDate: args.hardDeleteDate,
     supportEmail: SUPPORT_EMAIL,
   });
   return sendEmail({
