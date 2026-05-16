@@ -9,10 +9,13 @@ export default async function TeamPage() {
   const { supabase, pm } = await getAuthenticatedPM();
 
   // Fetch PM's communities
-  const { data: communitiesRaw } = await supabase
-    .from("communities")
-    .select("id, name")
-    .eq("property_manager_id", pm.id);
+  let commQuery = supabase.from("communities").select("id, name");
+  if (pm.organization_id) {
+    commQuery = commQuery.eq("organization_id", pm.organization_id);
+  } else {
+    commQuery = commQuery.eq("property_manager_id", pm.id);
+  }
+  const { data: communitiesRaw } = await commQuery;
 
   const communities =
     (communitiesRaw as { id: string; name: string }[] | null) ?? [];

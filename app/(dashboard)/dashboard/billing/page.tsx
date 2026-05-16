@@ -33,12 +33,17 @@ export default async function BillingPage() {
   const { supabase, pm } = await getAuthenticatedPM();
 
   // Fetch communities with billing info
-  const { data: communitiesRaw } = await supabase
+  let commQuery = supabase
     .from("communities")
     .select(
       "id, name, status, subscription_tier, trial_ends_at, stripe_customer_id, stripe_subscription_id"
-    )
-    .eq("property_manager_id", pm.id);
+    );
+  if (pm.organization_id) {
+    commQuery = commQuery.eq("organization_id", pm.organization_id);
+  } else {
+    commQuery = commQuery.eq("property_manager_id", pm.id);
+  }
+  const { data: communitiesRaw } = await commQuery;
 
   const communities =
     (communitiesRaw as {
@@ -184,7 +189,10 @@ export default async function BillingPage() {
                   )}
 
                   <button
-                    className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
+                    type="button"
+                    disabled
+                    title="Self-serve subscription management is coming soon. Email support@neighborlyy.com to make changes."
+                    className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl text-white opacity-60 cursor-not-allowed"
                     style={{ backgroundColor: "var(--nly-brand)" }}
                   >
                     <ArrowUpRight size={14} />

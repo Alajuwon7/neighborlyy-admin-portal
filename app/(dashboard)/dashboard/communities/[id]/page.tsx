@@ -18,7 +18,19 @@ export default async function CommunityOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { community } = await getCommunityWithAuth(id);
+  const { supabase, community } = await getCommunityWithAuth(id);
+
+  const [{ count: pendingCount }, { count: alertsCount }] = await Promise.all([
+    supabase
+      .from("pending_users")
+      .select("id", { count: "exact", head: true })
+      .eq("community_code", community.community_code)
+      .eq("status", "pending"),
+    supabase
+      .from("alerts")
+      .select("id", { count: "exact", head: true })
+      .eq("community_code", community.community_code),
+  ]);
 
   const trialDaysLeft =
     community.status === "trial" && community.trial_ends_at
@@ -82,11 +94,15 @@ export default async function CommunityOverviewPage({
             <Building2 size={15} /> Property Details
           </h2>
           <div className="space-y-3">
-            <InfoRow label="Property Type" value={community.property_type} capitalize />
+            <InfoRow label="Property Type" value={community.property_type ?? "—"} capitalize />
             <InfoRow label="Unit Count" value={`${community.unit_count} units`} />
             <InfoRow
               label="Address"
-              value={`${community.street_address}, ${community.city}, ${community.state} ${community.zip_code}`}
+              value={
+                [community.street_address, community.city, community.state, community.zip_code]
+                  .filter(Boolean)
+                  .join(", ") || "—"
+              }
               icon={<MapPin size={13} />}
             />
             <InfoRow label="Community Code" value={community.community_code} mono />
@@ -108,7 +124,7 @@ export default async function CommunityOverviewPage({
             <Shield size={15} /> Admin & Access
           </h2>
           <div className="space-y-3">
-            <InfoRow label="Admin Code" value={community.admin_code} mono />
+            <InfoRow label="Admin Code" value={community.admin_code ?? "—"} mono />
             <InfoRow
               label="Subscription"
               value={community.subscription_tier ?? "None"}
@@ -207,9 +223,9 @@ export default async function CommunityOverviewPage({
             <Users size={15} /> Quick Stats
           </h2>
           <div className="grid grid-cols-3 gap-4">
-            <StatBlock label="Units" value={community.unit_count} />
-            <StatBlock label="Pending" value={0} />
-            <StatBlock label="Alerts" value={0} />
+            <StatBlock label="Units" value={community.unit_count ?? 0} />
+            <StatBlock label="Pending" value={pendingCount ?? 0} />
+            <StatBlock label="Alerts" value={alertsCount ?? 0} />
           </div>
         </section>
       </div>

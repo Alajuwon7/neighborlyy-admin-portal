@@ -13,11 +13,15 @@ export default async function FeedPage() {
   const supabase = await createClient();
 
   // Get first community
-  const { data: communities } = await supabase
+  let commQuery = supabase
     .from("communities")
-    .select("id, community_code, name")
-    .eq("property_manager_id", pm.id)
-    .limit(1);
+    .select("id, community_code, name");
+  if (pm.organization_id) {
+    commQuery = commQuery.eq("organization_id", pm.organization_id);
+  } else {
+    commQuery = commQuery.eq("property_manager_id", pm.id);
+  }
+  const { data: communities } = await commQuery.limit(1);
 
   const community = (communities as { id: string; community_code: string; name: string }[] | null)?.[0];
   if (!community) redirect("/onboarding");

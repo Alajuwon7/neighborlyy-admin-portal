@@ -8,11 +8,13 @@ export default async function EventsRedirectPage() {
   const { pm } = await getAuthenticatedPM();
   const supabase = await createClient();
 
-  const { data: communities } = await supabase
-    .from("communities")
-    .select("id")
-    .eq("property_manager_id", pm.id)
-    .limit(1);
+  let commQuery = supabase.from("communities").select("id");
+  if (pm.organization_id) {
+    commQuery = commQuery.eq("organization_id", pm.organization_id);
+  } else {
+    commQuery = commQuery.eq("property_manager_id", pm.id);
+  }
+  const { data: communities } = await commQuery.limit(1);
 
   const firstId = (communities as { id: string }[] | null)?.[0]?.id;
   if (firstId) {
