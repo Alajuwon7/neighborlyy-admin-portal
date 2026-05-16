@@ -7,7 +7,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  // Both Phase 3 and Phase 4 Screen-5 seed deletion_requests for the SHARED
+  // test PM. The `deletion_requests_one_open_per_pm_idx` partial unique index
+  // forbids two concurrent open requests. Run a single worker locally (same as
+  // CI) to guarantee describe blocks never overlap on the shared PM row.
+  workers: 1,
   reporter: "html",
 
   globalSetup: "./tests/global-setup.ts",
