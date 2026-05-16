@@ -4,7 +4,7 @@
 
 **Goal:** Let a property manager complete their own account closure end-to-end (Screen 5 confirmation → atomic PII wipe → Screen 6 done), and add a daily cron job that hard-deletes the soft-deleted org/communities/PM row 30 days later.
 
-**Architecture:** All database mutations for the wipe happen inside one atomic Postgres RPC (`complete_pm_offboarding`); the `completeOffboarding` server action sequences the external calls (final email → Stripe customer anonymization → RPC → auth-user deletion) around it. A second RPC (`hard_delete_expired_offboarding`) is driven by a `CRON_SECRET`-guarded Vercel cron route. Screen 6 is a client-side state swap inside the confirmation component, not a route — once status flips to `completed` the layout guard would redirect any navigation away.
+**Architecture:** All database mutations for the wipe happen inside one atomic Postgres RPC (`complete_pm_offboarding`); the `completeOffboarding` server action sequences the external calls (Stripe customer anonymization → RPC → final email → auth-user deletion) around it. Stripe goes pre-commit because the customer record mirrors PM/org identifying data; the email goes post-commit so a no-op RPC (concurrent run / double-tap) doesn't produce a duplicate confirmation. A second RPC (`hard_delete_expired_offboarding`) is driven by a `CRON_SECRET`-guarded Vercel cron route. Screen 6 is a client-side state swap inside the confirmation component, not a route — once status flips to `completed` the layout guard would redirect any navigation away.
 
 **Tech Stack:** Next.js 16 (App Router, server components + server actions), Supabase (Postgres RPCs, service-role admin client, Auth admin API), Stripe SDK, Resend, `node:test` for unit tests, Playwright for e2e.
 
