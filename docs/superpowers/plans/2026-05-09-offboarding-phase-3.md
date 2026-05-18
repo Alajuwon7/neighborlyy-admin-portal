@@ -1285,7 +1285,7 @@ export function BillingClient({ deletionRequestId, initialCommunities }: Billing
             className="text-xs underline"
             style={{ color: "var(--nly-brand)" }}
           >
-            Contact support@neighborlyy.com
+            Contact support@miyora.com
           </a>
         </div>
       )}
@@ -1324,7 +1324,7 @@ function buildSupportMailto(communities: CommunityRow[]): string {
     .join("%0A");
   const subject = encodeURIComponent("Offboarding billing stuck");
   const body = `Stripe subscriptions:%0A${subs}`;
-  return `mailto:support@neighborlyy.com?subject=${subject}&body=${body}`;
+  return `mailto:support@miyora.com?subject=${subject}&body=${body}`;
 }
 ```
 

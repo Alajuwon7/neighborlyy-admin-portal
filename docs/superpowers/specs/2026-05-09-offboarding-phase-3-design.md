@@ -186,7 +186,7 @@ Server action `cancelSubscription(communityId)`:
 - Subscribes to realtime on `deletion_requests` row (already enabled in migration 025)
 - Also subscribes to `communities` row updates for live status (extend realtime publication in 027 if not already)
 - Tracks "last cancellation triggered at" in local state
-- After 10 minutes with no `stripe_resolved_at`, reveals "Need help? Contact support" CTA with the relevant Stripe IDs prefilled in a `mailto:support@neighborlyy.com` link
+- After 10 minutes with no `stripe_resolved_at`, reveals "Need help? Contact support" CTA with the relevant Stripe IDs prefilled in a `mailto:support@miyora.com` link
 
 "Continue to community decisions" button enables only when `stripe_resolved_at IS NOT NULL`.
 

@@ -23,7 +23,7 @@ End state of this PR: a PM can complete their own account closure end-to-end, an
 ## Non-goals
 
 - Transfer disposition / transfer flow (deferred to Phase 5)
-- Real GDPR data export — per the Phase 1 decision, the final email tells the PM to contact `support@neighborlyy.com` within 30 days for an export
+- Real GDPR data export — per the Phase 1 decision, the final email tells the PM to contact `support@miyora.com` within 30 days for an export
 - Rewriting resident `community_code` values to `[CLOSED-{code}]` — see "Resident data" decision below
 - Co-owner / multi-PM organization survival — no co-owner concept exists in the schema; orgs are 1:1 with a PM today
 - Resident push notifications (CC-6) — already handled as an `admin_notifications` stub in Phase 3; no new work here
@@ -243,7 +243,7 @@ Sequenced around the atomic RPC. Stripe anonymization runs pre-commit (the Strip
    unique stripe_customer_id across the org's communities,
    stripe.customers.update(id, {
      name: 'Deleted Account',
-     email: `deleted-${pm_id}@neighborlyy.internal`,
+     email: `deleted-${pm_id}@miyora.internal`,
      metadata: { deleted_at, deletion_request_id },
    }).
    Best-effort: per-customer failure → console.warn + safeAudit('stripe_anonymize_failed').

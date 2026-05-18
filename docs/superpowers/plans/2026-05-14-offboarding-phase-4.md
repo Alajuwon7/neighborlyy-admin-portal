@@ -127,7 +127,7 @@ test("buildStripeAnonymization produces the GDPR-safe customer shape", () => {
   const now = new Date("2026-05-14T12:00:00.000Z");
   const result = buildStripeAnonymization("pm-123", "req-456", now);
   assert.equal(result.name, "Deleted Account");
-  assert.equal(result.email, "deleted-pm-123@neighborlyy.internal");
+  assert.equal(result.email, "deleted-pm-123@miyora.internal");
   assert.equal(result.metadata.deleted_at, "2026-05-14T12:00:00.000Z");
   assert.equal(result.metadata.deletion_request_id, "req-456");
 });
@@ -174,7 +174,7 @@ export function buildStripeAnonymization(
 ): StripeAnonymization {
   return {
     name: "Deleted Account",
-    email: `deleted-${pmId}@neighborlyy.internal`,
+    email: `deleted-${pmId}@miyora.internal`,
     metadata: {
       deleted_at: now.toISOString(),
       deletion_request_id: deletionRequestId,
@@ -218,12 +218,12 @@ test("deletionComplete includes communities, hard-delete date, and support email
     pmFirstName: "Alex",
     communityLines: ["Maple Ridge — Suspended (awaiting a new property manager)"],
     hardDeleteDate: "June 13, 2026",
-    supportEmail: "support@neighborlyy.com",
+    supportEmail: "support@miyora.com",
   });
   assert.match(tpl.subject, /closed/i);
   assert.match(tpl.html, /Maple Ridge/);
   assert.match(tpl.html, /June 13, 2026/);
-  assert.match(tpl.html, /support@neighborlyy\.com/);
+  assert.match(tpl.html, /support@miyora\.com/);
   assert.match(tpl.text, /Maple Ridge/);
   assert.match(tpl.text, /June 13, 2026/);
 });
@@ -233,7 +233,7 @@ test("deletionComplete handles zero communities", () => {
     pmFirstName: "",
     communityLines: [],
     hardDeleteDate: "June 13, 2026",
-    supportEmail: "support@neighborlyy.com",
+    supportEmail: "support@miyora.com",
   });
   assert.match(tpl.html, /No communities required handoff/);
   assert.match(tpl.text, /No communities required handoff/);
@@ -244,7 +244,7 @@ test("deletionComplete escapes HTML in community lines", () => {
     pmFirstName: "Alex",
     communityLines: ["<script>Bad</script> Community"],
     hardDeleteDate: "June 13, 2026",
-    supportEmail: "support@neighborlyy.com",
+    supportEmail: "support@miyora.com",
   });
   assert.doesNotMatch(tpl.html, /<script>Bad<\/script>/);
   assert.match(tpl.html, /&lt;script&gt;/);
@@ -274,7 +274,7 @@ export interface DeletionCompleteInput {
 
 export function deletionComplete(input: DeletionCompleteInput) {
   const name = escapeHtml(input.pmFirstName || "there");
-  const subject = "Your Neighborlyy account has been closed";
+  const subject = "Your Miyora account has been closed";
 
   const communityItems = input.communityLines.length
     ? input.communityLines
@@ -287,7 +287,7 @@ export function deletionComplete(input: DeletionCompleteInput) {
     body: `
       <h1 style="margin:0 0 12px;font-size:20px;font-weight:700;">Your account has been closed</h1>
       <p style="margin:0 0 16px;">Hi ${name},</p>
-      <p style="margin:0 0 16px;">Your Neighborlyy property manager account has been closed. Here's what happened:</p>
+      <p style="margin:0 0 16px;">Your Miyora property manager account has been closed. Here's what happened:</p>
       <p style="margin:0 0 8px;font-weight:600;">Communities</p>
       <ul style="margin:0 0 16px;padding-left:20px;">${communityItems}</ul>
       <p style="margin:0 0 8px;font-weight:600;">Your data</p>
@@ -298,13 +298,13 @@ export function deletionComplete(input: DeletionCompleteInput) {
         <li style="margin:0 0 4px;">A compliance record of this process is retained.</li>
       </ul>
       <p style="margin:0 0 16px;">Your community data will be permanently deleted on <strong>${escapeHtml(input.hardDeleteDate)}</strong>. If you need a data export before then, email <a href="mailto:${escapeHtml(input.supportEmail)}">${escapeHtml(input.supportEmail)}</a>.</p>
-      <p style="margin:0 0 8px;">Thank you for using Neighborlyy.</p>
+      <p style="margin:0 0 8px;">Thank you for using Miyora.</p>
     `,
   });
 
   const text =
     `Hi ${input.pmFirstName || "there"},\n\n` +
-    `Your Neighborlyy property manager account has been closed.\n\n` +
+    `Your Miyora property manager account has been closed.\n\n` +
     `Communities:\n` +
     (input.communityLines.length
       ? input.communityLines.map((l) => `  - ${l}`).join("\n")
@@ -316,7 +316,7 @@ export function deletionComplete(input: DeletionCompleteInput) {
     `  - A compliance record of this process is retained.\n\n` +
     `Your community data will be permanently deleted on ${input.hardDeleteDate}. ` +
     `If you need a data export before then, email ${input.supportEmail}.\n\n` +
-    `Thank you for using Neighborlyy.`;
+    `Thank you for using Miyora.`;
 
   return { subject, html, text };
 }
@@ -985,7 +985,7 @@ export function FinalConfirmation({ requestId }: FinalConfirmationProps) {
           Your account has been closed
         </h2>
         <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
-          Thank you for using Neighborlyy.
+          Thank you for using Miyora.
         </p>
         <ul
           className="text-sm space-y-1 text-left inline-block"
@@ -1208,7 +1208,7 @@ export default async function FinalizePage() {
 
       <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
         You have 30 days to request a data export after closure — contact
-        support@neighborlyy.com.
+        support@miyora.com.
       </p>
 
       <FinalConfirmation requestId={req.id} />

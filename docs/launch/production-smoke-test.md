@@ -1,4 +1,4 @@
-# Production Smoke-Test Checklist — Neighborlyy Admin Portal
+# Production Smoke-Test Checklist — Miyora Admin Portal
 
 **Launch window:** Day 3 of 3  
 **Environment:** Vercel production deployment  
@@ -130,7 +130,7 @@ _Pass criterion: password length = 8, requirement = letters + digits, MFA method
 
 ### Email verification
 
-- [ ] Check the inbox for the verification email (from `RESEND_FROM_EMAIL` — `noreply@neighborlyy.com` or the configured value). It should arrive within 60 seconds.
+- [ ] Check the inbox for the verification email (from `RESEND_FROM_EMAIL` — `noreply@miyora.com` or the configured value). It should arrive within 60 seconds.
 - [ ] Click the verification link in the email.  
   _Pass criterion: link opens in the browser and you are redirected to the onboarding wizard or a "email confirmed" page, not a 404 or "invalid link"._
 
@@ -239,7 +239,7 @@ Work through the wizard, verifying each step renders correctly and the "Next" ac
 ### Corp approval email
 
 - [ ] Check the corporation contact email inbox. The corp-approval email should arrive within 60 seconds.  
-  _Pass criterion: email arrives from `noreply@neighborlyy.com` (or `RESEND_FROM_EMAIL`) with a unique approval link._
+  _Pass criterion: email arrives from `noreply@miyora.com` (or `RESEND_FROM_EMAIL`) with a unique approval link._
 
 ### Corp approval form
 
@@ -328,7 +328,7 @@ Work through the wizard, verifying each step renders correctly and the "Next" ac
 ### Post-closure verifications
 
 - [ ] In **Stripe Dashboard → Customers**, locate the test PM's customer record.  
-  _Pass criterion: customer name is **"Deleted Account"**; customer email ends with `@neighborlyy.internal`; metadata contains `deleted_at` and `deletion_request_id`._
+  _Pass criterion: customer name is **"Deleted Account"**; customer email ends with `@miyora.internal`; metadata contains `deleted_at` and `deletion_request_id`._
 
 - [ ] Click **"Close this window"** (or the sign-out button on Screen 6).  
   _Pass criterion: you are signed out and redirected to `/login`. The PM's session is terminated._
