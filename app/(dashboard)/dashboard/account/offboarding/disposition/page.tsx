@@ -50,7 +50,7 @@ export default async function DispositionPage() {
           No communities to disposition
         </h1>
         <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
-          Your organization has no communities. Please contact support@neighborlyy.com
+          Your organization has no communities. Please contact support@miyora.com
           to complete account closure.
         </p>
         <Link

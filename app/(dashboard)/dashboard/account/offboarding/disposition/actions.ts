@@ -136,7 +136,7 @@ export async function setCommunityDisposition(
       community_code: community.community_code,
       type: "community_suspended",
       title: `Community suspended: ${community.name}`,
-      body: "This community is being suspended because the property manager is closing their Neighborlyy account.",
+      body: "This community is being suspended because the property manager is closing their Miyora account.",
       reference_id: req.id,
       reference_table: "deletion_requests",
     });

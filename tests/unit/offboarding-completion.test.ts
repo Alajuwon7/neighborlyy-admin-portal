@@ -19,7 +19,7 @@ test("buildStripeAnonymization produces the GDPR-safe customer shape", () => {
   const now = new Date("2026-05-14T12:00:00.000Z");
   const result = buildStripeAnonymization("pm-123", "req-456", now);
   assert.equal(result.name, "Deleted Account");
-  assert.equal(result.email, "deleted-pm-123@neighborlyy.internal");
+  assert.equal(result.email, "deleted-pm-123@miyora.internal");
   assert.equal(result.metadata.deleted_at, "2026-05-14T12:00:00.000Z");
   assert.equal(result.metadata.deletion_request_id, "req-456");
 });

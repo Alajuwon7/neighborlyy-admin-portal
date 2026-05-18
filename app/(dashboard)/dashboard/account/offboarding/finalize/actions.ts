@@ -153,7 +153,7 @@ export async function completeOffboarding(): Promise<ActionResult> {
     );
     return {
       ok: false,
-      error: "Couldn't complete account closure. Please try again or contact support@neighborlyy.com.",
+      error: "Couldn't complete account closure. Please try again or contact support@miyora.com.",
     };
   }
   if (!rpcRows || (rpcRows as unknown[]).length === 0) {

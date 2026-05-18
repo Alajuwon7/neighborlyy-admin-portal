@@ -11,7 +11,7 @@ export interface DeletionCompleteInput {
 
 export function deletionComplete(input: DeletionCompleteInput) {
   const name = escapeHtml(input.pmFirstName || "there");
-  const subject = "Your Neighborlyy account has been closed";
+  const subject = "Your Miyora account has been closed";
 
   const communityItems = input.communityLines.length
     ? input.communityLines
@@ -24,7 +24,7 @@ export function deletionComplete(input: DeletionCompleteInput) {
     body: `
       <h1 style="margin:0 0 12px;font-size:20px;font-weight:700;">Your account has been closed</h1>
       <p style="margin:0 0 16px;">Hi ${name},</p>
-      <p style="margin:0 0 16px;">Your Neighborlyy property manager account has been closed. Here's what happened:</p>
+      <p style="margin:0 0 16px;">Your Miyora property manager account has been closed. Here's what happened:</p>
       <p style="margin:0 0 8px;font-weight:600;">Communities</p>
       <ul style="margin:0 0 16px;padding-left:20px;">${communityItems}</ul>
       <p style="margin:0 0 8px;font-weight:600;">Your data</p>
@@ -35,13 +35,13 @@ export function deletionComplete(input: DeletionCompleteInput) {
         <li style="margin:0 0 4px;">A compliance record of this process is retained.</li>
       </ul>
       <p style="margin:0 0 16px;">Your community data will be permanently deleted on <strong>${escapeHtml(input.hardDeleteDate)}</strong>. If you need a data export before then, email <a href="mailto:${escapeHtml(input.supportEmail)}">${escapeHtml(input.supportEmail)}</a>.</p>
-      <p style="margin:0 0 8px;">Thank you for using Neighborlyy.</p>
+      <p style="margin:0 0 8px;">Thank you for using Miyora.</p>
     `,
   });
 
   const text =
     `Hi ${input.pmFirstName || "there"},\n\n` +
-    `Your Neighborlyy property manager account has been closed.\n\n` +
+    `Your Miyora property manager account has been closed.\n\n` +
     `Communities:\n` +
     (input.communityLines.length
       ? input.communityLines.map((l) => `  - ${l}`).join("\n")
@@ -53,7 +53,7 @@ export function deletionComplete(input: DeletionCompleteInput) {
     `  - A compliance record of this process is retained.\n\n` +
     `Your community data will be permanently deleted on ${input.hardDeleteDate}. ` +
     `If you need a data export before then, email ${input.supportEmail}.\n\n` +
-    `Thank you for using Neighborlyy.`;
+    `Thank you for using Miyora.`;
 
   return { subject, html, text };
 }

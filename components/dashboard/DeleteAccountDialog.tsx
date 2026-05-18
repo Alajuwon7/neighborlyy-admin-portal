@@ -161,7 +161,7 @@ export function DeleteAccountDialog({
                   className="text-base font-bold"
                   style={{ color: "var(--nly-text-primary)" }}
                 >
-                  Delete your Neighborlyy account
+                  Delete your Miyora account
                 </h3>
                 <p
                   className="text-xs mt-1"

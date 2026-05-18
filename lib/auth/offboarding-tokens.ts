@@ -11,8 +11,8 @@ export interface OffboardingTokenPayload {
   jti: string;
 }
 
-const ISSUER = "neighborlyy-admin-portal";
-const AUDIENCE = "neighborlyy-offboarding";
+const ISSUER = "miyora-admin-portal";
+const AUDIENCE = "miyora-offboarding";
 
 function getSecret(): Uint8Array {
   const raw = process.env.OFFBOARDING_APPROVAL_SECRET;

@@ -87,7 +87,7 @@ export function CorpApprovalForm({
           className="text-xl font-bold"
           style={{ color: "var(--nly-text-primary)" }}
         >
-          A property manager has requested to close their Neighborlyy account
+          A property manager has requested to close their Miyora account
         </h1>
         <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
           This request requires your authorization. The PM&apos;s account will not
@@ -191,7 +191,7 @@ export function CorpApprovalForm({
           />
           <span>
             I am authorized to make decisions about this property&apos;s
-            Neighborlyy account and I confirm this decision.
+            Miyora account and I confirm this decision.
           </span>
         </label>
 

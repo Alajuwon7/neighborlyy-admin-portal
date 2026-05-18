@@ -16,7 +16,7 @@ export function emailShell({ preheader, body, footerNote }: ShellOptions): strin
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Neighborlyy</title>
+    <title>Miyora</title>
   </head>
   <body style="margin:0;padding:0;background:#F2F5FA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${TEXT_PRIMARY};">
     ${preheader ? `<span style="display:none;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;">${escapeHtml(preheader)}</span>` : ""}
@@ -26,7 +26,7 @@ export function emailShell({ preheader, body, footerNote }: ShellOptions): strin
           <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border:1px solid ${BORDER};border-radius:16px;overflow:hidden;">
             <tr>
               <td style="background:${SURFACE};padding:20px 24px;">
-                <span style="color:${BRAND_PRIMARY};font-weight:700;font-size:18px;letter-spacing:.04em;">NEIGHBORLYY</span>
+                <span style="color:${BRAND_PRIMARY};font-weight:700;font-size:18px;letter-spacing:.04em;">MIYORA</span>
               </td>
             </tr>
             <tr>

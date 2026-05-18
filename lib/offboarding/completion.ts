@@ -24,7 +24,7 @@ export function buildStripeAnonymization(
 ): StripeAnonymization {
   return {
     name: "Deleted Account",
-    email: `deleted-${pmId}@neighborlyy.internal`,
+    email: `deleted-${pmId}@miyora.internal`,
     metadata: {
       deleted_at: now.toISOString(),
       deletion_request_id: deletionRequestId,

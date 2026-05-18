@@ -88,7 +88,7 @@ export function FinalConfirmation({ requestId }: FinalConfirmationProps) {
           Your account has been closed
         </h2>
         <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
-          Thank you for using Neighborlyy.
+          Thank you for using Miyora.
         </p>
         <ul
           className="text-sm space-y-1 text-left inline-block"

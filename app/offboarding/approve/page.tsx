@@ -44,7 +44,7 @@ export default async function CorpApprovalPage({
     return (
       <ErrorPanel
         title="Not yet available"
-        body="Transfer approvals are not yet enabled. Please contact support@neighborlyy.com."
+        body="Transfer approvals are not yet enabled. Please contact support@miyora.com."
       />
     );
   }

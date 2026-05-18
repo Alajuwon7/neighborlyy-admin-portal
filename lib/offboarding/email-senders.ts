@@ -5,7 +5,7 @@ import { corpApprovalRequest } from "@/lib/email/templates/corp-approval-request
 import { corpDecisionNotice } from "@/lib/email/templates/corp-decision-notice";
 import { deletionComplete } from "@/lib/email/templates/deletion-complete";
 
-const SUPPORT_EMAIL = "support@neighborlyy.com";
+const SUPPORT_EMAIL = "support@miyora.com";
 
 function appUrl(): string {
   return (

@@ -15,11 +15,11 @@ export interface CorpApprovalRequestInput {
 export function corpApprovalRequest(input: CorpApprovalRequestInput) {
   const isDeletion = input.kind === "deletion";
   const headline = isDeletion
-    ? "A property manager has requested to close their Neighborlyy account"
-    : "A property manager has requested to transfer their Neighborlyy account";
+    ? "A property manager has requested to close their Miyora account"
+    : "A property manager has requested to transfer their Miyora account";
 
   const subject = isDeletion
-    ? `Action required: ${input.pmName} requested to close their Neighborlyy account`
+    ? `Action required: ${input.pmName} requested to close their Miyora account`
     : `Action required: ${input.pmName} requested an account transfer`;
 
   const communitiesList = input.communityNames.length

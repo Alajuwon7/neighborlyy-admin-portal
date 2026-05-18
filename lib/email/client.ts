@@ -12,7 +12,7 @@ function getClient(): Resend {
 }
 
 function getFrom(): string {
-  return process.env.RESEND_FROM_EMAIL || "Neighborlyy <onboarding@resend.dev>";
+  return process.env.RESEND_FROM_EMAIL || "Miyora <onboarding@resend.dev>";
 }
 
 export interface SendEmailInput {

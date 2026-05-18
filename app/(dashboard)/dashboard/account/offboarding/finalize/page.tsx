@@ -158,7 +158,7 @@ export default async function FinalizePage() {
 
       <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
         You have 30 days to request a data export after closure — contact
-        support@neighborlyy.com.
+        support@miyora.com.
       </p>
 
       <FinalConfirmation requestId={req.id} />
