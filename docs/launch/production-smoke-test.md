@@ -130,7 +130,7 @@ _Pass criterion: password length = 8, requirement = letters + digits, MFA method
 
 ### Email verification
 
-- [ ] Check the inbox for the verification email (from `RESEND_FROM_EMAIL` — `noreply@miyora.com` or the configured value). It should arrive within 60 seconds.
+- [ ] Check the inbox for the verification email (from `RESEND_FROM_EMAIL` — `noreply@miyora-app.com` or the configured value). It should arrive within 60 seconds.
 - [ ] Click the verification link in the email.  
   _Pass criterion: link opens in the browser and you are redirected to the onboarding wizard or a "email confirmed" page, not a 404 or "invalid link"._
 
@@ -239,7 +239,7 @@ Work through the wizard, verifying each step renders correctly and the "Next" ac
 ### Corp approval email
 
 - [ ] Check the corporation contact email inbox. The corp-approval email should arrive within 60 seconds.  
-  _Pass criterion: email arrives from `noreply@miyora.com` (or `RESEND_FROM_EMAIL`) with a unique approval link._
+  _Pass criterion: email arrives from `noreply@miyora-app.com` (or `RESEND_FROM_EMAIL`) with a unique approval link._
 
 ### Corp approval form
 

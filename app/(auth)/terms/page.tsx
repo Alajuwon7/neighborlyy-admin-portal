@@ -134,7 +134,7 @@ export default function TermsPage() {
               </h2>
               <p>
                 For questions about these Terms, contact us at{" "}
-                <span style={{ color: "var(--nly-accent)" }}>support@miyora.com</span>.
+                <span style={{ color: "var(--nly-accent)" }}>support@miyora-app.com</span>.
               </p>
             </section>
           </div>

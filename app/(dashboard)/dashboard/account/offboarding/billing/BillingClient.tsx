@@ -159,7 +159,7 @@ export function BillingClient({ deletionRequestId, initialCommunities }: Billing
             className="text-xs underline"
             style={{ color: "var(--nly-brand)" }}
           >
-            Contact support@miyora.com
+            Contact support@miyora-app.com
           </a>
         </div>
       )}
@@ -198,5 +198,5 @@ function buildSupportMailto(communities: CommunityRow[]): string {
     .join("\n");
   const subject = encodeURIComponent("Offboarding billing stuck");
   const body = encodeURIComponent(`Stripe subscriptions:\n${subs}`);
-  return `mailto:support@miyora.com?subject=${subject}&body=${body}`;
+  return `mailto:support@miyora-app.com?subject=${subject}&body=${body}`;
 }

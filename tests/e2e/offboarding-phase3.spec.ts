@@ -37,7 +37,7 @@ if (supabaseUrl && serviceRoleKey) {
 
 test.describe("PM offboarding Phase 3", () => {
   // Tests in this describe block all seed deletion_requests for the SHARED
-  // test PM (`e2e-test@miyora.com`). The `deletion_requests_one_open_per_pm_idx`
+  // test PM (`e2e-test@miyora-app.com`). The `deletion_requests_one_open_per_pm_idx`
   // partial unique index forbids two open requests per PM, so concurrent
   // beforeEach runs race. Force serial execution within this block.
   test.describe.configure({ mode: "serial" });

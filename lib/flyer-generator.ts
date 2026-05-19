@@ -78,7 +78,7 @@ export async function generateWelcomeFlyer(
   // Footer
   doc.setFontSize(9);
   doc.setTextColor(100, 120, 140);
-  doc.text("Powered by Miyora — miyora.com", 105, 285, {
+  doc.text("Powered by Miyora — miyora-app.com", 105, 285, {
     align: "center",
   });
 

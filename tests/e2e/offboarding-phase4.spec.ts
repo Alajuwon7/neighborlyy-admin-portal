@@ -162,7 +162,7 @@ test.describe("Phase 4 — complete_pm_offboarding RPC", () => {
     const suffix = rand();
 
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email: `phase4-rpc-${suffix}@miyora.com`,
+      email: `phase4-rpc-${suffix}@miyora-app.com`,
       password: `Throwaway-${suffix}-pw`,
       email_confirm: true,
     });
@@ -183,7 +183,7 @@ test.describe("Phase 4 — complete_pm_offboarding RPC", () => {
       .insert({
         user_id: throwawayUserId,
         full_name: "Throwaway PM",
-        email: `phase4-rpc-${suffix}@miyora.com`,
+        email: `phase4-rpc-${suffix}@miyora-app.com`,
         phone: "555-0100",
         company_name: "Throwaway Co",
         organization_id: orgId,
@@ -365,7 +365,7 @@ test.describe("Phase 4 — Gate 6 cron hard delete", () => {
     const suffix = rand();
 
     const { data: dueUser } = await admin.auth.admin.createUser({
-      email: `phase4-cron-due-${suffix}@miyora.com`,
+      email: `phase4-cron-due-${suffix}@miyora-app.com`,
       password: `Throwaway-${suffix}-pw`,
       email_confirm: true,
     });
@@ -423,7 +423,7 @@ test.describe("Phase 4 — Gate 6 cron hard delete", () => {
     dueRequestId = dueReq!.id;
 
     const { data: freshUser } = await admin.auth.admin.createUser({
-      email: `phase4-cron-fresh-${suffix}@miyora.com`,
+      email: `phase4-cron-fresh-${suffix}@miyora-app.com`,
       password: `Throwaway-${suffix}-pw`,
       email_confirm: true,
     });

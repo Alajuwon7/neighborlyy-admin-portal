@@ -7,7 +7,7 @@ test("deletionComplete includes communities, hard-delete date, and support email
     pmFirstName: "Alex",
     communityLines: ["Maple Ridge — Suspended (awaiting a new property manager)"],
     hardDeleteDate: "June 13, 2026",
-    supportEmail: "support@miyora.com",
+    supportEmail: "support@miyora-app.com",
   });
   assert.match(tpl.subject, /closed/i);
   assert.match(tpl.html, /Maple Ridge/);
@@ -22,7 +22,7 @@ test("deletionComplete handles zero communities", () => {
     pmFirstName: "",
     communityLines: [],
     hardDeleteDate: "June 13, 2026",
-    supportEmail: "support@miyora.com",
+    supportEmail: "support@miyora-app.com",
   });
   assert.match(tpl.html, /No communities required handoff/);
   assert.match(tpl.text, /No communities required handoff/);
@@ -35,7 +35,7 @@ test("deletionComplete escapes HTML in community lines", () => {
     pmFirstName: "Alex",
     communityLines: ["<script>Bad</script> Community"],
     hardDeleteDate: "June 13, 2026",
-    supportEmail: "support@miyora.com",
+    supportEmail: "support@miyora-app.com",
   });
   assert.doesNotMatch(tpl.html, /<script>Bad<\/script>/);
   assert.match(tpl.html, /&lt;script&gt;/);
@@ -46,7 +46,7 @@ test("deletionComplete escapes HTML in pmFirstName", () => {
     pmFirstName: '<img src=x onerror="alert(1)">',
     communityLines: [],
     hardDeleteDate: "June 13, 2026",
-    supportEmail: "support@miyora.com",
+    supportEmail: "support@miyora-app.com",
   });
   assert.doesNotMatch(tpl.html, /<img/);
   assert.match(tpl.html, /&lt;img/);

@@ -606,11 +606,11 @@ STRIPE_PRICE_ENTERPRISE_ANNUAL=price_xxx
 
 # Email (Resend)
 RESEND_API_KEY=re_xxx
-RESEND_FROM_EMAIL=noreply@miyora.com
+RESEND_FROM_EMAIL=noreply@miyora-app.com
 
 # App URLs
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_SITE_URL=https://miyora.com
+NEXT_PUBLIC_SITE_URL=https://miyora-app.com
 
 # Admin Codes
 DEFAULT_ADMIN_CODE=ADMIN2025

@@ -152,7 +152,7 @@ export default function PrivacyPage() {
               </h2>
               <p>
                 For privacy-related questions or requests, contact us at{" "}
-                <span style={{ color: "var(--nly-accent)" }}>privacy@miyora.com</span>.
+                <span style={{ color: "var(--nly-accent)" }}>privacy@miyora-app.com</span>.
               </p>
             </section>
           </div>

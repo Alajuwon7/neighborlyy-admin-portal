@@ -38,7 +38,7 @@ export default function OffboardingPublicLayout({
         }}
       >
         <div className="max-w-3xl mx-auto px-6 py-4">
-          Miyora Admin Portal · support@miyora.com
+          Miyora Admin Portal · support@miyora-app.com
         </div>
       </footer>
     </div>

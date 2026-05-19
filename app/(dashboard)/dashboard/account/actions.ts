@@ -304,7 +304,7 @@ export async function submitDeletionRequest(
     return {
       ok: false,
       error:
-        "We couldn't email your corporation. Please try again, or contact support@miyora.com if the problem persists.",
+        "We couldn't email your corporation. Please try again, or contact support@miyora-app.com if the problem persists.",
     };
   }
 

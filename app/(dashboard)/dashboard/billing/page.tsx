@@ -191,7 +191,7 @@ export default async function BillingPage() {
                   <button
                     type="button"
                     disabled
-                    title="Self-serve subscription management is coming soon. Email support@miyora.com to make changes."
+                    title="Self-serve subscription management is coming soon. Email support@miyora-app.com to make changes."
                     className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl text-white opacity-60 cursor-not-allowed"
                     style={{ backgroundColor: "var(--nly-brand)" }}
                   >

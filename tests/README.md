@@ -10,7 +10,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-The `SUPABASE_SERVICE_ROLE_KEY` is needed by the global setup script to create and manage the test user (`e2e-test@miyora.com`).
+The `SUPABASE_SERVICE_ROLE_KEY` is needed by the global setup script to create and manage the test user (`e2e-test@miyora-app.com`).
 
 ## Running Tests
 
@@ -34,7 +34,7 @@ npm run test:e2e:debug
 
 Before any tests run, the global setup script:
 
-1. **Creates a test user** in Supabase auth (`e2e-test@miyora.com`) with a confirmed email using the Admin API — no email verification needed
+1. **Creates a test user** in Supabase auth (`e2e-test@miyora-app.com`) with a confirmed email using the Admin API — no email verification needed
 2. **Creates a `property_managers` row** for that user
 3. **Cleans up any existing communities** from previous test runs
 4. **Logs in via the browser** and saves the authenticated session to `tests/.auth/session.json`
@@ -72,7 +72,7 @@ Tests use constants from `tests/fixtures/test-data.ts`:
 
 | Constant | Value |
 |---|---|
-| Test user email | `e2e-test@miyora.com` |
+| Test user email | `e2e-test@miyora-app.com` |
 | Test user password | `TestPassword123!` |
 | Property name | Cypress Gardens |
 | Community code | `CYPGRDNS` |

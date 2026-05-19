@@ -1,7 +1,7 @@
 import { chromium, type FullConfig } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
-const TEST_EMAIL = "e2e-test@miyora.com";
+const TEST_EMAIL = "e2e-test@miyora-app.com";
 const TEST_PASSWORD = "TestPassword123!";
 const TEST_FULL_NAME = "E2E Test Manager";
 

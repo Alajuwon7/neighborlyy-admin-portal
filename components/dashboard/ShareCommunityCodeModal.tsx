@@ -86,7 +86,7 @@ Welcome to ${communityName}!`;
       await navigator.share({
         title: `Join ${communityName} on Miyora`,
         text: `Join our community on Miyora! Use code: ${communityCode}`,
-        url: "https://miyora.com",
+        url: "https://miyora-app.com",
       });
     } catch (err: unknown) {
       // User cancelled share — not an error
