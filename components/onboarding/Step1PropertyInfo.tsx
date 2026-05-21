@@ -223,7 +223,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
             </p>
           ) : (
             <OnboardingTip
-              text="Properties with a website get 2x more resident signups"
+              text="Add your website and we'll pull your brand colors and pre-fill your property details automatically."
               visible={!data.website_url}
             />
           )}
