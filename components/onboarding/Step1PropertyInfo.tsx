@@ -165,7 +165,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
                 });
                 if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
               }}
-              className="sm:pl-[115px]"
+              className="sm:pl-[90px]"
               style={errors.name ? errorInputStyle : inputStyle}
             />
           </div>

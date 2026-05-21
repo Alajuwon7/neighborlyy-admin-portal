@@ -84,7 +84,11 @@ export function BillingClient({ deletionRequestId, initialCommunities }: Billing
   }
 
   const allResolved = communities.every(
-    (c) => !c.stripe_subscription_id || c.stripe_subscription_status === "canceled",
+    (c) =>
+      !c.stripe_subscription_id ||
+      c.stripe_subscription_status === "canceled" ||
+      c.stripe_subscription_status === "cancel_scheduled" ||
+      Boolean(c.stripe_cancel_at),
   );
 
   return (
