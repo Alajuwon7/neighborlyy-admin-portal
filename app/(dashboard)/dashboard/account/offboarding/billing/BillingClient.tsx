@@ -79,6 +79,16 @@ export function BillingClient({ deletionRequestId, initialCommunities }: Billing
       toast.error(result.error);
       return;
     }
+    // Optimistically reflect the scheduled cancellation locally, mirroring the
+    // server's optimistic DB write. Without this the row + Continue gate only
+    // update if a Realtime UPDATE event arrives, which is not guaranteed.
+    setCommunities((prev) =>
+      prev.map((c) =>
+        c.id === communityId
+          ? { ...c, stripe_subscription_status: "cancel_scheduled" }
+          : c,
+      ),
+    );
     toast.success("Cancellation scheduled.");
     setActionCount((n) => n + 1);
   }
