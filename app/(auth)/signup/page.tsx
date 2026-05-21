@@ -40,13 +40,14 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             full_name: formData.fullName,
             phone: formData.phone,
+            account_type: "property_manager",
           },
           emailRedirectTo: `${window.location.origin}/api/auth/callback`,
         },
@@ -54,18 +55,10 @@ export default function SignupPage() {
 
       if (authError) throw authError;
 
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from("property_managers")
-          .insert({
-            user_id: authData.user.id,
-            full_name: formData.fullName,
-            email: formData.email,
-            phone: formData.phone || null,
-          });
-
-        if (profileError) throw profileError;
-      }
+      // The property_managers row is created server-side by the
+      // on_auth_user_created_create_pm trigger (migration 032), keyed off the
+      // account_type marker above. No client-side insert — it would run
+      // without a session when email confirmation is enabled and fail RLS.
 
       toast.success("Account created! Please check your email to verify.");
       router.push("/verify-email");
