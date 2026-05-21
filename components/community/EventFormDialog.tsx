@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { createEvent } from "@/app/(dashboard)/dashboard/communities/[id]/events/actions";
+import { EventImageField } from "@/components/community/EventImageField";
 import { toast } from "sonner";
 
 export function EventFormDialog({
@@ -120,6 +121,7 @@ export function EventFormDialog({
               style={inputStyle}
             />
           </div>
+          <EventImageField />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label style={{ color: "var(--nly-text-secondary)" }}>Date</Label>

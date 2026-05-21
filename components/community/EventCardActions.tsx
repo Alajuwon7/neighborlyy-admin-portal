@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { updateEvent, deleteEvent } from "@/app/(dashboard)/dashboard/communities/[id]/events/actions";
+import { EventImageField } from "@/components/community/EventImageField";
 import { toast } from "sonner";
 
 interface EventCardActionsProps {
@@ -23,6 +24,7 @@ interface EventCardActionsProps {
     location: string | null;
     event_date: string;
     max_attendees: number | null;
+    image_url: string | null;
   };
   communityId: string;
 }
@@ -131,6 +133,7 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
                 style={inputStyle}
               />
             </div>
+            <EventImageField existingUrl={event.image_url} />
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label style={{ color: "var(--nly-text-secondary)" }}>Date & Time</Label>
