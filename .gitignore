@@ -56,3 +56,6 @@ tests/.auth/
 
 # Claude Code local state
 .claude/
+
+# Sentry Config File
+.env.sentry-build-plugin
