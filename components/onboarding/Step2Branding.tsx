@@ -94,9 +94,10 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="space-y-3">
-          <Label style={{ color: "var(--nly-text-primary)" }}>Primary Color</Label>
+          <Label htmlFor="primaryColor" style={{ color: "var(--nly-text-primary)" }}>Primary Color</Label>
           <div className="flex items-center gap-3">
             <input
+              id="primaryColor"
               type="color"
               value={data.primary_color}
               onChange={(e) => onChange({ primary_color: e.target.value })}
@@ -104,6 +105,8 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
               style={{ backgroundColor: "transparent" }}
             />
             <input
+              id="primaryColorHex"
+              aria-label="Primary color hex value"
               type="text"
               value={data.primary_color}
               onChange={(e) => {
@@ -125,9 +128,10 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
         </div>
 
         <div className="space-y-3">
-          <Label style={{ color: "var(--nly-text-primary)" }}>Accent Color</Label>
+          <Label htmlFor="accentColor" style={{ color: "var(--nly-text-primary)" }}>Accent Color</Label>
           <div className="flex items-center gap-3">
             <input
+              id="accentColor"
               type="color"
               value={data.accent_color}
               onChange={(e) => onChange({ accent_color: e.target.value })}
@@ -135,6 +139,8 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
               style={{ backgroundColor: "transparent" }}
             />
             <input
+              id="accentColorHex"
+              aria-label="Accent color hex value"
               type="text"
               value={data.accent_color}
               onChange={(e) => {

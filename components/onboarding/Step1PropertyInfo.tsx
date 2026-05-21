@@ -143,7 +143,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Property Name — stacked label on mobile, inline prefix on desktop */}
         <div className="sm:col-span-2 space-y-2">
-          <Label style={labelStyle}>Property Name *</Label>
+          <Label htmlFor="propertyName" style={labelStyle}>Property Name *</Label>
           <p className="text-xs sm:hidden" style={{ color: "var(--nly-background)" }}>
             Miyora @
           </p>
@@ -155,6 +155,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
               Miyora @
             </span>
             <Input
+              id="propertyName"
               required
               placeholder="The Reserve"
               value={data.name}
@@ -181,7 +182,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
         </div>
 
         <div className="sm:col-span-2 space-y-2">
-          <Label style={{ color: "var(--nly-text-secondary)" }}>
+          <Label htmlFor="propertyWebsite" style={{ color: "var(--nly-text-secondary)" }}>
             Property Website
           </Label>
           <div className="flex gap-2">
@@ -192,6 +193,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
                 style={{ color: "var(--nly-text-placeholder)" }}
               />
               <Input
+                id="propertyWebsite"
                 type="url"
                 placeholder="https://yourproperty.com"
                 value={data.website_url}
@@ -228,8 +230,9 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
         </div>
 
         <div className="space-y-2">
-          <Label style={labelStyle}>Community Code *</Label>
+          <Label htmlFor="communityCode" style={labelStyle}>Community Code *</Label>
           <Input
+            id="communityCode"
             required
             placeholder="SUNSET"
             maxLength={8}
@@ -254,8 +257,9 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
         </div>
 
         <div className="space-y-2">
-          <Label style={labelStyle}>Property Type *</Label>
+          <Label htmlFor="propertyType" style={labelStyle}>Property Type *</Label>
           <select
+            id="propertyType"
             required
             value={data.property_type}
             onChange={(e) =>
@@ -273,8 +277,9 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
         </div>
 
         <div className="sm:col-span-2 space-y-2">
-          <Label style={labelStyle}>Street Address *</Label>
+          <Label htmlFor="streetAddress" style={labelStyle}>Street Address *</Label>
           <Input
+            id="streetAddress"
             required
             placeholder="123 Main Street"
             value={data.street_address}
@@ -284,8 +289,9 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
         </div>
 
         <div className="space-y-2">
-          <Label style={labelStyle}>City *</Label>
+          <Label htmlFor="city" style={labelStyle}>City *</Label>
           <Input
+            id="city"
             required
             placeholder="Austin"
             value={data.city}
@@ -296,8 +302,9 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label style={labelStyle}>State *</Label>
+            <Label htmlFor="state" style={labelStyle}>State *</Label>
             <select
+              id="state"
               required
               value={data.state}
               onChange={(e) => onChange({ state: e.target.value })}
@@ -313,8 +320,9 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
             </select>
           </div>
           <div className="space-y-2">
-            <Label style={labelStyle}>ZIP *</Label>
+            <Label htmlFor="zip" style={labelStyle}>ZIP *</Label>
             <Input
+              id="zip"
               required
               placeholder="78701"
               maxLength={5}
@@ -328,8 +336,9 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
         </div>
 
         <div className="space-y-2">
-          <Label style={labelStyle}>Number of Units *</Label>
+          <Label htmlFor="numberOfUnits" style={labelStyle}>Number of Units *</Label>
           <Input
+            id="numberOfUnits"
             required
             type="number"
             min="1"

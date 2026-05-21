@@ -70,10 +70,11 @@ export function Step4AdminAccess({ data, onChange, onNext, onBack }: Props) {
       </div>
 
       <div className="space-y-3">
-        <Label style={{ color: "var(--nly-text-primary)" }}>Admin Code *</Label>
+        <Label htmlFor="adminCode" style={{ color: "var(--nly-text-primary)" }}>Admin Code *</Label>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Input
+              id="adminCode"
               required
               type={showCode ? "text" : "password"}
               minLength={6}
