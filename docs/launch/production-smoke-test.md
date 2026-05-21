@@ -522,3 +522,38 @@ If **GO**: confirm all sections 1–6 passed (or deferred items are explicitly a
 ---
 
 _Checklist version: 2026-05-16. Covers release up to and including commit `1142f7d` (Phase 4 — PM Account Offboarding completion + cron hard-delete). Phase 5 (transfer flow) is not included._
+
+---
+
+## Day 3 Smoke Test Results — 2026-05-19
+
+**Environment:** `miyora-admin-portal-two.vercel.app` (live-mode Stripe, live Resend, prod Supabase project `jytmdphkjphpaiuvhbaf`).
+**Tester:** Alajuwon Thomas.
+**Decision:** `NO-GO` — verified core flows work, but discovered 5 items below that must clear before public launch.
+
+### Verified working end-to-end ✅
+
+- **Resend SMTP via Supabase** — auth emails (signup confirmation, invite) deliver from `Miyora <noreply@miyora-app.com>`.
+- **Direct Resend transactional email** — full offboarding pipeline:
+  - Corp approval request → corp contact inbox ✓
+  - Deletion request received → PM inbox ✓
+  - Corp decision notice → PM inbox (after corp officer approval at `/offboarding/approve`) ✓
+- **Stripe checkout (live mode)** — onboarding wizard → Stripe Checkout → success route → dashboard, with a real card on the 14-day trial.
+- **Onboarding wizard** — Step 1 prefix gap polish ("Miyora @" padding 115px → 90px) deployed.
+- **Welcome modal** — fixed-position overlay now renders correctly over the dashboard (was being demoted to `position: relative` by `.nly-mesh-bg > *` rule).
+- **BillingClient `allResolved`** — now accepts `cancel_scheduled` and `stripe_cancel_at`-truthy as resolved, not just `canceled`. Trial users with scheduled cancellations can now advance through the offboarding wizard.
+
+### Launch-blocking issues discovered
+
+1. **Signup `property_managers` 401** — client-side `.insert()` after `auth.signUp` runs without a session when "Confirm email" is on. **Workaround:** "Confirm email" was disabled tonight to unblock the test. **Real fix:** Postgres trigger on `auth.users` insert that creates the PM row from user metadata; remove the client-side insert. See `app/(auth)/signup/page.tsx` ~line 58.
+2. **"Confirm email" is currently OFF in Supabase** — must be re-enabled after #1 is fixed. Unverified signups are accepted as of right now.
+3. **Trailing `\n` in `NEXT_PUBLIC_SUPABASE_ANON_KEY`** — Vercel prod env stores the value with a literal newline at the end. Currently tolerated, but a latent bug. Fix by removing and re-adding via `printf '%s'` piping.
+4. **Schema drift after May 18 DB wipe** — `public.onboarding_sessions` was missing in prod (PGRST205 from Stripe checkout). Re-applied migration 005 via SQL editor tonight. Other tables may also be missing — schema-diff against `supabase/migrations/` before launch.
+5. **Live-mode trial subscription on a real card** — testing required a real card because Stripe is in live mode. The 14-day trial subscription must be canceled in Stripe dashboard before 2026-06-02.
+
+### Auth setup applied
+
+- Supabase Custom SMTP wired to Resend — config recorded in `docs/SUPABASE_AUTH_CONFIG.md`.
+- Auth rate limit bumped to 100 emails/hour (from 30) to accommodate active testing.
+- `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_SITE_URL` re-added without `--sensitive` flag earlier in the day (yesterday's fix) — offboarding email links now point to prod, not localhost.
+- `RESEND_API_KEY`, `STRIPE_*` env vars confirmed present in Vercel production.
