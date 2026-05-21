@@ -156,7 +156,7 @@ export function OnboardingSuccessModal({
               <Share2 size={18} style={{ color: "var(--nly-brand)" }} />
               <span
                 className="text-xs font-medium text-center"
-                style={{ color: "var(--nly-text-secondary)" }}
+                style={{ color: "var(--nly-input-text)" }}
               >
                 Share Code
               </span>
@@ -175,7 +175,7 @@ export function OnboardingSuccessModal({
               <CalendarPlus size={18} style={{ color: "var(--nly-accent)" }} />
               <span
                 className="text-xs font-medium text-center"
-                style={{ color: "var(--nly-text-secondary)" }}
+                style={{ color: "var(--nly-input-text)" }}
               >
                 Create Event
               </span>
@@ -194,7 +194,7 @@ export function OnboardingSuccessModal({
               <Megaphone size={18} style={{ color: "var(--nly-warning)" }} />
               <span
                 className="text-xs font-medium text-center"
-                style={{ color: "var(--nly-text-secondary)" }}
+                style={{ color: "var(--nly-input-text)" }}
               >
                 Announce
               </span>
