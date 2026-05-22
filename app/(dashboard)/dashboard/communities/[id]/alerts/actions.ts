@@ -25,12 +25,13 @@ export async function createAlert(
     return { error: "Title, message, and priority are required" };
   }
 
+  // created_by FKs to profiles.id; property managers live in property_managers,
+  // not profiles, so we leave it null for PM-authored community alerts.
   const { error } = await supabase.from("alerts").insert({
     community_code: communityCode,
     title,
     message,
     priority: priority as "urgent" | "high" | "medium" | "low",
-    created_by: user.id,
     is_active: true,
     is_pinned: isPinned,
     valid_until: validUntil || null,
