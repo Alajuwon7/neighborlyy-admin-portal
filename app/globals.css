@@ -274,6 +274,7 @@
      `color: var(--nly-text-primary)` resolves to dark text without touching
      each component. Placeholder pseudo gets its own color. */
   [data-slot="input"],
+  [data-slot="select-trigger"],
   input,
   textarea,
   select {
