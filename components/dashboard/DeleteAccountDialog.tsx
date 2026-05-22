@@ -176,7 +176,7 @@ export function DeleteAccountDialog({
               <div
                 className="rounded-xl p-4 space-y-3 text-xs"
                 style={{
-                  backgroundColor: "var(--nly-info-bg, rgba(47,196,211,0.08))",
+                  backgroundColor: "rgba(47, 196, 211, 0.08)",
                   border: "1px solid var(--nly-border)",
                 }}
               >

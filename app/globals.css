@@ -263,10 +263,34 @@
     @apply min-h-[44px] min-w-[44px];
   }
 
-  /* Input focus glow */
-  [data-slot="input"]:focus-visible {
+  /* Input focus glow — also applied to form select triggers so they get the
+     same subtle glow instead of the harsh gray shadcn `ring-ring/50` halo
+     (which read as a doubled/offset outline around the light tile). */
+  [data-slot="input"]:focus-visible,
+  [data-slot="select-trigger"]:focus-visible {
     border-color: var(--nly-input-border-focus) !important;
     box-shadow: 0 0 0 3px var(--nly-input-focus-glow) !important;
+  }
+
+  /* Native constraint-validation feedback. `:user-invalid` (not `:invalid`)
+     only fires once the user has interacted with the field or attempted to
+     submit, so pristine fields never look like errors. Gives every native
+     input/textarea (incl. base-ui `Input`) a red border + red glow when left
+     empty-required or failing its `pattern`. base-ui `Select` renders its
+     control as a button, so it can't match `:user-invalid` — selects fall back
+     to the browser's native validation bubble. */
+  [data-slot="input"]:user-invalid,
+  input:user-invalid,
+  textarea:user-invalid,
+  select:user-invalid {
+    border-color: var(--nly-input-border-error) !important;
+  }
+
+  [data-slot="input"]:user-invalid:focus-visible,
+  input:user-invalid:focus-visible,
+  textarea:user-invalid:focus-visible,
+  select:user-invalid:focus-visible {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18) !important;
   }
 
   /* Inputs, textareas, and selects use light bg with dark text. We rebind

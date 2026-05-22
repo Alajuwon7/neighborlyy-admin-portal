@@ -39,6 +39,28 @@ export async function inviteTeamMember(formData: FormData) {
   return { success: true };
 }
 
+export async function updateTeamMemberRole(
+  memberId: string,
+  role: "manager" | "assistant_manager" | "leasing_agent"
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("team_members")
+    .update({ role })
+    .eq("id", memberId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard/team");
+  return { success: true };
+}
+
 export async function updateTeamMemberStatus(
   memberId: string,
   status: "active" | "deactivated"

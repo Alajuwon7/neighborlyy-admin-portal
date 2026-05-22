@@ -21,12 +21,18 @@ export function PostFormDialog({ communityCode }: { communityCode: string }) {
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
-    const result = await createPost(formData, communityCode);
-    setLoading(false);
-    if (result.error) toast.error(result.error);
-    else {
-      toast.success("Post published — visible to residents in the app");
-      setOpen(false);
+    try {
+      const result = await createPost(formData, communityCode);
+      if (result.error) toast.error(result.error);
+      else {
+        toast.success("Post published — visible to residents in the app");
+        setOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to publish post:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -46,7 +52,7 @@ export function PostFormDialog({ communityCode }: { communityCode: string }) {
         New Post
       </DialogTrigger>
       <DialogContent
-        className="border"
+        className="border sm:max-w-md"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",

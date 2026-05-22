@@ -131,14 +131,14 @@ function EventCard({
 
   return (
     <div
-      className="nly-card-hover rounded-2xl border p-4 space-y-3 group relative"
+      className="nly-card-hover rounded-2xl border p-5 space-y-3 group relative"
       style={{
         backgroundColor: "var(--nly-surface)",
         borderColor: "var(--nly-border)",
       }}
     >
       {/* Edit/Delete actions */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-3 right-3">
         <EventCardActions event={event} communityId={communityId} />
       </div>
 

@@ -37,24 +37,36 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
   const handleDelete = async () => {
     if (!confirm(`Delete "${event.title}"? This will remove it from the resident app.`)) return;
     setDeleting(true);
-    const result = await deleteEvent(event.id, communityId);
-    setDeleting(false);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      toast.success("Event deleted");
+    try {
+      const result = await deleteEvent(event.id, communityId);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Event deleted");
+      }
+    } catch (err) {
+      console.error("Failed to delete event:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setDeleting(false);
     }
   };
 
   const handleEdit = async (formData: FormData) => {
     setEditLoading(true);
-    const result = await updateEvent(event.id, formData, communityId);
-    setEditLoading(false);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      toast.success("Event updated");
-      setEditOpen(false);
+    try {
+      const result = await updateEvent(event.id, formData, communityId);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Event updated");
+        setEditOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to update event:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -71,29 +83,27 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
 
   return (
     <>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={() => setEditOpen(true)}
-          className="w-7 h-7 flex items-center justify-center rounded-lg transition-all hover:bg-[var(--nly-surface-hover)]"
-          style={{ color: "var(--nly-text-tertiary)" }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--nly-border)] bg-[var(--nly-surface-hover)] text-[var(--nly-text-secondary)] transition-all hover:text-[var(--nly-brand)] hover:border-[var(--nly-border-hover)]"
           title="Edit event"
         >
-          <Pencil size={13} />
+          <Pencil size={15} />
         </button>
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className="w-7 h-7 flex items-center justify-center rounded-lg transition-all hover:bg-[var(--nly-surface-hover)]"
-          style={{ color: "var(--nly-text-tertiary)" }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--nly-border)] bg-[var(--nly-surface-hover)] text-[var(--nly-text-secondary)] transition-all hover:text-[var(--nly-error)] hover:border-[var(--nly-error)] hover:bg-[var(--nly-error-bg)] disabled:opacity-50"
           title="Delete event"
         >
-          <Trash2 size={13} />
+          <Trash2 size={15} />
         </button>
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent
-          className="border"
+          className="border sm:max-w-md max-h-[90vh] overflow-y-auto"
           style={{
             backgroundColor: "var(--nly-surface)",
             borderColor: "var(--nly-border)",

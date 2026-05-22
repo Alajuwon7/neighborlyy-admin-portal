@@ -75,7 +75,7 @@ export function FinalConfirmation({ requestId }: FinalConfirmationProps) {
   if (phase === "complete") {
     return (
       <section
-        className="rounded-2xl border p-6 space-y-4 text-center"
+        className="rounded-2xl border p-5 space-y-4 text-center"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",

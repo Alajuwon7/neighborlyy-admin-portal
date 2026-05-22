@@ -29,32 +29,37 @@ export function EventFormDialog({
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
+    try {
+      const date = formData.get("event_date") as string;
+      const timeStart = formData.get("event_time_start") as string;
+      const timeEnd = formData.get("event_time_end") as string;
 
-    const date = formData.get("event_date") as string;
-    const timeStart = formData.get("event_time_start") as string;
-    const timeEnd = formData.get("event_time_end") as string;
+      const startLocal = new Date(`${date}T${timeStart}`);
+      formData.set("event_date", startLocal.toISOString());
 
-    const startLocal = new Date(`${date}T${timeStart}`);
-    formData.set("event_date", startLocal.toISOString());
+      if (timeEnd) {
+        const endLocal = new Date(`${date}T${timeEnd}`);
+        const endFormatted = endLocal.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const existing = ((formData.get("description") as string) || "").trim();
+        formData.set("description", `${existing}\n\nEnds at: ${endFormatted}`);
+      }
 
-    if (timeEnd) {
-      const endLocal = new Date(`${date}T${timeEnd}`);
-      const endFormatted = endLocal.toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      const existing = ((formData.get("description") as string) || "").trim();
-      formData.set("description", `${existing}\n\nEnds at: ${endFormatted}`);
-    }
-
-    const result = await createEvent(formData, communityCode, communityId);
-    setLoading(false);
-    if (result.error) toast.error(result.error);
-    else {
-      toast.success("Event created — visible to residents in the app");
-      setOpen(false);
+      const result = await createEvent(formData, communityCode, communityId);
+      if (result.error) toast.error(result.error);
+      else {
+        toast.success("Event created — visible to residents in the app");
+        setOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to create event:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -74,7 +79,7 @@ export function EventFormDialog({
         Create Event
       </DialogTrigger>
       <DialogContent
-        className="border"
+        className="border sm:max-w-md max-h-[90vh] overflow-y-auto"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",

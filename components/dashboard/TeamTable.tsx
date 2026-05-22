@@ -1,21 +1,16 @@
 "use client";
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
-import { updateTeamMemberStatus } from "@/app/(dashboard)/dashboard/team/actions";
+import { MoreHorizontal, ChevronDown, Check } from "lucide-react";
+import {
+  updateTeamMemberStatus,
+  updateTeamMemberRole,
+} from "@/app/(dashboard)/dashboard/team/actions";
 import { toast } from "sonner";
 
 interface TeamMember {
@@ -35,10 +30,16 @@ const ROLE_LABELS: Record<string, string> = {
   leasing_agent: "Leasing Agent",
 };
 
-const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  active: { bg: "rgba(16, 185, 129, 0.1)", color: "var(--nly-success)" },
-  invited: { bg: "rgba(245, 158, 11, 0.1)", color: "var(--nly-warning)" },
-  deactivated: { bg: "rgba(239, 68, 68, 0.1)", color: "var(--nly-error)" },
+const EDITABLE_ROLES = [
+  "manager",
+  "assistant_manager",
+  "leasing_agent",
+] as const;
+
+const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
+  active: { label: "Active", bg: "rgba(16, 185, 129, 0.12)", color: "var(--nly-success)" },
+  invited: { label: "Pending", bg: "rgba(245, 158, 11, 0.12)", color: "var(--nly-warning)" },
+  deactivated: { label: "Deactivated", bg: "rgba(239, 68, 68, 0.12)", color: "var(--nly-error)" },
 };
 
 export function TeamTable({ members }: { members: TeamMember[] }) {
@@ -46,11 +47,35 @@ export function TeamTable({ members }: { members: TeamMember[] }) {
     memberId: string,
     status: "active" | "deactivated"
   ) {
-    const result = await updateTeamMemberStatus(memberId, status);
-    if (result.error) {
-      toast.error(result.error);
-    } else {
-      toast.success(`Member ${status === "active" ? "activated" : "deactivated"}`);
+    try {
+      const result = await updateTeamMemberStatus(memberId, status);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(
+          `Member ${status === "active" ? "activated" : "deactivated"}`
+        );
+      }
+    } catch (err) {
+      console.error("Failed to update member status:", err);
+      toast.error("Something went wrong. Please try again.");
+    }
+  }
+
+  async function handleRoleChange(
+    memberId: string,
+    role: (typeof EDITABLE_ROLES)[number]
+  ) {
+    try {
+      const result = await updateTeamMemberRole(memberId, role);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Role updated");
+      }
+    } catch (err) {
+      console.error("Failed to update member role:", err);
+      toast.error("Something went wrong. Please try again.");
     }
   }
 
@@ -78,127 +103,133 @@ export function TeamTable({ members }: { members: TeamMember[] }) {
         borderColor: "var(--nly-border)",
       }}
     >
-      <Table>
-        <TableHeader>
-          <TableRow style={{ borderColor: "var(--nly-border)" }}>
-            <TableHead
-              className="text-xs font-medium"
-              style={{ color: "var(--nly-text-tertiary)" }}
+      {members.map((m) => {
+        const status = STATUS_CONFIG[m.status] ?? STATUS_CONFIG.deactivated;
+        const initial = (m.full_name || m.email || "?").charAt(0).toUpperCase();
+        const isOwner = m.role === "owner";
+        return (
+          <div
+            key={m.id}
+            className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b last:border-b-0"
+            style={{ borderColor: "var(--nly-divider)" }}
+          >
+            {/* Avatar */}
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+              style={{
+                backgroundColor: "rgba(47, 196, 211, 0.12)",
+                color: "var(--nly-brand)",
+              }}
             >
-              Name
-            </TableHead>
-            <TableHead
-              className="text-xs font-medium"
-              style={{ color: "var(--nly-text-tertiary)" }}
-            >
-              Email
-            </TableHead>
-            <TableHead
-              className="text-xs font-medium"
-              style={{ color: "var(--nly-text-tertiary)" }}
-            >
-              Role
-            </TableHead>
-            <TableHead
-              className="text-xs font-medium"
-              style={{ color: "var(--nly-text-tertiary)" }}
-            >
-              Community
-            </TableHead>
-            <TableHead
-              className="text-xs font-medium"
-              style={{ color: "var(--nly-text-tertiary)" }}
-            >
-              Status
-            </TableHead>
-            <TableHead className="w-10" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.map((m) => {
-            const statusStyle =
-              STATUS_STYLES[m.status] ?? STATUS_STYLES.deactivated;
-            return (
-              <TableRow
-                key={m.id}
-                style={{ borderColor: "var(--nly-divider)" }}
-              >
-                <TableCell
-                  className="text-sm font-medium"
+              {initial}
+            </div>
+
+            {/* Name + email + community */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p
+                  className="text-sm font-medium truncate"
                   style={{ color: "var(--nly-text-primary)" }}
                 >
                   {m.full_name}
-                </TableCell>
-                <TableCell
-                  className="text-sm"
-                  style={{ color: "var(--nly-text-secondary)" }}
+                </p>
+                <span
+                  className="text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0"
+                  style={{ backgroundColor: status.bg, color: status.color }}
                 >
-                  {m.email}
-                </TableCell>
-                <TableCell
-                  className="text-sm capitalize"
-                  style={{ color: "var(--nly-text-secondary)" }}
+                  {status.label}
+                </span>
+              </div>
+              <p
+                className="text-xs truncate"
+                style={{ color: "var(--nly-text-tertiary)" }}
+              >
+                {m.email} · {m.community_name}
+              </p>
+            </div>
+
+            {/* Role */}
+            {isOwner ? (
+              <span
+                className="text-xs font-medium px-2.5 py-1 rounded-lg border shrink-0"
+                style={{
+                  borderColor: "var(--nly-border)",
+                  color: "var(--nly-text-secondary)",
+                }}
+              >
+                Owner
+              </span>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition-opacity hover:opacity-80 shrink-0"
+                  style={{
+                    borderColor: "var(--nly-border)",
+                    color: "var(--nly-text-secondary)",
+                  }}
                 >
                   {ROLE_LABELS[m.role] ?? m.role}
-                </TableCell>
-                <TableCell
-                  className="text-sm"
-                  style={{ color: "var(--nly-text-secondary)" }}
+                  <ChevronDown size={12} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  style={{
+                    backgroundColor: "var(--nly-surface)",
+                    borderColor: "var(--nly-border)",
+                  }}
                 >
-                  {m.community_name}
-                </TableCell>
-                <TableCell>
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full font-medium capitalize"
-                    style={{
-                      backgroundColor: statusStyle.bg,
-                      color: statusStyle.color,
-                    }}
+                  {EDITABLE_ROLES.map((r) => (
+                    <DropdownMenuItem
+                      key={r}
+                      onClick={() => handleRoleChange(m.id, r)}
+                      style={{ color: "var(--nly-text-primary)" }}
+                    >
+                      <span className="flex-1">{ROLE_LABELS[r]}</span>
+                      {m.role === r && (
+                        <Check size={14} style={{ color: "var(--nly-brand)" }} />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="p-1.5 rounded-lg transition-opacity hover:opacity-80 shrink-0"
+                style={{ color: "var(--nly-text-tertiary)" }}
+              >
+                <MoreHorizontal size={16} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                style={{
+                  backgroundColor: "var(--nly-surface)",
+                  borderColor: "var(--nly-border)",
+                }}
+              >
+                {m.status !== "active" && (
+                  <DropdownMenuItem
+                    onClick={() => handleStatusChange(m.id, "active")}
+                    style={{ color: "var(--nly-text-primary)" }}
                   >
-                    {m.status}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      className="p-1.5 rounded-lg transition-opacity hover:opacity-80"
-                      style={{ color: "var(--nly-text-tertiary)" }}
-                    >
-                      <MoreHorizontal size={16} />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      style={{
-                        backgroundColor: "var(--nly-surface)",
-                        borderColor: "var(--nly-border)",
-                      }}
-                    >
-                      {m.status !== "active" && (
-                        <DropdownMenuItem
-                          onClick={() => handleStatusChange(m.id, "active")}
-                          style={{ color: "var(--nly-text-primary)" }}
-                        >
-                          Activate
-                        </DropdownMenuItem>
-                      )}
-                      {m.status !== "deactivated" && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleStatusChange(m.id, "deactivated")
-                          }
-                          className="text-red-400"
-                        >
-                          Deactivate
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                    Activate
+                  </DropdownMenuItem>
+                )}
+                {m.status !== "deactivated" && (
+                  <DropdownMenuItem
+                    onClick={() => handleStatusChange(m.id, "deactivated")}
+                    className="text-red-400"
+                  >
+                    Deactivate
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      })}
     </div>
   );
 }

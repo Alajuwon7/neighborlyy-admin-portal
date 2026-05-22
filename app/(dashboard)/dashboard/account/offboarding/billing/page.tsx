@@ -70,7 +70,7 @@ export default async function BillingPage() {
 
       {isBlocked && (
         <div
-          className="rounded-2xl border p-4 text-sm"
+          className="rounded-2xl border p-5 text-sm"
           style={{ borderColor: "var(--nly-error)", color: "var(--nly-error)" }}
           role="alert"
         >

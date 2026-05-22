@@ -38,14 +38,20 @@ export function FacilityFormDialog({
     formData.set("name", name);
 
     setLoading(true);
-    const result = await createFacility(formData, communityCode, communityId);
-    setLoading(false);
-    if (result.error) toast.error(result.error);
-    else {
-      toast.success("Facility added");
-      setPreset("");
-      setCustomName("");
-      setOpen(false);
+    try {
+      const result = await createFacility(formData, communityCode, communityId);
+      if (result.error) toast.error(result.error);
+      else {
+        toast.success("Facility added");
+        setPreset("");
+        setCustomName("");
+        setOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to add facility:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -65,7 +71,7 @@ export function FacilityFormDialog({
         Add Facility
       </DialogTrigger>
       <DialogContent
-        className="border max-h-[90vh] overflow-y-auto"
+        className="border sm:max-w-md max-h-[90vh] overflow-y-auto"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",

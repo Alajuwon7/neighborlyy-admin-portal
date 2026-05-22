@@ -109,7 +109,7 @@ export function BillingClient({ deletionRequestId, initialCommunities }: Billing
         return (
           <div
             key={c.id}
-            className="rounded-2xl border p-4 space-y-2"
+            className="rounded-2xl border p-5 space-y-2"
             style={{ backgroundColor: "var(--nly-surface)", borderColor: "var(--nly-border)" }}
           >
             <div className="flex items-start justify-between gap-3">
@@ -161,7 +161,7 @@ export function BillingClient({ deletionRequestId, initialCommunities }: Billing
 
       {showStallHelp && (
         <div
-          className="rounded-2xl border p-4 text-sm space-y-2"
+          className="rounded-2xl border p-5 text-sm space-y-2"
           style={{ borderColor: "var(--nly-warning)", color: "var(--nly-text-primary)" }}
         >
           <p>

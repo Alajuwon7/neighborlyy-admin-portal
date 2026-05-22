@@ -51,7 +51,7 @@ export default async function CommunitiesPage() {
       <DashboardAnimatedShell>
         {/* Actions bar */}
         <DashboardSection delay={0}>
-          <div className="flex items-center justify-between max-w-5xl">
+          <div className="flex items-center justify-between">
             <h2
               className="text-sm font-medium"
               style={{ color: "var(--nly-text-secondary)" }}
@@ -72,7 +72,7 @@ export default async function CommunitiesPage() {
         {communities.length === 0 ? (
           <DashboardSection delay={0.1}>
             <div
-              className="rounded-2xl border p-12 text-center max-w-5xl"
+              className="rounded-2xl border p-12 text-center"
               style={{
                 backgroundColor: "var(--nly-surface)",
                 borderColor: "var(--nly-border)",
@@ -87,7 +87,7 @@ export default async function CommunitiesPage() {
             </div>
           </DashboardSection>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-5xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {communities.map((c, i) => (
               <CommunityCard key={c.id} {...c} index={i} />
             ))}

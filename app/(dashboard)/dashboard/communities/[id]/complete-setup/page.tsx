@@ -5,6 +5,14 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, Smartphone } from "lucide-react";
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { use } from "react";
 
 const PROPERTY_TYPES = [
@@ -102,7 +110,8 @@ export default function CompleteSetupPage({
       .eq("id", community.id);
 
     if (updateError) {
-      setError(updateError.message);
+      console.error("Failed to save community details:", updateError);
+      setError("Couldn't save your changes. Please try again.");
       setSaving(false);
       return;
     }
@@ -132,8 +141,8 @@ export default function CompleteSetupPage({
   }
 
   const inputStyle = {
-    backgroundColor: "var(--nly-bg)",
-    borderColor: "var(--nly-border)",
+    backgroundColor: "var(--nly-input-bg)",
+    borderColor: "var(--nly-input-border)",
     color: "var(--nly-text-primary)",
   };
 
@@ -150,7 +159,7 @@ export default function CompleteSetupPage({
         </Link>
 
         <div
-          className="rounded-2xl border p-6 space-y-6"
+          className="rounded-2xl border p-5 space-y-6"
           style={{
             backgroundColor: "var(--nly-surface)",
             borderColor: "var(--nly-border)",
@@ -197,13 +206,12 @@ export default function CompleteSetupPage({
               >
                 Street Address *
               </label>
-              <input
+              <Input
                 type="text"
                 required
                 value={streetAddress}
                 onChange={(e) => setStreetAddress(e.target.value)}
                 placeholder="123 Main St"
-                className="w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-offset-1"
                 style={inputStyle}
               />
             </div>
@@ -216,13 +224,12 @@ export default function CompleteSetupPage({
                 >
                   City *
                 </label>
-                <input
+                <Input
                   type="text"
                   required
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="Atlanta"
-                  className="w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-offset-1"
                   style={inputStyle}
                 />
               </div>
@@ -233,20 +240,24 @@ export default function CompleteSetupPage({
                 >
                   State *
                 </label>
-                <select
+                <Select
+                  name="state"
                   required
                   value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-offset-1"
-                  style={inputStyle}
+                  onValueChange={(v) => setState(v as string)}
+                  items={Object.fromEntries(US_STATES.map((s) => [s, s]))}
                 >
-                  <option value="">Select state</option>
-                  {US_STATES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger variant="form">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent variant="form">
+                    {US_STATES.map((s) => (
+                      <SelectItem key={s} value={s} variant="form">
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -258,14 +269,13 @@ export default function CompleteSetupPage({
                 >
                   ZIP Code *
                 </label>
-                <input
+                <Input
                   type="text"
                   required
                   value={zipCode}
                   onChange={(e) => setZipCode(e.target.value)}
                   placeholder="30303"
                   pattern="[0-9]{5}"
-                  className="w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-offset-1"
                   style={inputStyle}
                 />
               </div>
@@ -276,14 +286,13 @@ export default function CompleteSetupPage({
                 >
                   Unit Count *
                 </label>
-                <input
+                <Input
                   type="number"
                   required
                   min={1}
                   value={unitCount}
                   onChange={(e) => setUnitCount(e.target.value)}
                   placeholder="100"
-                  className="w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-offset-1"
                   style={inputStyle}
                 />
               </div>
@@ -296,20 +305,26 @@ export default function CompleteSetupPage({
               >
                 Property Type *
               </label>
-              <select
+              <Select
+                name="property_type"
                 required
                 value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-offset-1"
-                style={inputStyle}
+                onValueChange={(v) => setPropertyType(v as string)}
+                items={Object.fromEntries(
+                  PROPERTY_TYPES.map((pt) => [pt.value, pt.label])
+                )}
               >
-                <option value="">Select type</option>
-                {PROPERTY_TYPES.map((pt) => (
-                  <option key={pt.value} value={pt.value}>
-                    {pt.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger variant="form">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent variant="form">
+                  {PROPERTY_TYPES.map((pt) => (
+                    <SelectItem key={pt.value} value={pt.value} variant="form">
+                      {pt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {error && (

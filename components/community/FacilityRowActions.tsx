@@ -47,33 +47,49 @@ export function FacilityRowActions({
 
   async function handleEdit(formData: FormData) {
     setLoading(true);
-    const result = await updateFacility(facility.id, formData, communityId);
-    setLoading(false);
-    if (result.error) toast.error(result.error);
-    else {
-      toast.success("Facility updated");
-      setEditOpen(false);
+    try {
+      const result = await updateFacility(facility.id, formData, communityId);
+      if (result.error) toast.error(result.error);
+      else {
+        toast.success("Facility updated");
+        setEditOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to update facility:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleToggle() {
-    const result = await toggleFacilityAvailability(
-      facility.id,
-      !facility.available,
-      communityId
-    );
-    if (result.error) toast.error(result.error);
-    else
-      toast.success(
-        facility.available ? "Marked unavailable" : "Marked available"
+    try {
+      const result = await toggleFacilityAvailability(
+        facility.id,
+        !facility.available,
+        communityId
       );
+      if (result.error) toast.error(result.error);
+      else
+        toast.success(
+          facility.available ? "Marked unavailable" : "Marked available"
+        );
+    } catch (err) {
+      console.error("Failed to toggle facility availability:", err);
+      toast.error("Something went wrong. Please try again.");
+    }
   }
 
   async function handleDelete() {
     if (!confirm(`Delete "${facility.name}"? This cannot be undone.`)) return;
-    const result = await deleteFacility(facility.id, communityId);
-    if (result.error) toast.error(result.error);
-    else toast.success("Facility deleted");
+    try {
+      const result = await deleteFacility(facility.id, communityId);
+      if (result.error) toast.error(result.error);
+      else toast.success("Facility deleted");
+    } catch (err) {
+      console.error("Failed to delete facility:", err);
+      toast.error("Something went wrong. Please try again.");
+    }
   }
 
   const iconBtn =
@@ -115,7 +131,7 @@ export function FacilityRowActions({
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent
-          className="border"
+          className="border sm:max-w-md max-h-[90vh] overflow-y-auto"
           style={{
             backgroundColor: "var(--nly-surface)",
             borderColor: "var(--nly-border)",

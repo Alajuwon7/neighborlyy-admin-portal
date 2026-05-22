@@ -42,12 +42,18 @@ export function CreateAlertDialog({
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
-    const result = await createAlert(formData, communityCode, communityId);
-    setLoading(false);
-    if (result.error) toast.error(result.error);
-    else {
-      toast.success("Alert sent — visible to residents in the app");
-      setOpen(false);
+    try {
+      const result = await createAlert(formData, communityCode, communityId);
+      if (result.error) toast.error(result.error);
+      else {
+        toast.success("Alert sent — visible to residents in the app");
+        setOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to send alert:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -67,7 +73,7 @@ export function CreateAlertDialog({
         Send Alert
       </DialogTrigger>
       <DialogContent
-        className="border"
+        className="border sm:max-w-md"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",
@@ -110,17 +116,12 @@ export function CreateAlertDialog({
                 Priority
               </Label>
               <Select name="priority" required>
-                <SelectTrigger className="border" style={inputStyle}>
+                <SelectTrigger variant="form">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
-                <SelectContent
-                  style={{
-                    backgroundColor: "var(--nly-surface)",
-                    borderColor: "var(--nly-border)",
-                  }}
-                >
+                <SelectContent variant="form">
                   {PRIORITIES.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>
+                    <SelectItem key={p.value} value={p.value} variant="form">
                       <span className="flex items-center gap-2">
                         <span
                           className="w-2 h-2 rounded-full"
