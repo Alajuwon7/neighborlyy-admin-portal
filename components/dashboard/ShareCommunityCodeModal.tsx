@@ -139,19 +139,19 @@ Welcome to ${communityName}!`;
         >
           <p
             className="text-xs font-semibold mb-2"
-            style={{ color: "var(--nly-text-tertiary)" }}
+            style={{ color: "var(--nly-input-text)" }}
           >
             COMMUNITY CODE
           </p>
           <p
             className="text-2xl sm:text-3xl font-mono font-bold tracking-widest"
-            style={{ color: "var(--nly-brand)" }}
+            style={{ color: "var(--nly-input-text)" }}
           >
             {communityCode}
           </p>
           <p
             className="text-xs mt-2"
-            style={{ color: "var(--nly-text-tertiary)" }}
+            style={{ color: "var(--nly-input-text)" }}
           >
             Residents enter this code to join {communityName}
           </p>
@@ -195,12 +195,12 @@ Welcome to ${communityName}!`;
                 className="w-36 h-36 sm:w-44 sm:h-44 rounded-lg flex items-center justify-center"
                 style={{ backgroundColor: "var(--nly-border)" }}
               >
-                <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+                <p className="text-xs" style={{ color: "var(--nly-input-text)" }}>
                   Generating...
                 </p>
               </div>
             )}
-            <p className="text-xs text-center" style={{ color: "var(--nly-text-tertiary)" }}>
+            <p className="text-xs text-center" style={{ color: "var(--nly-input-text)" }}>
               Residents can scan this to download the app and join
             </p>
             <button
@@ -208,7 +208,7 @@ Welcome to ${communityName}!`;
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium border transition-opacity hover:opacity-80"
               style={{
                 borderColor: "var(--nly-border)",
-                color: "var(--nly-text-secondary)",
+                color: "var(--nly-input-text)",
               }}
             >
               <Download size={14} />
@@ -241,7 +241,7 @@ Welcome to ${communityName}!`;
             style={{
               backgroundColor: "var(--nly-input-bg)",
               borderColor: "var(--nly-border)",
-              color: "var(--nly-text-secondary)",
+              color: "var(--nly-input-text)",
               maxHeight: "150px",
               overflowY: "auto",
             }}
@@ -267,12 +267,12 @@ Welcome to ${communityName}!`;
               backgroundColor: "var(--nly-input-bg)",
             }}
           >
-            <FileText size={18} style={{ color: "var(--nly-brand)" }} />
+            <FileText size={18} style={{ color: "var(--nly-input-text)" }} />
             <div className="text-left">
-              <p className="text-sm font-medium" style={{ color: "var(--nly-text-primary)" }}>
+              <p className="text-sm font-medium" style={{ color: "var(--nly-input-text)" }}>
                 {generatingFlyer ? "Generating..." : "Download Welcome Flyer"}
               </p>
-              <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+              <p className="text-xs" style={{ color: "var(--nly-input-text)" }}>
                 PDF with QR code and join instructions — print and post in your building
               </p>
             </div>
