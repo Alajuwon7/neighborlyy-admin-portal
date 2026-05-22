@@ -10,6 +10,7 @@ interface SummaryCardProps {
   subtext?: string;
   icon: ReactNode;
   trend?: { value: string; positive: boolean };
+  footer?: ReactNode;
   accentColor?: string;
   index?: number;
 }
@@ -20,6 +21,7 @@ export function SummaryCard({
   subtext,
   icon,
   trend,
+  footer,
   accentColor = "var(--nly-brand)",
   index = 0,
 }: SummaryCardProps) {
@@ -64,7 +66,7 @@ export function SummaryCard({
 
       <div className="relative">
         <motion.p
-          className="text-3xl font-bold tabular-nums"
+          className="text-4xl font-bold tabular-nums leading-none"
           style={{ color: "var(--nly-text-primary)" }}
           initial={{ opacity: 0, y: 8 }}
           animate={isInView ? { opacity: 1, y: 0 } : undefined}
@@ -73,11 +75,13 @@ export function SummaryCard({
           {value}
         </motion.p>
         {subtext && (
-          <p className="text-xs mt-0.5" style={{ color: "var(--nly-text-tertiary)" }}>
+          <p className="text-xs mt-1.5" style={{ color: "var(--nly-text-tertiary)" }}>
             {subtext}
           </p>
         )}
       </div>
+
+      {footer && <div className="relative mt-auto pt-1">{footer}</div>}
 
       {trend && (
         <div className="flex items-center gap-1.5">

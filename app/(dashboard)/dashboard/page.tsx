@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { differenceInDays, differenceInHours } from "date-fns";
 import { Building2, Users, Clock, AlertTriangle } from "lucide-react";
 import { Header } from "@/components/dashboard/Header";
@@ -82,6 +83,8 @@ export default async function DashboardPage({
 
   const totalUnits = communities.reduce((sum, c) => sum + (c.unit_count ?? 0), 0);
   const activeCommunities = communities.filter((c) => c.status !== "cancelled").length;
+  const activeCount = communities.filter((c) => c.status === "active").length;
+  const trialCount = communities.filter((c) => c.status === "trial").length;
 
   // Determine if this is a new user (community created within last 24 hours)
   const hoursSinceCreation = differenceInHours(
@@ -101,6 +104,11 @@ export default async function DashboardPage({
     supabase.from("pending_users").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
     supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
   ]);
+
+  const occupancyPct =
+    totalUnits > 0
+      ? Math.min(100, Math.round(((residentCount ?? 0) / totalUnits) * 100))
+      : 0;
 
   // Build activity feed from recent events across tables
   const communityNameByCode = new Map(communities.map((c) => [c.community_code, c.name]));
@@ -249,6 +257,15 @@ export default async function DashboardPage({
               subtext={`${totalUnits.toLocaleString()} total units`}
               icon={<Building2 size={22} style={{ color: "var(--nly-brand)" }} />}
               accentColor="var(--nly-brand)"
+              footer={
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--nly-text-tertiary)" }}
+                >
+                  {activeCount} active
+                  {trialCount > 0 ? ` · ${trialCount} on trial` : ""}
+                </p>
+              }
               index={0}
             />
             <SummaryCard
@@ -261,6 +278,29 @@ export default async function DashboardPage({
               }
               icon={<Users size={22} style={{ color: "var(--nly-accent)" }} />}
               accentColor="var(--nly-accent)"
+              footer={
+                <div>
+                  <div
+                    className="h-1.5 w-full rounded-full overflow-hidden"
+                    style={{ backgroundColor: "var(--nly-border)" }}
+                  >
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${occupancyPct}%`,
+                        backgroundColor: "var(--nly-accent)",
+                      }}
+                    />
+                  </div>
+                  <p
+                    className="text-xs mt-1.5"
+                    style={{ color: "var(--nly-text-tertiary)" }}
+                  >
+                    {occupancyPct}% occupied · {(residentCount ?? 0).toLocaleString()}{" "}
+                    {residentCount === 1 ? "resident" : "residents"}
+                  </p>
+                </div>
+              }
               index={1}
             />
             <SummaryCard
@@ -273,6 +313,21 @@ export default async function DashboardPage({
               }
               icon={<Clock size={22} style={{ color: "var(--nly-warning)" }} />}
               accentColor="var(--nly-warning)"
+              footer={
+                <p
+                  className="text-xs font-medium"
+                  style={{
+                    color:
+                      (pendingCount ?? 0) > 0
+                        ? "var(--nly-warning)"
+                        : "var(--nly-success)",
+                  }}
+                >
+                  {(pendingCount ?? 0) > 0
+                    ? "Awaiting your review"
+                    : "All caught up"}
+                </p>
+              }
               index={2}
             />
             <SummaryCard
@@ -285,6 +340,16 @@ export default async function DashboardPage({
               }
               icon={<AlertTriangle size={22} style={{ color: "var(--nly-error)" }} />}
               accentColor="var(--nly-error)"
+              footer={
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--nly-text-tertiary)" }}
+                >
+                  {(alertCount ?? 0) > 0
+                    ? "Visible in the resident app"
+                    : "None active right now"}
+                </p>
+              }
               index={3}
             />
           </div>
@@ -319,17 +384,17 @@ export default async function DashboardPage({
                 >
                   Your Communities
                 </h3>
-                <a
+                <Link
                   href="/dashboard/communities"
                   className="text-xs hover:underline transition-colors duration-200"
                   style={{ color: "var(--nly-accent)" }}
                 >
                   View all →
-                </a>
+                </Link>
               </div>
               <div className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>
                 {communities.map((c) => (
-                  <a
+                  <Link
                     key={c.id}
                     href={`/dashboard/communities/${c.id}`}
                     className="flex items-center gap-3 px-5 py-3.5 transition-all duration-200 hover:bg-[var(--nly-surface-hover)] group"
@@ -373,7 +438,7 @@ export default async function DashboardPage({
                     >
                       {c.status}
                     </span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
