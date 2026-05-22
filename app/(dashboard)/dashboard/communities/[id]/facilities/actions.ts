@@ -18,7 +18,6 @@ export async function createFacility(
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
   const capacityRaw = formData.get("capacity") as string;
-  const imageUrl = formData.get("image_url") as string;
   const openTime = formData.get("open_time") as string;
   const closeTime = formData.get("close_time") as string;
 
@@ -31,7 +30,6 @@ export async function createFacility(
     name,
     description: description || null,
     capacity,
-    image_url: imageUrl || null,
     open_time: openTime || null,
     close_time: closeTime || null,
     available: true,
@@ -81,7 +79,6 @@ export async function updateFacility(
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
   const capacityRaw = formData.get("capacity") as string;
-  const imageUrl = formData.get("image_url") as string;
   const openTime = formData.get("open_time") as string;
   const closeTime = formData.get("close_time") as string;
 
@@ -95,7 +92,6 @@ export async function updateFacility(
       name,
       description: description || null,
       capacity,
-      image_url: imageUrl || null,
       open_time: openTime || null,
       close_time: closeTime || null,
     })

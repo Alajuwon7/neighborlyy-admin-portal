@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { OnboardingTip } from "@/components/onboarding/OnboardingTip";
+import { FACILITY_OPTIONS } from "@/lib/facilities";
 
 const SMART_DEFAULTS: Record<string, string[]> = {
   apartment: ["pool", "gym", "clubhouse", "parking", "laundry", "package_room"],
@@ -7,27 +8,6 @@ const SMART_DEFAULTS: Record<string, string[]> = {
   senior: ["clubhouse", "spa", "conference", "parking", "package_room"],
   condo: ["pool", "gym", "rooftop", "parking", "ev_charging", "conference"],
 };
-
-const FACILITY_OPTIONS = [
-  { id: "pool", label: "Swimming Pool", icon: "🏊" },
-  { id: "gym", label: "Fitness Center", icon: "🏋️" },
-  { id: "clubhouse", label: "Clubhouse", icon: "🏠" },
-  { id: "dog_park", label: "Dog Park", icon: "🐕" },
-  { id: "playground", label: "Playground", icon: "🛝" },
-  { id: "tennis", label: "Tennis Court", icon: "🎾" },
-  { id: "basketball", label: "Basketball Court", icon: "🏀" },
-  { id: "bbq", label: "BBQ / Grill Area", icon: "🔥" },
-  { id: "coworking", label: "Co-working Space", icon: "💻" },
-  { id: "theater", label: "Theater Room", icon: "🎬" },
-  { id: "rooftop", label: "Rooftop Deck", icon: "🌆" },
-  { id: "parking", label: "Covered Parking", icon: "🅿️" },
-  { id: "ev_charging", label: "EV Charging", icon: "⚡" },
-  { id: "laundry", label: "Laundry Room", icon: "👕" },
-  { id: "package_room", label: "Package Room", icon: "📦" },
-  { id: "bike_storage", label: "Bike Storage", icon: "🚲" },
-  { id: "conference", label: "Conference Room", icon: "🤝" },
-  { id: "spa", label: "Spa / Sauna", icon: "🧖" },
-];
 
 export interface Step3Data {
   facilities: string[];

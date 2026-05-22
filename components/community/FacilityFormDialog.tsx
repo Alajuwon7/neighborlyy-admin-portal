@@ -11,32 +11,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { createFacility } from "@/app/(dashboard)/dashboard/communities/[id]/facilities/actions";
+import { FACILITY_OPTIONS } from "@/lib/facilities";
 import { toast } from "sonner";
-
-const FACILITY_PRESETS = [
-  "Pool",
-  "Gym",
-  "Clubhouse",
-  "Tennis Court",
-  "Basketball Court",
-  "Playground",
-  "BBQ Area",
-  "Business Center",
-  "Parking",
-  "Laundry",
-  "Dog Park",
-  "Other",
-];
 
 export function FacilityFormDialog({
   communityCode,
@@ -86,7 +65,7 @@ export function FacilityFormDialog({
         Add Facility
       </DialogTrigger>
       <DialogContent
-        className="border"
+        className="border max-h-[90vh] overflow-y-auto"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",
@@ -102,23 +81,51 @@ export function FacilityFormDialog({
             <Label style={{ color: "var(--nly-text-secondary)" }}>
               Facility
             </Label>
-            <Select value={preset} onValueChange={(v) => setPreset(v ?? "")}>
-              <SelectTrigger className="border" style={inputStyle}>
-                <SelectValue placeholder="Select facility" />
-              </SelectTrigger>
-              <SelectContent
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {FACILITY_OPTIONS.map((f) => {
+                const isSelected = preset === f.label;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setPreset(f.label)}
+                    className="flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all"
+                    style={{
+                      backgroundColor: isSelected
+                        ? "rgba(47, 196, 211, 0.08)"
+                        : "transparent",
+                      borderColor: isSelected
+                        ? "var(--nly-brand)"
+                        : "var(--nly-border)",
+                      color: isSelected
+                        ? "var(--nly-text-primary)"
+                        : "var(--nly-text-secondary)",
+                    }}
+                  >
+                    <span className="text-base leading-none">{f.icon}</span>
+                    <span className="text-xs font-medium">{f.label}</span>
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setPreset("Other")}
+                className="flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all"
                 style={{
-                  backgroundColor: "var(--nly-surface)",
-                  borderColor: "var(--nly-border)",
+                  backgroundColor:
+                    preset === "Other" ? "rgba(47, 196, 211, 0.08)" : "transparent",
+                  borderColor:
+                    preset === "Other" ? "var(--nly-brand)" : "var(--nly-border)",
+                  color:
+                    preset === "Other"
+                      ? "var(--nly-text-primary)"
+                      : "var(--nly-text-secondary)",
                 }}
               >
-                {FACILITY_PRESETS.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <span className="text-base leading-none">➕</span>
+                <span className="text-xs font-medium">Other</span>
+              </button>
+            </div>
             {preset === "Other" && (
               <Input
                 value={customName}
@@ -149,18 +156,6 @@ export function FacilityFormDialog({
               type="number"
               min="1"
               placeholder="20"
-              className="border"
-              style={inputStyle}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label style={{ color: "var(--nly-text-secondary)" }}>
-              Image URL
-            </Label>
-            <Input
-              name="image_url"
-              type="url"
-              placeholder="https://..."
               className="border"
               style={inputStyle}
             />

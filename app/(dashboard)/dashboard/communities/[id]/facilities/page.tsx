@@ -1,6 +1,7 @@
 import { getCommunityWithAuth } from "@/lib/queries";
 import { FacilityFormDialog } from "@/components/community/FacilityFormDialog";
 import { FacilityRowActions } from "@/components/community/FacilityRowActions";
+import { getFacilityIcon } from "@/lib/facilities";
 import { CheckCircle, XCircle, Users, Clock } from "lucide-react";
 
 function formatTime(t: string | null): string | null {
@@ -34,7 +35,6 @@ export default async function FacilitiesPage({
       name: string;
       description: string | null;
       capacity: number | null;
-      image_url: string | null;
       open_time: string | null;
       close_time: string | null;
       available: boolean;
@@ -116,10 +116,13 @@ export default async function FacilitiesPage({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h4
-                      className="text-sm font-semibold"
+                      className="text-sm font-semibold flex items-center gap-1.5"
                       style={{ color: "var(--nly-text-primary)" }}
                     >
-                      {f.name}
+                      <span className="text-base leading-none" aria-hidden>
+                        {getFacilityIcon(f.name)}
+                      </span>
+                      <span className="truncate">{f.name}</span>
                     </h4>
                     <div className="flex items-center gap-1.5 mt-1">
                       {f.available ? (

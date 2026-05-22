@@ -24,7 +24,6 @@ type Facility = {
   name: string;
   description: string | null;
   capacity: number | null;
-  image_url: string | null;
   open_time: string | null;
   close_time: string | null;
   available: boolean;
@@ -158,18 +157,6 @@ export function FacilityRowActions({
                 type="number"
                 min="1"
                 defaultValue={facility.capacity ?? ""}
-                className="border"
-                style={inputStyle}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label style={{ color: "var(--nly-text-secondary)" }}>
-                Image URL
-              </Label>
-              <Input
-                name="image_url"
-                type="url"
-                defaultValue={facility.image_url ?? ""}
                 className="border"
                 style={inputStyle}
               />
