@@ -60,7 +60,7 @@ export default async function CommunitiesPage() {
             </h2>
             <Link
               href="/onboarding"
-              className="nly-btn-glow flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: "var(--nly-brand)" }}
             >
               <Plus size={16} />
