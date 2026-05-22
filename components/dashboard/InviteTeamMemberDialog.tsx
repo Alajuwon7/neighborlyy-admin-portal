@@ -66,8 +66,11 @@ export function InviteTeamMemberDialog({
       >
         <DialogHeader>
           <DialogTitle style={{ color: "var(--nly-text-primary)" }}>
-            Invite Team Member
+            Invite team member
           </DialogTitle>
+          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+            We&apos;ll email them an invite to create their account.
+          </p>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
@@ -115,7 +118,15 @@ export function InviteTeamMemberDialog({
 
           <div className="space-y-2">
             <Label style={{ color: "var(--nly-text-secondary)" }}>Role</Label>
-            <Select name="role" required>
+            <Select
+              name="role"
+              required
+              items={{
+                manager: "Manager",
+                assistant_manager: "Assistant Manager",
+                leasing_agent: "Leasing Agent",
+              }}
+            >
               <SelectTrigger
                 className="border"
                 style={{
@@ -145,7 +156,11 @@ export function InviteTeamMemberDialog({
             <Label style={{ color: "var(--nly-text-secondary)" }}>
               Community
             </Label>
-            <Select name="community_id" required>
+            <Select
+              name="community_id"
+              required
+              items={Object.fromEntries(communities.map((c) => [c.id, c.name]))}
+            >
               <SelectTrigger
                 className="border"
                 style={{
