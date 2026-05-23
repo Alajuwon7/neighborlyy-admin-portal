@@ -32,7 +32,9 @@ export async function GET(request: Request) {
     }
   }
 
-  // Link was invalid, expired, or already used — send the user back to request
-  // a fresh one with an explanation rather than a silent bounce to /login.
-  return NextResponse.redirect(`${origin}/forgot-password?error=link_invalid`);
+  // Link was invalid, expired, or already used. Send the user somewhere they can
+  // recover, with an explanation rather than a silent bounce: password resets go
+  // back to /forgot-password; signup and other confirmations go to /login.
+  const failurePath = type === "recovery" ? "/forgot-password" : "/login";
+  return NextResponse.redirect(`${origin}${failurePath}?error=link_invalid`);
 }

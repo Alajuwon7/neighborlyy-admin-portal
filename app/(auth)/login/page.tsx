@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -18,6 +18,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const router = useRouter();
+
+  // Surface confirm-link failures (expired/invalid signup or recovery links the
+  // /api/auth/confirm route sends here) instead of leaving the user guessing.
+  useEffect(() => {
+    const err = new URLSearchParams(window.location.search).get("error");
+    if (err === "link_invalid" || err === "auth") {
+      toast.error(
+        "That link was invalid or expired — please sign in, or request a new one."
+      );
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     const supabase = createClient();
