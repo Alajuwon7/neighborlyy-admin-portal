@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
@@ -13,6 +13,19 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [linkError, setLinkError] = useState(false);
+
+  // The confirm route sends invalid/expired/used recovery links back here with
+  // ?error=link_invalid instead of silently bouncing to the sign-in page.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "link_invalid") {
+      setLinkError(true);
+      toast.error(
+        "That reset link was invalid or expired — please request a new one."
+      );
+    }
+  }, []);
 
   const handleReset = async (e: React.FormEvent) => {
     const supabase = createClient();
@@ -21,7 +34,7 @@ export default function ForgotPasswordPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/api/auth/callback?next=/account`,
+        redirectTo: `${window.location.origin}/api/auth/confirm?next=/dashboard/account`,
       });
 
       if (error) throw error;
@@ -54,6 +67,19 @@ export default function ForgotPasswordPage() {
           Enter your email and we&apos;ll send you a reset link.
         </p>
       </div>
+
+      {linkError && !sent && (
+        <div
+          className="mb-6 rounded-xl px-4 py-3 text-sm"
+          style={{
+            backgroundColor: "var(--nly-error-bg)",
+            color: "var(--nly-error)",
+          }}
+        >
+          That reset link was invalid or expired. Enter your email below to get a
+          fresh one.
+        </div>
+      )}
 
       {sent ? (
         <div className="space-y-6 text-center">
