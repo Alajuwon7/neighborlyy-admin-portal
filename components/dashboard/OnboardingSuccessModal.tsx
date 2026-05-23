@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Copy, CalendarPlus, Megaphone, Share2, PartyPopper, Play } from "lucide-react";
 import { toast } from "sonner";
 import { celebrateOnboarding } from "@/lib/confetti";
+import { useClientValue } from "@/hooks/useClientValue";
 
 interface OnboardingSuccessModalProps {
   communityName: string;
@@ -22,21 +23,23 @@ export function OnboardingSuccessModal({
   onStartTour,
 }: OnboardingSuccessModalProps) {
   const router = useRouter();
-  const [visible, setVisible] = useState(false);
+  // Default to dismissed on the server so the modal never flashes during SSR;
+  // after hydration the real localStorage flag decides whether to show it.
+  const previouslyDismissed = useClientValue(
+    () => localStorage.getItem(MODAL_DISMISSED_KEY) === "true",
+    true,
+  );
+  const [closed, setClosed] = useState(false);
+  const visible = !previouslyDismissed && !closed;
 
+  // Fire confetti once when the modal becomes visible (external side effect).
   useEffect(() => {
-    const alreadyDismissed =
-      localStorage.getItem(MODAL_DISMISSED_KEY) === "true";
-    if (!alreadyDismissed) {
-      setVisible(true);
-      // Fire confetti
-      celebrateOnboarding();
-    }
-  }, []);
+    if (visible) celebrateOnboarding();
+  }, [visible]);
 
   const handleClose = (autoTour = true) => {
     localStorage.setItem(MODAL_DISMISSED_KEY, "true");
-    setVisible(false);
+    setClosed(true);
     router.replace("/dashboard", { scroll: false });
     // Auto-start tour after modal dismisses
     if (autoTour && localStorage.getItem("nly-product-tour-completed") !== "true") {

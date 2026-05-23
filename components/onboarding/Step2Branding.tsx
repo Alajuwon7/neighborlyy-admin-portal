@@ -26,7 +26,8 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
   useEffect(() => {
     if (!websiteUrl || !websiteUrl.startsWith("http") || extracted) return;
     let cancelled = false;
-    setExtracting(true);
+    // Defer the in-flight flag out of the synchronous effect body.
+    queueMicrotask(() => { if (!cancelled) setExtracting(true); });
     extractFromUrl(websiteUrl).then((site) => {
       if (cancelled) return;
       const updates: Partial<Step2Data> = {};
@@ -39,6 +40,8 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
       setExtracting(false);
     }).catch(() => { if (!cancelled) { setExtracting(false); } });
     return () => { cancelled = true; };
+    // Run only when the URL changes; `extracted` guards re-runs and `onChange` is parent-owned.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [websiteUrl]);
 
   const handleSubmit = (e: React.FormEvent) => {

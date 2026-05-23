@@ -250,7 +250,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
               {errors.community_code}
             </p>
           ) : (
-            <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+            <p className="text-xs" style={{ color: "var(--nly-text-secondary)" }}>
               Residents use this code to join. Max 8 characters.
             </p>
           )}

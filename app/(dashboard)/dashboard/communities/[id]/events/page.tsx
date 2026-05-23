@@ -143,6 +143,9 @@ function EventCard({
       </div>
 
       {event.image_url && (
+        // User-uploaded remote thumbnail; plain <img> avoids image-optimization
+        // cost and remote-host config for a low-traffic admin view.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={event.image_url}
           alt={event.title}

@@ -53,6 +53,9 @@ export function PostCard({ post }: PostCardProps) {
             {post.content}
           </p>
           {post.image_url && (
+            // User-uploaded remote attachment; plain <img> avoids image-optimization
+            // cost and remote-host config for a low-traffic admin view.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={post.image_url}
               alt="Post attachment"

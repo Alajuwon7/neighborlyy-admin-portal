@@ -19,20 +19,19 @@ export function PageTransitionLoader() {
   // Detect route completion via pathname change
   useEffect(() => {
     if (pathname !== prevPathRef.current) {
-      setCompleting(true);
+      prevPathRef.current = pathname;
+      // Defer the flag out of the synchronous effect body.
+      queueMicrotask(() => setCompleting(true));
       const timer = setTimeout(() => {
         setLoading(false);
         setCompleting(false);
       }, 350);
-      prevPathRef.current = pathname;
       return () => clearTimeout(timer);
     }
   }, [pathname]);
 
   // Detect navigation start by intercepting history methods
   useEffect(() => {
-    const currentPath = prevPathRef.current;
-
     const origPushState = history.pushState.bind(history);
     const origReplaceState = history.replaceState.bind(history);
 
@@ -101,8 +100,9 @@ export function usePageLoading() {
 
   useEffect(() => {
     if (pathname !== prevPathRef.current) {
-      setIsLoading(false);
       prevPathRef.current = pathname;
+      // Defer the flag out of the synchronous effect body.
+      queueMicrotask(() => setIsLoading(false));
     }
   }, [pathname]);
 

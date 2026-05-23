@@ -210,6 +210,8 @@ Welcome to ${communityName}!`;
               }}
             >
               {qrDataURL ? (
+                // QR is a base64 data URL — next/image can't optimize data URLs.
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={qrDataURL}
                   alt={`QR code to join ${communityName}`}
