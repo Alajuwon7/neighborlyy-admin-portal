@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Bell } from "lucide-react";
 import { motion } from "motion/react";
 import { NotificationDropdown } from "@/components/dashboard/NotificationDropdown";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useClientValue } from "@/hooks/useClientValue";
 import type { AdminNotification } from "@/lib/notifications";
 
 function getLocalGreeting(): string {
@@ -41,10 +42,9 @@ export function Header({
   communityMap = {},
   communityNameMap = {},
 }: HeaderProps) {
-  const [greeting, setGreeting] = useState<string | null>(null);
-  useEffect(() => {
-    if (firstName) setGreeting(getLocalGreeting());
-  }, [firstName]);
+  // Time-based greeting depends on the client's clock, so resolve it after
+  // hydration to avoid an SSR mismatch (server renders the plain title).
+  const greeting = useClientValue(getLocalGreeting, null);
   const displayTitle = greeting && firstName ? `${greeting}, ${firstName} 👋` : title;
 
   const [latestNotification, setLatestNotification] = useState<AdminNotification | null>(null);

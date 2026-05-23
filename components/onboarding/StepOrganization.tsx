@@ -161,7 +161,7 @@ export function StepOrganization({ data, onChange, onNext }: StepOrganizationPro
               onChange({ org_name: e.target.value });
               if (error) setError("");
             }}
-            placeholder="e.g., Atlantic Residential Partners"
+            placeholder="e.g., Summit Property Group"
             className="w-full h-10 px-3 rounded-xl text-sm outline-none transition-all"
             style={{
               backgroundColor: "var(--nly-input-bg)",

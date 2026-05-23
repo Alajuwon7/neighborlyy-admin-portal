@@ -1,18 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useClientValue } from "@/hooks/useClientValue";
 import type { Nudge } from "@/lib/nudges";
 
 const DISMISSED_KEY = "nly-dismissed-nudges";
+const EMPTY_IDS: string[] = [];
+
+// Cache the parsed snapshot keyed by the raw localStorage string so repeated
+// reads return a stable reference (useClientValue compares snapshots by identity).
+let cachedRaw: string | null = null;
+let cachedIds: string[] = EMPTY_IDS;
 
 function getDismissedIds(): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(DISMISSED_KEY) || "[]");
-  } catch {
-    return [];
+  if (typeof window === "undefined") return EMPTY_IDS;
+  const raw = localStorage.getItem(DISMISSED_KEY) || "[]";
+  if (raw !== cachedRaw) {
+    cachedRaw = raw;
+    try {
+      cachedIds = JSON.parse(raw);
+    } catch {
+      cachedIds = EMPTY_IDS;
+    }
   }
+  return cachedIds;
 }
 
 function dismissNudge(id: string) {
@@ -24,18 +36,18 @@ function dismissNudge(id: string) {
 }
 
 export function NudgeCards({ nudges }: { nudges: Nudge[] }) {
-  const [dismissed, setDismissed] = useState<string[]>([]);
+  // Persisted dismissals (read after hydration) + ones dismissed this session.
+  const persisted = useClientValue(getDismissedIds, EMPTY_IDS);
+  const [sessionDismissed, setSessionDismissed] = useState<string[]>([]);
 
-  useEffect(() => {
-    setDismissed(getDismissedIds());
-  }, []);
-
-  const visible = nudges.filter((n) => !dismissed.includes(n.id));
+  const visible = nudges.filter(
+    (n) => !persisted.includes(n.id) && !sessionDismissed.includes(n.id),
+  );
   if (visible.length === 0) return null;
 
   const handleDismiss = (id: string) => {
     dismissNudge(id);
-    setDismissed((prev) => [...prev, id]);
+    setSessionDismissed((prev) => [...prev, id]);
   };
 
   return (

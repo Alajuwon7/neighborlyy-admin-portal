@@ -19,6 +19,9 @@ const eslintConfig = defineConfig([
     "playwright-report/**",
     "test-results/**",
     "blob-report/**",
+    // Stale git worktrees keep their own source + .next bundles; without this
+    // ESLint re-lints every worktree copy and floods the output.
+    ".claude/**",
   ]),
 ]);
 

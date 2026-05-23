@@ -50,14 +50,18 @@ export function NotificationDropdown({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  useEffect(() => {
-    if (latestNotification && open) {
-      setNotifications((prev) => {
-        if (prev.some((n) => n.id === latestNotification.id)) return prev;
-        return [latestNotification, ...prev].slice(0, 8);
-      });
-    }
-  }, [latestNotification, open]);
+  // Prepend a freshly-arrived realtime notification while the panel is open.
+  // Adjusting state during render (guarded by the last-seen id stored in state)
+  // is React's recommended pattern for reacting to a changed prop without an effect.
+  const [lastSeenNotifId, setLastSeenNotifId] = useState<string | null>(null);
+  if (open && latestNotification && latestNotification.id !== lastSeenNotifId) {
+    setLastSeenNotifId(latestNotification.id);
+    setNotifications((prev) =>
+      prev.some((n) => n.id === latestNotification.id)
+        ? prev
+        : [latestNotification, ...prev].slice(0, 8),
+    );
+  }
 
   async function handleOpen() {
     setOpen((prev) => !prev);

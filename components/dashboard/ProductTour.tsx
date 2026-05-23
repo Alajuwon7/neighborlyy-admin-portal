@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   Joyride,
   STATUS,
@@ -8,6 +7,7 @@ import {
   type Step,
   type EventData,
 } from "react-joyride";
+import { useClientValue } from "@/hooks/useClientValue";
 
 interface ProductTourProps {
   run: boolean;
@@ -48,11 +48,8 @@ const steps: Step[] = [
 ];
 
 export function ProductTour({ run, onClose }: ProductTourProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Joyride targets DOM nodes, so only render after hydration.
+  const mounted = useClientValue(() => true, false);
 
   const handleEvent = (data: EventData) => {
     const { status, action } = data;

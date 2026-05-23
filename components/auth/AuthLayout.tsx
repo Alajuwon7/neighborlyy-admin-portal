@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex nly-auth-bg">
@@ -22,10 +24,13 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       {/* Right side — Background image with overlay content */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden">
         {/* Background image */}
-        <img
+        <Image
           src="/images/auth-bg.jpg"
           alt="Modern apartment community"
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          priority
+          sizes="50vw"
+          className="object-cover"
         />
 
         {/* Gradient overlay for text readability */}

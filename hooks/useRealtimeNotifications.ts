@@ -20,7 +20,9 @@ export function useRealtimeNotifications({
   const [unreadCount, setUnreadCount] = useState(initialCount);
   const supabaseRef = useRef(createClient());
   const callbackRef = useRef(onNewNotification);
-  callbackRef.current = onNewNotification;
+  useEffect(() => {
+    callbackRef.current = onNewNotification;
+  }, [onNewNotification]);
 
   useEffect(() => {
     setUnreadCount(initialCount);

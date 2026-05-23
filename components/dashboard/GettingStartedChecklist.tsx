@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useClientValue } from "@/hooks/useClientValue";
 import {
   CheckCircle2,
   Circle,
@@ -43,8 +44,9 @@ export function GettingStartedChecklist({
   onShareCode,
 }: GettingStartedChecklistProps) {
   const router = useRouter();
-  const [dismissed, setDismissed] = useState(true);
-  const [collapsed, setCollapsed] = useState(false);
+  // User actions taken this session (override the persisted/computed defaults).
+  const [manuallyDismissed, setManuallyDismissed] = useState(false);
+  const [manualCollapsed, setManualCollapsed] = useState<boolean | null>(null);
 
   const items: ChecklistItem[] = [
     {
@@ -84,47 +86,40 @@ export function GettingStartedChecklist({
   const allDone = completedCount === items.length;
   const progress = (completedCount / items.length) * 100;
 
-  useEffect(() => {
-    const wasDismissed = localStorage.getItem(DISMISSED_KEY) === "true";
-    const wasCollapsed = localStorage.getItem(COLLAPSED_KEY) === "true";
-
-    if (wasDismissed) {
-      setDismissed(true);
-      return;
-    }
-
-    const createdAt = new Date(communityCreatedAt);
+  // Hidden by default (also on the server) until hydration reveals the real
+  // state, so the card never flashes before localStorage/age checks run.
+  const storedDismissed = useClientValue(() => {
+    if (localStorage.getItem(DISMISSED_KEY) === "true") return true;
     const hoursSinceCreation =
-      (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-    if (hoursSinceCreation > 24) {
-      setDismissed(true);
-      return;
-    }
+      (Date.now() - new Date(communityCreatedAt).getTime()) / (1000 * 60 * 60);
+    return hoursSinceCreation > 24;
+  }, true);
+  const storedCollapsed = useClientValue(
+    () => localStorage.getItem(COLLAPSED_KEY) === "true",
+    false,
+  );
 
-    setDismissed(false);
-    setCollapsed(wasCollapsed);
-  }, [communityCreatedAt]);
+  const dismissed = storedDismissed || manuallyDismissed;
+  const collapsed =
+    manualCollapsed ?? (storedCollapsed || (allDone && !dismissed));
 
-  // Auto-collapse when all done
+  // Persist the auto-collapse decision (localStorage write only — no setState).
   useEffect(() => {
-    if (allDone && !collapsed && !dismissed) {
+    if (allDone && !dismissed && manualCollapsed === null && !storedCollapsed) {
       localStorage.setItem(COLLAPSED_KEY, "true");
-      setCollapsed(true);
     }
-  }, [allDone, collapsed, dismissed]);
+  }, [allDone, dismissed, manualCollapsed, storedCollapsed]);
 
   const handleDismiss = useCallback(() => {
     localStorage.setItem(DISMISSED_KEY, "true");
-    setDismissed(true);
+    setManuallyDismissed(true);
   }, []);
 
   const toggleCollapse = useCallback(() => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem(COLLAPSED_KEY, String(next));
-      return next;
-    });
-  }, []);
+    const next = !collapsed;
+    localStorage.setItem(COLLAPSED_KEY, String(next));
+    setManualCollapsed(next);
+  }, [collapsed]);
 
   if (dismissed) return null;
 

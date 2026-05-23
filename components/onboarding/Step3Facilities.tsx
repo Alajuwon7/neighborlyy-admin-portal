@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { OnboardingTip } from "@/components/onboarding/OnboardingTip";
 import { FACILITY_OPTIONS } from "@/lib/facilities";
 
@@ -22,17 +22,18 @@ interface Props {
 }
 
 export function Step3Facilities({ data, propertyType, onChange, onNext, onBack }: Props) {
-  const [autoApplied, setAutoApplied] = useState(false);
+  // Tracks the one-time auto-apply without triggering a re-render (ref, not state).
+  const autoAppliedRef = useRef(false);
 
   // Auto-select smart defaults based on property type (only on first mount if no selections yet)
   useEffect(() => {
-    if (autoApplied || data.facilities.length > 0 || !propertyType) return;
+    if (autoAppliedRef.current || data.facilities.length > 0 || !propertyType) return;
     const defaults = SMART_DEFAULTS[propertyType];
     if (defaults) {
       onChange({ facilities: defaults });
-      setAutoApplied(true);
+      autoAppliedRef.current = true;
     }
-  }, [propertyType, autoApplied, data.facilities.length, onChange]);
+  }, [propertyType, data.facilities.length, onChange]);
   const toggle = (id: string) => {
     const current = data.facilities;
     onChange({
