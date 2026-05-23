@@ -49,7 +49,7 @@ export default function SignupPage() {
             phone: formData.phone,
             account_type: "property_manager",
           },
-          emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/api/auth/confirm?next=/dashboard`,
         },
       });
 
