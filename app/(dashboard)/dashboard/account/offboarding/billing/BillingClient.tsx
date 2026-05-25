@@ -183,7 +183,7 @@ export function BillingClient({ deletionRequestId, initialCommunities }: Billing
         disabled={!allResolved}
         onClick={() => router.push("/dashboard/account/offboarding/disposition")}
         className="w-full h-10 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-        style={{ backgroundColor: "var(--nly-brand)" }}
+        style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
       >
         Continue to community decisions →
       </button>

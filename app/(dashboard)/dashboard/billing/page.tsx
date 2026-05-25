@@ -193,7 +193,7 @@ export default async function BillingPage() {
                     disabled
                     title="Self-serve subscription management is coming soon. Email support@miyora-app.com to make changes."
                     className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl text-white opacity-60 cursor-not-allowed"
-                    style={{ backgroundColor: "var(--nly-brand)" }}
+                    style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
                   >
                     <ArrowUpRight size={14} />
                     {c.stripe_subscription_id ? "Manage Subscription" : "Upgrade Plan"}

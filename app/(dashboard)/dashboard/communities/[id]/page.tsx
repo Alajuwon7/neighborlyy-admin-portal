@@ -70,7 +70,7 @@ export default async function CommunityOverviewPage({
           <a
             href="/dashboard/billing"
             className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
-            style={{ backgroundColor: "var(--nly-brand)" }}
+            style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             Upgrade Plan
           </a>

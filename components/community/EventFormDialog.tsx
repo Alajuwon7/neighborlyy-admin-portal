@@ -73,7 +73,7 @@ export function EventFormDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: "var(--nly-brand)" }}
+        style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
       >
         <Plus size={16} />
         Create Event
@@ -169,7 +169,7 @@ export function EventFormDialog({
             type="submit"
             disabled={loading}
             className="w-full text-white"
-            style={{ backgroundColor: "var(--nly-brand)" }}
+            style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             {loading ? "Creating..." : "Create Event"}
           </Button>

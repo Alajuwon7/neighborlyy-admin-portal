@@ -283,7 +283,7 @@ export function Step5Billing({
           onClick={isStripeConfigured ? handleCheckout : onSubmit}
           disabled={isLoading}
           className="flex-2 flex-1 h-11 rounded-lg font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
+          style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           {checkoutLoading
             ? "Redirecting to Stripe…"

@@ -210,7 +210,7 @@ export default function SignupPage() {
           disabled={loading}
           style={{
             background: "var(--nly-brand-gradient)",
-            color: "#fff",
+            color: "var(--nly-brand-text)",
           }}
         >
           {loading ? "Creating account..." : "Create Account"}

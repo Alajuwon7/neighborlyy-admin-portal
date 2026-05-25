@@ -82,7 +82,7 @@ export function DispositionCards({
         disabled={!allDecided || pending}
         onClick={handleFinalize}
         className="w-full h-10 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-        style={{ backgroundColor: "var(--nly-brand)" }}
+        style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
       >
         {pending ? "Finalizing..." : "Continue to account closure →"}
       </button>

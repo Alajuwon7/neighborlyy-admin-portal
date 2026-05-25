@@ -136,7 +136,7 @@ export default function ForgotPasswordPage() {
             disabled={loading}
             style={{
               background: "var(--nly-brand-gradient)",
-              color: "#fff",
+              color: "var(--nly-brand-text)",
             }}
           >
             {loading ? "Sending..." : "Send Reset Link"}

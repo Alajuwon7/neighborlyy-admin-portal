@@ -98,7 +98,7 @@ export function Step3Facilities({ data, propertyType, onChange, onNext, onBack }
           type="button"
           onClick={onNext}
           className="flex-1 h-11 rounded-lg font-semibold text-sm transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
+          style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           Continue →
         </button>

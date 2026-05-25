@@ -159,6 +159,7 @@ export function Header({
           />
         ) : (
           <motion.button
+            aria-label="Notifications"
             className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all"
             style={{ color: "var(--nly-text-secondary)" }}
             whileHover={{ scale: 1.05, backgroundColor: "var(--nly-surface-hover)" }}

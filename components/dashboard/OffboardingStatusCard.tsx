@@ -197,7 +197,7 @@ export function OffboardingStatusCard({
         <Link
           href="/dashboard/account/offboarding/billing"
           className="w-full h-9 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 inline-flex items-center justify-center"
-          style={{ backgroundColor: "var(--nly-brand)" }}
+          style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           Continue offboarding →
         </Link>
@@ -206,7 +206,7 @@ export function OffboardingStatusCard({
         <Link
           href="/dashboard/account/offboarding/finalize"
           className="w-full h-9 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 inline-flex items-center justify-center"
-          style={{ backgroundColor: "var(--nly-brand)" }}
+          style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           View closure status →
         </Link>

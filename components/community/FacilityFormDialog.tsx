@@ -65,7 +65,7 @@ export function FacilityFormDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: "var(--nly-brand)" }}
+        style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
       >
         <Plus size={16} />
         Add Facility
@@ -194,7 +194,7 @@ export function FacilityFormDialog({
             type="submit"
             disabled={loading}
             className="w-full text-white"
-            style={{ backgroundColor: "var(--nly-brand)" }}
+            style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             {loading ? "Adding..." : "Add Facility"}
           </Button>

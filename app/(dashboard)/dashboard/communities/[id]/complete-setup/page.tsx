@@ -337,7 +337,7 @@ export default function CompleteSetupPage({
               type="submit"
               disabled={saving}
               className="w-full px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: "var(--nly-brand)" }}
+              style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
             >
               {saving ? "Saving..." : "Save & Continue"}
             </button>

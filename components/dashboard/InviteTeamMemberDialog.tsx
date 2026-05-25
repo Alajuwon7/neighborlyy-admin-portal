@@ -73,7 +73,7 @@ export function InviteTeamMemberDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: "var(--nly-brand)" }}
+        style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
       >
         <UserPlus size={16} />
         Invite Member
@@ -257,7 +257,7 @@ export function InviteTeamMemberDialog({
               size="lg"
               disabled={loading || communities.length === 0}
               className="flex-1 text-white"
-              style={{ backgroundColor: "var(--nly-brand)" }}
+              style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
             >
               {loading ? "Sending invite..." : "Send invite"}
             </Button>

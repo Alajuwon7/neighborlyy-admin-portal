@@ -85,7 +85,7 @@ export function ProductTour({ run, onClose }: ProductTourProps) {
         },
         buttonPrimary: {
           backgroundColor: "#2FC4D3",
-          color: "#fff",
+          color: "#0B0F1A",
           borderRadius: 8,
           fontSize: 13,
           fontWeight: 600,

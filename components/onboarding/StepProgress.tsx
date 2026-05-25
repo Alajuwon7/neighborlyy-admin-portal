@@ -47,7 +47,7 @@ export function StepProgress({ currentStep }: StepProgressProps) {
                     : isActive
                     ? "var(--nly-brand)"
                     : "var(--nly-surface)",
-                  color: isDone || isActive ? "#fff" : "var(--nly-text-tertiary)",
+                  color: isDone || isActive ? "var(--nly-brand-text)" : "var(--nly-text-tertiary)",
                   border: `2px solid ${
                     isDone || isActive ? "var(--nly-brand)" : "var(--nly-border)"
                   }`,

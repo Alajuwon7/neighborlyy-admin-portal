@@ -128,7 +128,7 @@ export function AccountForm({
             type="submit"
             disabled={profileLoading}
             className="text-white"
-            style={{ backgroundColor: "var(--nly-brand)" }}
+            style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             {profileLoading ? "Saving..." : "Save Changes"}
           </Button>
@@ -184,7 +184,7 @@ export function AccountForm({
             type="submit"
             disabled={passwordLoading}
             className="text-white"
-            style={{ backgroundColor: "var(--nly-brand)" }}
+            style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             {passwordLoading ? "Updating..." : "Update Password"}
           </Button>

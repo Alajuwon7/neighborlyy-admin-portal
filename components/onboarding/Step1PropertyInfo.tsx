@@ -369,7 +369,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
           type="submit"
           disabled={validating}
           className="flex-1 h-11 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
+          style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           {validating ? "Checking availability…" : "Continue →"}
         </button>

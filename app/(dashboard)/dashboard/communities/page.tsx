@@ -61,7 +61,7 @@ export default async function CommunitiesPage() {
             <Link
               href="/onboarding"
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "var(--nly-brand)" }}
+              style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
             >
               <Plus size={16} />
               Add Community

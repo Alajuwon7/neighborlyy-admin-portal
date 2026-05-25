@@ -181,7 +181,7 @@ export function StepOrganization({ data, onChange, onNext }: StepOrganizationPro
       <button
         onClick={handleNext}
         className="nly-btn-glow w-full h-11 rounded-xl text-sm font-semibold text-white transition-all"
-        style={{ backgroundColor: "var(--nly-brand)" }}
+        style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
       >
         Continue
       </button>

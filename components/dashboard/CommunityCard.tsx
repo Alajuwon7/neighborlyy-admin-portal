@@ -110,7 +110,7 @@ export function CommunityCard({
         <Link
           href={`/dashboard/communities/${id}/complete-setup`}
           className="nly-btn-glow flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-all"
-          style={{ backgroundColor: "var(--nly-brand)" }}
+          style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           Complete Setup
           <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />

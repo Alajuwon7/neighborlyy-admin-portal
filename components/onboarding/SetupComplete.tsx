@@ -86,7 +86,7 @@ export function SetupComplete({ communityName, adminCode, paymentCompleted, plan
       <button
         onClick={() => router.push("/dashboard?onboarding=complete")}
         className="w-full h-12 rounded-xl font-bold text-base transition-opacity hover:opacity-90"
-        style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
+        style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
       >
         Go to Dashboard →
       </button>
