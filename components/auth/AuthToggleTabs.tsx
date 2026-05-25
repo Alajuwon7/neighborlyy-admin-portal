@@ -25,7 +25,7 @@ export function AuthToggleTabs() {
             className="flex-1 py-2.5 px-6 rounded-full text-sm font-semibold transition-all"
             style={{
               backgroundColor: isActive ? "var(--nly-brand)" : "transparent",
-              color: isActive ? "#fff" : "var(--nly-text-tertiary)",
+              color: isActive ? "var(--nly-brand-text)" : "var(--nly-text-tertiary)",
             }}
           >
             {tab.label}

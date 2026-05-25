@@ -22,7 +22,9 @@ the actual rendered `--nly-*` theme tokens.
 
 Core PM flows only:
 
-- **Public (no auth):** `/login`, `/signup`, `/forgot-password`, `/reset-password`
+- **Public (no auth):** `/login`, `/signup`, `/forgot-password`, `/verify-email`
+  (no standalone `/reset-password` exists — recovery lands on the authenticated
+  `/dashboard/account`, which is out of scope)
 - **Onboarding:** all 6 steps
 - **Dashboard:** `/dashboard`, `/dashboard/feed`, `/dashboard/notifications`,
   `/dashboard/team`, `/dashboard/billing`

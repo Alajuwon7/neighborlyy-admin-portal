@@ -172,7 +172,7 @@ export default function LoginPage() {
           disabled={loading}
           style={{
             background: "var(--nly-brand-gradient)",
-            color: "#fff",
+            color: "var(--nly-brand-text)",
           }}
         >
           {loading ? "Signing in..." : "Sign In"}
