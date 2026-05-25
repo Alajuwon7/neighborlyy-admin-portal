@@ -184,7 +184,7 @@ Welcome to ${communityName}!`;
             <button
               onClick={handleCopyCode}
               className="mt-3 h-10 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
+              style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
             >
               <Copy size={15} />
               Copy code

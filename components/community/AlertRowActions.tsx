@@ -121,7 +121,7 @@ export function AlertRowActions({ alert, communityId }: AlertRowActionsProps) {
               type="submit"
               disabled={editLoading}
               className="w-full text-white"
-              style={{ backgroundColor: "var(--nly-brand)" }}
+              style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
             >
               {editLoading ? "Saving..." : "Save Changes"}
             </Button>

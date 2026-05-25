@@ -205,7 +205,7 @@ export function DeleteAccountDialog({
                   disabled={savingCorpEmail}
                   onClick={handleSaveCorpEmail}
                   className="w-full h-9 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                  style={{ backgroundColor: "var(--nly-brand)" }}
+                  style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
                 >
                   {savingCorpEmail ? "Saving..." : "Save and continue"}
                 </button>

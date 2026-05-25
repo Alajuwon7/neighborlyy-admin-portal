@@ -207,7 +207,7 @@ export function FacilityRowActions({
               type="submit"
               disabled={loading}
               className="w-full text-white"
-              style={{ backgroundColor: "var(--nly-brand)" }}
+              style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
             >
               {loading ? "Saving..." : "Save Changes"}
             </Button>

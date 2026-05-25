@@ -20,7 +20,7 @@ export default function NotFound() {
         <Link
           href="/dashboard"
           className="inline-block px-6 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
+          style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           Back to Dashboard
         </Link>

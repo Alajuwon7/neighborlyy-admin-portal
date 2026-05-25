@@ -128,7 +128,7 @@ export function OnboardingSuccessModal({
             className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
             style={{
               backgroundColor: "var(--nly-brand)",
-              color: "#fff",
+              color: "var(--nly-brand-text)",
             }}
           >
             <Copy size={12} />
@@ -210,7 +210,7 @@ export function OnboardingSuccessModal({
           <button
             onClick={() => handleClose(true)}
             className="w-full h-11 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
+            style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             Got it, let&apos;s go!
           </button>

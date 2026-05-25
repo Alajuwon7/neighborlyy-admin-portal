@@ -172,7 +172,7 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
               type="submit"
               disabled={editLoading}
               className="w-full text-white"
-              style={{ backgroundColor: "var(--nly-brand)" }}
+              style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
             >
               {editLoading ? "Saving..." : "Save Changes"}
             </Button>

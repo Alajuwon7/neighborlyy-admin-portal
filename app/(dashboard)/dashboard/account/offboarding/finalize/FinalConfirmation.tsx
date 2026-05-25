@@ -107,7 +107,7 @@ export function FinalConfirmation({ requestId }: FinalConfirmationProps) {
           onClick={handleSignOut}
           disabled={signingOut}
           className="w-full h-10 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: "var(--nly-brand)" }}
+          style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           {signingOut ? "Signing out..." : "Close this window"}
         </button>

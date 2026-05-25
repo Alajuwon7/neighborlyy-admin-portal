@@ -224,7 +224,7 @@ export function CorpApprovalForm({
             disabled={submitting}
             onClick={() => handleSubmit("approve")}
             className="flex-1 h-10 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: "var(--nly-brand)" }}
+            style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             {submitting ? "Submitting..." : "Approve deletion request"}
           </button>
