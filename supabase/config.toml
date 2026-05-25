@@ -1,6 +1,6 @@
 [auth]
-site_url = "https://miyora-admin-portal.netlify.app"
+site_url = "https://miyora-admin-portal-two.vercel.app"
 additional_redirect_urls = [
-  "https://miyora-admin-portal.netlify.app/**",
+  "https://miyora-admin-portal-two.vercel.app/**",
   "http://localhost:3000/**"
 ]
