@@ -241,7 +241,7 @@ export function Step2Branding({ data, communityName, websiteUrl, onChange, onNex
         <button
           type="submit"
           className="flex-1 h-11 rounded-lg font-semibold text-sm transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "var(--nly-brand)", color: "#fff" }}
+          style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           Continue →
         </button>

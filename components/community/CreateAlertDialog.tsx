@@ -45,7 +45,7 @@ export function CreateAlertDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: "var(--nly-brand)" }}
+        style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
       >
         <Bell size={16} />
         Send Alert
@@ -71,7 +71,7 @@ export function CreateAlertDialog({
             type="submit"
             disabled={loading}
             className="w-full text-white"
-            style={{ backgroundColor: "var(--nly-brand)" }}
+            style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             {loading ? "Sending..." : "Send Alert"}
           </Button>

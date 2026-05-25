@@ -46,7 +46,7 @@ export function PostFormDialog({ communityCode }: { communityCode: string }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
-        style={{ backgroundColor: "var(--nly-brand)" }}
+        style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
       >
         <Megaphone size={16} />
         New Post
@@ -83,7 +83,7 @@ export function PostFormDialog({ communityCode }: { communityCode: string }) {
             type="submit"
             disabled={loading}
             className="w-full text-white"
-            style={{ backgroundColor: "var(--nly-brand)" }}
+            style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             {loading ? "Publishing..." : "Publish Post"}
           </Button>
