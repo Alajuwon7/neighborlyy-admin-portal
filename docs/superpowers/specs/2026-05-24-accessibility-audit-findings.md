@@ -50,9 +50,14 @@ Files fixed:
 - 5 dialog components — trigger **and** submit buttons:
   `EventFormDialog`, `PostFormDialog`, `CreateAlertDialog`, `FacilityFormDialog`
   (community/), `InviteTeamMemberDialog` (dashboard/)
-- 6 onboarding buttons: `Step1PropertyInfo`, `Step2Branding`, `Step3Facilities`,
-  `Step4AdminAccess`, `Step5Billing`, `SetupComplete`
+- 7 onboarding buttons: `StepOrganization`, `Step1PropertyInfo`, `Step2Branding`,
+  `Step3Facilities`, `Step4AdminAccess`, `Step5Billing`, `SetupComplete`
 - `app/(dashboard)/dashboard/communities/[id]/page.tsx` "Upgrade Plan" link
+
+> `StepOrganization` (onboarding step 1) was caught in code review, not by axe:
+> its Continue button carries `.nly-btn-glow`, whose `::after` overlay made axe
+> unable to measure the contrast (reported as "needs-review", not a violation),
+> even though at rest it was white-on-cyan. Fixed with the same token swap.
 
 ---
 
@@ -84,9 +89,11 @@ badge background). Verify via re-scan.
 
 ### KB-1 — Modal focus trap is intermittent
 `tests/e2e/a11y-keyboard.spec.ts` observed keyboard focus escaping an open dialog
-into the sidebar nav ("Dashboard"/"Communities"/"Notifications") on a first
-attempt, then trapping correctly on retry — i.e. flaky. Dialog open-focus, Esc to
-close, and return-focus all work reliably; only the trap leaks. base-ui's
+into the sidebar nav — in the final run, Tab walked through ALL six sidebar links
+(Dashboard, Communities, Notifications, Team, Billing, Account) behind the open
+modal, so this reproduces reliably (earlier it occasionally trapped on retry).
+Dialog open-focus, Esc to close, and return-focus all work; only the trap leaks.
+base-ui's
 `Dialog.Root` is modal by default, so this is likely a timing/inert-application or
 layout-layering issue. **Recommendation:** investigate the base-ui Dialog
 modal/inert behavior against the dashboard layout; ensure the background is inert
@@ -94,6 +101,37 @@ while a dialog is open. Trap check is logged (not hard-asserted) in the spec unt
 fixed.
 
 ---
+
+### D3 — Same contrast bug on buttons OUTSIDE the audited scope
+Code review found the identical white-on-`--nly-brand` pattern on ~15 more
+buttons/links not covered by the core-flow scan (deferred routes, modals not
+open during the scan, disabled/state-gated CTAs). All are the same one-line
+`color: var(--nly-brand-text)` fix; they were left untouched because they
+weren't axe-verified tonight. **Recommendation:** sweep them in a focused
+follow-up. Known sites:
+- `app/error.tsx`, `app/not-found.tsx`
+- `components/dashboard/OnboardingSuccessModal.tsx`, `ShareCommunityCodeModal.tsx`,
+  `CommunityCard.tsx` ("Complete Setup", only shows pre-onboarding),
+  `OffboardingStatusCard.tsx`, `AccountForm.tsx`, `DeleteAccountDialog.tsx`
+- `app/(dashboard)/dashboard/billing/page.tsx` (currently `disabled`, so axe skipped it)
+- offboarding flow: `disposition/DispositionCards.tsx`, `finalize/FinalConfirmation.tsx`,
+  `billing/BillingClient.tsx`, `offboarding/approve/CorpApprovalForm.tsx`,
+  `communities/[id]/complete-setup/page.tsx`, `communities/page.tsx`
+- per-row edit dialogs: `EventCardActions.tsx`, `AlertRowActions.tsx`, `FacilityRowActions.tsx`
+
+## Harness hardening (from code review)
+
+- `scanRoute` now hard-asserts the post-navigation pathname matches the intended
+  route, so a silent redirect (expired session → `/login`, missing community →
+  `/dashboard/communities`) fails loudly instead of scanning the wrong page and
+  reporting it clean. (This is the failure mode that initially hid the missing
+  `SUPABASE_SERVICE_ROLE_KEY`.)
+- `afterAll` deletes the seed by `community_code` (not just the captured id) so a
+  half-created seed can't leave the test PM owning two communities.
+- The keyboard spec's `focusInDialogOnOpen` is logged, not hard-asserted (base-ui
+  can place initial focus on a guard sentinel outside `[role=dialog]`).
+
+Final re-run: **20/22 routes clean** (only D1 + D2 remain) + **keyboard spec stable**.
 
 ## Needs-review items judged acceptable
 

@@ -58,7 +58,8 @@ async function scanRoute(
   page: Page,
   slug: string,
   url: string | null,
-  prep?: (page: Page) => Promise<void>
+  prep?: (page: Page) => Promise<void>,
+  expectPath?: string
 ) {
   if (prep) {
     await prep(page);
@@ -67,6 +68,18 @@ async function scanRoute(
   }
   // Let client components hydrate / animations settle before measuring.
   await page.waitForTimeout(1_500);
+
+  // Guard against silent redirects (expired session → /login, missing community
+  // → /dashboard/communities, etc.). Without this, axe would scan the wrong page
+  // and report it clean — a false pass. Hard-assert we're where we intended.
+  const expected = expectPath ?? (url ? new URL(url, "http://localhost").pathname : null);
+  if (expected) {
+    const actual = new URL(page.url()).pathname;
+    expect(
+      actual.startsWith(expected),
+      `${slug}: expected to be on ${expected} but landed on ${actual} (redirect?)`
+    ).toBe(true);
+  }
 
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
 
@@ -128,9 +141,15 @@ test.describe("a11y: onboarding wizard", () => {
   for (const step of steps) {
     test(`scan onboarding step ${step}`, async ({ page }) => {
       test.setTimeout(120_000);
-      await scanRoute(page, `onboarding-step-${step}`, null, async (p) => {
-        await skipToOnboardingStep(p, step);
-      });
+      await scanRoute(
+        page,
+        `onboarding-step-${step}`,
+        null,
+        async (p) => {
+          await skipToOnboardingStep(p, step);
+        },
+        "/onboarding"
+      );
     });
   }
 });
@@ -197,8 +216,11 @@ test.describe("a11y: dashboard + community", () => {
   });
 
   test.afterAll(async () => {
-    if (admin && communityId) {
-      await admin.from("communities").delete().eq("id", communityId);
+    // Delete by community_code (not just the captured id) so a seed that was
+    // created before `communityId` was assigned — e.g. beforeAll threw midway —
+    // is still cleaned up and can't leave the test PM owning two communities.
+    if (admin) {
+      await admin.from("communities").delete().eq("community_code", "A11YSEED");
     }
   });
 
