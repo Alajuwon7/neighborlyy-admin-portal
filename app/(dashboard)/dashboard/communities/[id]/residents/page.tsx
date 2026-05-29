@@ -17,6 +17,9 @@ export default async function ResidentsPage({
     .select("id, full_name, email, phone, unit_number, created_at")
     .eq("community_code", community.community_code)
     .eq("status", "approved")
+    // Exclude admin/PM profiles (a PM who also signed up on the mobile app has a
+    // role='admin' profiles row in the same community) — they aren't residents.
+    .or("role.is.null,role.neq.admin")
     .order("full_name", { ascending: true });
 
   const residents =

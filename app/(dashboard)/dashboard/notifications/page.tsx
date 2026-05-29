@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getAuthenticatedPM } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -60,7 +61,7 @@ export default async function NotificationsPage({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 overflow-x-auto">
             {NOTIFICATION_FILTERS.map((f) => (
-              <a
+              <Link
                 key={f.value}
                 href={f.value === "all" ? "/dashboard/notifications" : `/dashboard/notifications?filter=${f.value}`}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
@@ -77,7 +78,7 @@ export default async function NotificationsPage({
                 }}
               >
                 {f.label}
-              </a>
+              </Link>
             ))}
           </div>
           <RefreshButton />

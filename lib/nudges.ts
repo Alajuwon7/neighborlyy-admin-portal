@@ -26,9 +26,13 @@ export async function computeNudges(
   const codes = await getCommunityCodesForIds(supabase, communityIds);
   if (codes.length === 0) return nudges;
 
-  // 1. Check pending residents
+  // 1. Check pending residents.
+  // Source must match the approval queue the "Review now" CTA opens
+  // (/communities/[id]/pending) and the approve/deny RPCs — all of which use
+  // pending_users, NOT profiles. Counting profiles.status='pending' here caused
+  // a stale "N residents waiting" nudge that pointed at an empty pending page.
   const { count: pendingCount } = await supabase
-    .from("profiles")
+    .from("pending_users")
     .select("id", { count: "exact", head: true })
     .in("community_code", codes)
     .eq("status", "pending");
@@ -88,7 +92,10 @@ export async function computeNudges(
       .from("profiles")
       .select("id", { count: "exact", head: true })
       .in("community_code", cCodes)
-      .eq("status", "approved");
+      .eq("status", "approved")
+      // Exclude admin/PM profiles (a PM who also signed up on mobile has a
+      // role='admin' profiles row) so milestones count real residents only.
+      .or("role.is.null,role.neq.admin");
 
     if (residentCount) {
       const milestones = [100, 50, 25];
