@@ -1,24 +1,36 @@
 import Image from "next/image";
+import { AuthHeroStats } from "@/components/auth/AuthHeroStats";
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex nly-auth-bg">
-      {/* Left side — Form */}
-      <div className="flex-1 flex items-center justify-center px-4 py-6 sm:px-6 sm:py-8 md:p-8">
+      {/* Left side — Form.
+          Top-anchored (items-start) so the tabs + heading hold a fixed vertical
+          position when the form height changes between Sign In and Sign Up —
+          otherwise vertical centering re-centers the whole block and it "jumps". */}
+      <div className="relative flex-1 flex items-start justify-center px-4 py-10 sm:px-6 sm:py-12 md:px-8 lg:py-16">
         <div className="w-full max-w-md">
           <div className="mb-8">
             <h1
-              className="text-2xl font-bold mb-1 tracking-wide"
-              style={{ color: "var(--nly-brand)" }}
+              className="font-serif text-4xl font-semibold mb-1 tracking-[0.12em]"
+              style={{ color: "#fff" }}
             >
               MIYORA
             </h1>
             <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
-              Property Manager Portal
+              Your home, your light, your moment.
             </p>
           </div>
           {children}
         </div>
+
+        {/* Pinned footer */}
+        <p
+          className="absolute bottom-6 inset-x-0 text-center text-xs tracking-wide"
+          style={{ color: "var(--nly-text-tertiary)" }}
+        >
+          Property Manager Portal
+        </p>
       </div>
 
       {/* Right side — Background image with overlay content */}
@@ -26,11 +38,12 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         {/* Background image */}
         <Image
           src="/images/auth-bg.jpg"
-          alt="Modern apartment community"
+          alt="Diverse residents relaxing together in a sunlit luxury apartment lounge"
           fill
           priority
           sizes="50vw"
           className="object-cover"
+          style={{ filter: "brightness(1.12) saturate(1.05)" }}
         />
 
         {/* Gradient overlay for text readability */}
@@ -38,14 +51,17 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(10, 22, 40, 0.75) 0%, rgba(10, 22, 40, 0.35) 40%, rgba(10, 22, 40, 0.35) 60%, rgba(10, 22, 40, 0.8) 100%)",
+              "linear-gradient(to bottom, rgba(10, 22, 40, 0.58) 0%, rgba(10, 22, 40, 0.5) 22%, rgba(10, 22, 40, 0.1) 45%, rgba(10, 22, 40, 0.1) 62%, rgba(10, 22, 40, 0.66) 100%)",
           }}
         />
 
         {/* Content positioned over the image */}
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           {/* Top — Header and subheader */}
-          <div className="space-y-3 max-w-lg">
+          <div
+            className="space-y-3 max-w-lg"
+            style={{ textShadow: "0 1px 14px rgba(10, 22, 40, 0.55)" }}
+          >
             <h2
               className="text-3xl font-bold leading-tight"
               style={{ color: "#fff" }}
@@ -62,32 +78,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Bottom — Stats */}
-          <div className="flex flex-wrap gap-4 xl:gap-8">
-            {[
-              { label: "Avg. Engagement", value: "68%" },
-              { label: "Renewal Lift", value: "+12%" },
-              { label: "Setup Time", value: "<10 min" },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="px-5 py-3 rounded-xl"
-                style={{ backgroundColor: "rgba(10, 22, 40, 0.6)", backdropFilter: "blur(8px)" }}
-              >
-                <p
-                  className="text-2xl font-bold"
-                  style={{ color: "var(--nly-brand)" }}
-                >
-                  {stat.value}
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "rgba(255, 255, 255, 0.6)" }}
-                >
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </div>
+          <AuthHeroStats />
         </div>
       </div>
     </div>
