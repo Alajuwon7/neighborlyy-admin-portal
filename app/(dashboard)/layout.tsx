@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { PageTransitionLoader } from "@/components/ui/page-transition";
+import { TrialBanner } from "@/components/dashboard/TrialBanner";
 import { Menu } from "lucide-react";
 
 export default function DashboardLayout({
@@ -22,6 +23,9 @@ export default function DashboardLayout({
 
       {/* Main content — offset by sidebar width on desktop */}
       <div className="flex-1 flex flex-col lg:ml-60 min-h-screen">
+        {/* Trial-end reminder — sticky at the top of every dashboard page */}
+        <TrialBanner />
+
         {/* Mobile top bar with hamburger */}
         <div
           className="lg:hidden flex items-center gap-3 px-4 py-3 border-b"
