@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { type EmailOtpType } from "@supabase/supabase-js";
+import {
+  confirmRedirectPath,
+  MOBILE_CONFIRMED_PATH,
+  sanitizeNextPath,
+} from "@/lib/auth-confirm";
+import { type EmailOtpType, type User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 // Handles email-link auth confirmations (password recovery, etc.).
@@ -16,19 +21,45 @@ export async function GET(request: Request) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard/account";
+  const next = sanitizeNextPath(searchParams.get("next"), "/dashboard/account");
 
   const supabase = await createClient();
 
+  // The Supabase project is shared with the Miyora mobile app, so mobile
+  // signups confirm through this route too. Mobile users get sent to the
+  // return-to-app page instead of into the PM portal (see lib/auth-confirm).
+  const redirectAfterConfirm = async (user: User | null) => {
+    // Positive PM check: the signup trigger creates a property_managers row
+    // before the user ever confirms, and RLS lets a PM read their own row.
+    // Skipped for recovery, which never leaves the portal flow.
+    let hasPmRow = false;
+    if (user && type !== "recovery") {
+      const { data: pmRow } = await supabase
+        .from("property_managers")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      hasPmRow = Boolean(pmRow);
+    }
+    const path = confirmRedirectPath(user, hasPmRow, type, next);
+    if (path === MOBILE_CONFIRMED_PATH) {
+      // verifyOtp/exchangeCodeForSession just set portal session cookies for
+      // a mobile-app user; clear them — they sign in inside the app and must
+      // not hold a portal session. Local scope: leave any app session alone.
+      await supabase.auth.signOut({ scope: "local" });
+    }
+    return NextResponse.redirect(`${origin}${path}`);
+  };
+
   if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return redirectAfterConfirm(data.user);
     }
   } else if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return redirectAfterConfirm(data.user);
     }
   }
 

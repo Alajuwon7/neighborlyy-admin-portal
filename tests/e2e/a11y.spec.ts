@@ -116,12 +116,15 @@ test.describe("a11y: public auth pages", () => {
 
   // Note: there is no standalone /reset-password route — the recovery link
   // lands on the authenticated /dashboard/account (out of scope). The public
-  // auth surfaces are login, signup, forgot-password, and verify-email.
+  // auth surfaces are login, signup, forgot-password, verify-email, and
+  // email-confirmed (the mobile-signup return-to-app page; its miyora://
+  // deep-link attempt is ignored by the test browser, so the page stays put).
   const pages: Array<[string, string]> = [
     ["login", "/login"],
     ["signup", "/signup"],
     ["forgot-password", "/forgot-password"],
     ["verify-email", "/verify-email"],
+    ["email-confirmed", "/email-confirmed"],
   ];
 
   for (const [slug, url] of pages) {
