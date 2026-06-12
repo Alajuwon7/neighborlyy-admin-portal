@@ -12,7 +12,7 @@ test("deletionComplete includes communities, hard-delete date, and support email
   assert.match(tpl.subject, /closed/i);
   assert.match(tpl.html, /Maple Ridge/);
   assert.match(tpl.html, /June 13, 2026/);
-  assert.match(tpl.html, /support@miyora\.com/);
+  assert.match(tpl.html, /support@miyora-app\.com/);
   assert.match(tpl.text, /Maple Ridge/);
   assert.match(tpl.text, /June 13, 2026/);
 });
