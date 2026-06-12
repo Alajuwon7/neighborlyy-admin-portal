@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { differenceInDays } from "date-fns";
+import { trialDaysLeft as computeTrialDaysLeft } from "@/lib/trial-days";
 import { Building2, MapPin, Users, ArrowRight, Smartphone } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -38,7 +38,7 @@ export function CommunityCard({
 
   const trialDaysLeft =
     status === "trial" && trial_ends_at
-      ? Math.max(0, differenceInDays(new Date(trial_ends_at), new Date()))
+      ? Math.max(0, computeTrialDaysLeft(trial_ends_at))
       : null;
 
   const statusConfig: Record<string, { bg: string; color: string }> = {

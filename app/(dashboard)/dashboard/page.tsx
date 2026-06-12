@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { differenceInDays, differenceInHours } from "date-fns";
+import { differenceInHours } from "date-fns";
+import { trialDaysLeft as computeTrialDaysLeft } from "@/lib/trial-days";
+import { filterResidents } from "@/lib/residents";
 import { Building2, Users, Clock, AlertTriangle } from "lucide-react";
 import { Header } from "@/components/dashboard/Header";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
@@ -78,7 +80,7 @@ export default async function DashboardPage({
   // Compute trial days left (use first community)
   const firstCommunity = communities[0];
   const trialDaysLeft = firstCommunity.trial_ends_at
-    ? Math.max(0, differenceInDays(new Date(firstCommunity.trial_ends_at), new Date()))
+    ? Math.max(0, computeTrialDaysLeft(firstCommunity.trial_ends_at))
     : null;
 
   const totalUnits = communities.reduce((sum, c) => sum + (c.unit_count ?? 0), 0);
@@ -100,10 +102,7 @@ export default async function DashboardPage({
   const communityCodes = communities.map((c) => c.community_code).filter(Boolean);
   const [{ count: eventCount }, { count: residentCount }, { count: pendingCount }, { count: alertCount }] = await Promise.all([
     supabase.from("events").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
-    // Residents = approved, non-admin profiles. A PM who also signs up on the
-    // mobile app gets a profiles row (role='admin', unit_number='PM') sharing the
-    // community_code — exclude those so they don't inflate the count/occupancy.
-    supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "approved").or("role.is.null,role.neq.admin"),
+    filterResidents(supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes)),
     supabase.from("pending_users").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
     supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
   ]);
@@ -117,15 +116,13 @@ export default async function DashboardPage({
   const communityNameByCode = new Map(communities.map((c) => [c.community_code, c.name]));
   const activityItems: ActivityItem[] = [];
 
-  // Recent approved residents — approved, non-admin only. Without these filters
-  // an admin/PM who signed up on the mobile app (role='admin') showed up here as
-  // "<name> joined the community".
-  const { data: recentProfiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, community_code, created_at")
-    .in("community_code", communityCodes)
-    .eq("status", "approved")
-    .or("role.is.null,role.neq.admin")
+  // Recent residents who joined ("<name> joined the community")
+  const { data: recentProfiles } = await filterResidents(
+    supabase
+      .from("profiles")
+      .select("id, full_name, community_code, created_at")
+      .in("community_code", communityCodes),
+  )
     .order("created_at", { ascending: false })
     .limit(10);
 

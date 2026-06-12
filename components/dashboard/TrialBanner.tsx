@@ -19,9 +19,6 @@ export function TrialBanner() {
       return false;
     }
   }, false);
-  const [manuallyDismissed, setManuallyDismissed] = useState(false);
-  const dismissed = initiallyDismissed || manuallyDismissed;
-
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
 
   useEffect(() => {
@@ -39,7 +36,7 @@ export function TrialBanner() {
     };
   }, [initiallyDismissed]);
 
-  if (dismissed || daysLeft === null) return null;
+  if (initiallyDismissed || daysLeft === null) return null;
 
   const message =
     daysLeft < 0
@@ -56,7 +53,9 @@ export function TrialBanner() {
     } catch {
       /* ignore storage failures */
     }
-    setManuallyDismissed(true);
+    // Hiding is just "no days to show" — one state instead of a second
+    // dismissed flag that could desync from sessionStorage.
+    setDaysLeft(null);
   };
 
   return (

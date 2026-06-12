@@ -1,14 +1,24 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { differenceInCalendarDays } from "date-fns";
+import { trialDaysLeft } from "@/lib/trial-days";
 
 /**
- * Returns the days remaining on the soonest-expiring trial across the signed-in
- * PM's communities, but only when it falls inside the 7-day warning window
- * (daysLeft <= 7, including 0 and negative = already ended). Returns null when
- * there's nothing to warn about, or on any auth/lookup failure — this powers a
- * non-critical banner fetched on mount, so it never redirects or throws.
+ * Returns the days remaining on the most urgent trial across the signed-in
+ * PM's communities, for the dashboard's trial-end warning banner.
+ *
+ * Only communities still genuinely on a free trial count: status='trial' AND
+ * not actively billed (no subscription, or a canceled one — the same rule the
+ * Stripe webhook fan-in uses), because communities.status never flips off
+ * 'trial' when a PM subscribes; without the billing check the banner would
+ * tell paying customers their trial ended.
+ *
+ * Warning window: the soonest unexpired trial with daysLeft <= 7. Unexpired
+ * trials win over expired ones so a long-abandoned trial community can't
+ * permanently mask an imminent expiry elsewhere; only when every unbilled
+ * trial has ended does it return a negative daysLeft ("trial has ended").
+ * Returns null when there's nothing to warn about, or on any auth/lookup
+ * failure — this powers a non-critical banner, so it never redirects or throws.
  */
 export async function getTrialStatus(): Promise<{ daysLeft: number } | null> {
   const supabase = await createClient();
@@ -28,7 +38,7 @@ export async function getTrialStatus(): Promise<{ daysLeft: number } | null> {
 
   let query = supabase
     .from("communities")
-    .select("trial_ends_at")
+    .select("trial_ends_at, stripe_subscription_id, stripe_subscription_status")
     .eq("status", "trial")
     .not("trial_ends_at", "is", null);
 
@@ -37,16 +47,27 @@ export async function getTrialStatus(): Promise<{ daysLeft: number } | null> {
     : query.eq("property_manager_id", pm.id);
 
   const { data: communities } = await query;
-  if (!communities || communities.length === 0) return null;
 
-  const today = new Date();
-  const soonest = Math.min(
-    ...(communities as { trial_ends_at: string }[]).map((c) =>
-      differenceInCalendarDays(new Date(c.trial_ends_at), today),
-    ),
+  // Same "not actively billed" predicate as allCommunitiesBillingResolved()
+  // in app/api/webhooks/stripe/fan-in.ts.
+  const onTrial = (
+    (communities ?? []) as {
+      trial_ends_at: string;
+      stripe_subscription_id: string | null;
+      stripe_subscription_status: string | null;
+    }[]
+  ).filter(
+    (c) =>
+      !c.stripe_subscription_id || c.stripe_subscription_status === "canceled",
   );
+  if (onTrial.length === 0) return null;
 
-  if (soonest > 7) return null;
+  const days = onTrial.map((c) => trialDaysLeft(c.trial_ends_at));
+  const unexpired = days.filter((d) => d >= 0);
+  const daysLeft =
+    unexpired.length > 0 ? Math.min(...unexpired) : Math.max(...days);
 
-  return { daysLeft: soonest };
+  if (daysLeft > 7) return null;
+
+  return { daysLeft };
 }

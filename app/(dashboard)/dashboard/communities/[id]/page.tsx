@@ -1,5 +1,5 @@
 import { getCommunityWithAuth } from "@/lib/queries";
-import { differenceInDays } from "date-fns";
+import { trialDaysLeft as computeTrialDaysLeft } from "@/lib/trial-days";
 import {
   Building2,
   Users,
@@ -34,10 +34,7 @@ export default async function CommunityOverviewPage({
 
   const trialDaysLeft =
     community.status === "trial" && community.trial_ends_at
-      ? Math.max(
-          0,
-          differenceInDays(new Date(community.trial_ends_at), new Date())
-        )
+      ? Math.max(0, computeTrialDaysLeft(community.trial_ends_at))
       : null;
 
   return (

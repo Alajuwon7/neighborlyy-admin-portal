@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { MotionConfig, motion } from "motion/react";
 
 /**
  * Per-navigation fade for the Sign In / Sign Up form swap.
@@ -12,23 +12,28 @@ import { motion, useReducedMotion } from "motion/react";
  *
  * The shell (background image, hero stats, tabs) lives in the persistent
  * `layout.tsx` and is untouched by this remount.
+ *
+ * Reduced motion is honoured via `MotionConfig reducedMotion="user"` rather
+ * than branching on `useReducedMotion()`: that hook is null during SSR but
+ * reads matchMedia synchronously on the first client render, so a structural
+ * branch hydration-mismatches for reduced-motion users. With MotionConfig the
+ * tree is identical on server and client; the y-translate is simply skipped
+ * for them at animation time and only the brief fade plays.
  */
 export default function TabbedAuthTemplate({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const reduce = useReducedMotion();
-
-  if (reduce) return <>{children}</>;
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-    >
-      {children}
-    </motion.div>
+    <MotionConfig reducedMotion="user">
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+      >
+        {children}
+      </motion.div>
+    </MotionConfig>
   );
 }

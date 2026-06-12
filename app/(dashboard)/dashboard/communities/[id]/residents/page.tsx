@@ -1,4 +1,5 @@
 import { getCommunityWithAuth } from "@/lib/queries";
+import { filterResidents } from "@/lib/residents";
 import { ResidentsTable } from "@/components/community/ResidentsTable";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
 
@@ -12,15 +13,12 @@ export default async function ResidentsPage({
   const { id } = await params;
   const { supabase, community } = await getCommunityWithAuth(id);
 
-  const { data: residentsRaw } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, phone, unit_number, created_at")
-    .eq("community_code", community.community_code)
-    .eq("status", "approved")
-    // Exclude admin/PM profiles (a PM who also signed up on the mobile app has a
-    // role='admin' profiles row in the same community) — they aren't residents.
-    .or("role.is.null,role.neq.admin")
-    .order("full_name", { ascending: true });
+  const { data: residentsRaw } = await filterResidents(
+    supabase
+      .from("profiles")
+      .select("id, full_name, email, phone, unit_number, created_at")
+      .eq("community_code", community.community_code),
+  ).order("full_name", { ascending: true });
 
   const residents =
     (residentsRaw as {
