@@ -1,6 +1,6 @@
 import { getAuthenticatedPM } from "@/lib/queries";
 import { Header } from "@/components/dashboard/Header";
-import { differenceInDays } from "date-fns";
+import { trialDaysLeft as computeTrialDaysLeft } from "@/lib/trial-days";
 import {
   CreditCard,
   ArrowUpRight,
@@ -101,13 +101,7 @@ export default async function BillingPage() {
                 : null;
               const trialDaysLeft =
                 c.status === "trial" && c.trial_ends_at
-                  ? Math.max(
-                      0,
-                      differenceInDays(
-                        new Date(c.trial_ends_at),
-                        new Date()
-                      )
-                    )
+                  ? Math.max(0, computeTrialDaysLeft(c.trial_ends_at))
                   : null;
 
               return (

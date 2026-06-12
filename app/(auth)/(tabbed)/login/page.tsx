@@ -6,8 +6,6 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { AuthLayout } from "@/components/auth/AuthLayout";
-import { AuthToggleTabs } from "@/components/auth/AuthToggleTabs";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,9 +85,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout>
-      <AuthToggleTabs />
-
+    <>
       <div className="space-y-2 mb-8">
         <h2
           className="text-2xl font-bold"
@@ -178,6 +174,6 @@ export default function LoginPage() {
           {loading ? "Signing in..." : "Sign In"}
         </button>
       </form>
-    </AuthLayout>
+    </>
   );
 }
