@@ -41,7 +41,7 @@ export function SummaryCard({
         delay: index * 0.08,
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
-      className="nly-card-hover nly-gradient-border rounded-2xl pt-4 px-5 pb-5 flex flex-col gap-2 relative overflow-hidden"
+      className="nly-card-hover nly-gradient-border rounded-2xl pt-4 px-5 pb-5 flex flex-col gap-2 relative overflow-hidden h-full"
       style={{
         backgroundColor: "var(--nly-surface)",
         boxShadow: "var(--nly-shadow-sm)",
@@ -118,7 +118,7 @@ export function SummaryCard({
     return (
       <Link
         href={href}
-        className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nly-brand)]"
+        className="block h-full rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nly-brand)]"
       >
         {card}
       </Link>

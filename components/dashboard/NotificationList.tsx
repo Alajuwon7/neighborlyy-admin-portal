@@ -103,10 +103,7 @@ export function NotificationList({
         </div>
       )}
 
-      <div
-        className="divide-y max-h-[32rem] overflow-y-auto"
-        style={{ borderColor: "var(--nly-divider)" }}
-      >
+      <div className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>
         {notifications.length === 0 ? (
           <div className="px-4 py-12 text-center">
             <p className="text-sm" style={{ color: "var(--nly-text-tertiary)" }}>

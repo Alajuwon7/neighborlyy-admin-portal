@@ -57,7 +57,7 @@ export default async function NotificationsPage({
         communityMap={communityMap}
         communityNameMap={communityNameMap}
       />
-      <main className="flex-1 p-4 sm:p-6 space-y-4 max-w-3xl">
+      <main className="flex-1 p-4 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 overflow-x-auto">
             {NOTIFICATION_FILTERS.map((f) => (
