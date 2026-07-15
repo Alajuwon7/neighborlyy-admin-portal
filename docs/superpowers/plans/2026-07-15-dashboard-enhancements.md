@@ -773,13 +773,9 @@ Add this effect as the FIRST statement inside the component body (before the `re
       refreshTimer.current = setTimeout(() => router.refresh(), 800);
     };
     const channel = supabase.channel("dashboard-activity");
-    for (const table of [
-      "profiles",
-      "events",
-      "alerts",
-      "help_requests",
-      "facility_reservations",
-    ]) {
+    // These are exactly the tables the server builds recentActivity from
+    // (profiles / pending_users / events / alerts in dashboard/page.tsx).
+    for (const table of ["profiles", "pending_users", "events", "alerts"]) {
       channel.on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table },
@@ -839,7 +835,7 @@ Run: `npm run dev`, log in as a PM, open `/dashboard`. Verify:
 - Weekly deltas render only when a matching row was created in the last 7 days; no "+0".
 - Quick-actions buttons route correctly for a single-community vs multi-community PM.
 - With a pending resident present, the inline panel shows; Approve and Deny mutate, toast, remove the row, and the "Pending Approvals" count updates.
-- Inserting a row into a source table (e.g. a new pending user or alert) refreshes the activity feed within ~1s without a manual refresh.
+- Inserting a row into a source table (profiles / pending_users / events / alerts — e.g. a new pending user or alert) refreshes the activity feed within ~1s without a manual refresh.
 - A PM with two trials on different clocks sees the soonest countdown in the header.
 
 - [ ] **Step 3: Use the `verify` skill (optional but recommended)**
