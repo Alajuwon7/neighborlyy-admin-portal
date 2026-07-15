@@ -98,25 +98,29 @@ export default async function DashboardPage({
 
   // Check if user has events, residents, pending users (for getting started checklist)
   const communityCodes = communities.map((c) => c.community_code).filter(Boolean);
-  const [{ count: eventCount }, { count: residentCount }, { count: pendingCount }, { count: alertCount }] = await Promise.all([
-    supabase.from("events").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
-    filterResidents(supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes)),
-    supabase.from("pending_users").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
-    supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
-  ]);
 
-  // Weekly momentum deltas (last 7 days). Communities delta is derived from
-  // the already-fetched list (no extra query); residents/pending/alerts need
-  // scoped count queries.
+  // Weekly momentum window (last 7 days). Communities delta is derived from the
+  // already-fetched list (no query); residents/pending/alerts deltas are scoped
+  // count queries batched together with the base counts below so the dashboard
+  // issues a single round-trip instead of two serial ones.
   const weekAgoIso = new Date(new Date().getTime() - 7 * 864e5).toISOString();
   const newCommunitiesWk = communities.filter(
     (c) => c.created_at >= weekAgoIso,
   ).length;
+
   const [
+    { count: eventCount },
+    { count: residentCount },
+    { count: pendingCount },
+    { count: alertCount },
     { count: newResidentsWk },
     { count: newPendingWk },
     { count: newAlertsWk },
   ] = await Promise.all([
+    supabase.from("events").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
+    filterResidents(supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes)),
+    supabase.from("pending_users").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
+    supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
     filterResidents(
       supabase
         .from("profiles")
