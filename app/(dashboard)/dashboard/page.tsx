@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { differenceInHours } from "date-fns";
-import { trialDaysLeft as computeTrialDaysLeft } from "@/lib/trial-days";
+import { soonestTrialDaysLeft } from "@/lib/trial-days";
 import { filterResidents } from "@/lib/residents";
 import { Building2, Users, Clock, AlertTriangle } from "lucide-react";
 import { Header } from "@/components/dashboard/Header";
@@ -15,6 +15,8 @@ import { computeNudges } from "@/lib/nudges";
 import { getNotificationCount } from "@/app/(dashboard)/dashboard/notifications/actions";
 import { NudgeCards } from "@/components/dashboard/NudgeCards";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
+import { QuickActions } from "@/components/dashboard/QuickActions";
+import { PendingApprovalsPanel, type PendingRow } from "@/components/dashboard/PendingApprovalsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -77,11 +79,7 @@ export default async function DashboardPage({
     redirect("/onboarding");
   }
 
-  // Compute trial days left (use first community)
   const firstCommunity = communities[0];
-  const trialDaysLeft = firstCommunity.trial_ends_at
-    ? Math.max(0, computeTrialDaysLeft(firstCommunity.trial_ends_at))
-    : null;
 
   const totalUnits = communities.reduce((sum, c) => sum + (c.unit_count ?? 0), 0);
   const activeCommunities = communities.filter((c) => c.status !== "cancelled").length;
@@ -105,6 +103,38 @@ export default async function DashboardPage({
     filterResidents(supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes)),
     supabase.from("pending_users").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
     supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
+  ]);
+
+  // Weekly momentum deltas (last 7 days). Communities delta is derived from
+  // the already-fetched list (no extra query); residents/pending/alerts need
+  // scoped count queries.
+  const weekAgoIso = new Date(new Date().getTime() - 7 * 864e5).toISOString();
+  const newCommunitiesWk = communities.filter(
+    (c) => c.created_at >= weekAgoIso,
+  ).length;
+  const [
+    { count: newResidentsWk },
+    { count: newPendingWk },
+    { count: newAlertsWk },
+  ] = await Promise.all([
+    filterResidents(
+      supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .in("community_code", communityCodes)
+        .gte("created_at", weekAgoIso),
+    ),
+    supabase
+      .from("pending_users")
+      .select("id", { count: "exact", head: true })
+      .in("community_code", communityCodes)
+      .eq("status", "pending")
+      .gte("created_at", weekAgoIso),
+    supabase
+      .from("alerts")
+      .select("id", { count: "exact", head: true })
+      .in("community_code", communityCodes)
+      .gte("created_at", weekAgoIso),
   ]);
 
   const occupancyPct =
@@ -208,6 +238,19 @@ export default async function DashboardPage({
     communityNameMap[c.community_code] = c.name;
   }
 
+  // Top-5 oldest pending residents for the inline approvals panel
+  let pendingRows: PendingRow[] = [];
+  if ((pendingCount ?? 0) > 0) {
+    const { data: pendingRaw } = await supabase
+      .from("pending_users")
+      .select("id, full_name, email, unit_number, created_at, community_code")
+      .in("community_code", communityCodes)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
+      .limit(5);
+    pendingRows = (pendingRaw as PendingRow[] | null) ?? [];
+  }
+
   // Compute smart nudges
   const communityNames = new Map(communities.map((c) => [c.id, c.name]));
   const nudges = await computeNudges(
@@ -218,13 +261,24 @@ export default async function DashboardPage({
 
   const firstName = pm.full_name?.split(" ")[0] ?? "there";
 
+  const single = communities.length === 1;
+  const firstId = firstCommunity.id;
+
+  // Only render a delta when there's actually movement (no "+0").
+  const posDelta = (n: number | null, label: string) =>
+    n && n > 0 ? { value: `+${n}`, tone: "positive" as const, label } : undefined;
+  const neutralDelta = (n: number | null, label: string) =>
+    n && n > 0 ? { value: `+${n}`, tone: "neutral" as const, label } : undefined;
+
+  const soonestTrial = soonestTrialDaysLeft(communities);
+
   return (
     <div className="flex flex-col flex-1">
       <Header
         title="Dashboard"
         firstName={firstName}
         subtitle="Here's what's happening across your communities"
-        trialDaysLeft={firstCommunity.status === "trial" ? trialDaysLeft : null}
+        trialDaysLeft={soonestTrial}
         notificationCount={notificationCount}
         communityCodes={communityCodes}
         communityMap={communityMap}
@@ -261,6 +315,8 @@ export default async function DashboardPage({
               subtext={`${totalUnits.toLocaleString()} total units`}
               icon={<Building2 size={22} style={{ color: "var(--nly-brand)" }} />}
               accentColor="var(--nly-brand)"
+              href="/dashboard/communities"
+              trend={posDelta(newCommunitiesWk, "new this week")}
               footer={
                 <p
                   className="text-xs"
@@ -282,6 +338,8 @@ export default async function DashboardPage({
               }
               icon={<Users size={22} style={{ color: "var(--nly-accent)" }} />}
               accentColor="var(--nly-accent)"
+              href="/dashboard/communities"
+              trend={posDelta(newResidentsWk, "residents this week")}
               footer={
                 <div>
                   <div
@@ -317,6 +375,14 @@ export default async function DashboardPage({
               }
               icon={<Clock size={22} style={{ color: "var(--nly-warning)" }} />}
               accentColor="var(--nly-warning)"
+              href={
+                single
+                  ? `/dashboard/communities/${firstId}/pending`
+                  : (pendingCount ?? 0) > 0
+                  ? "#pending-approvals"
+                  : "/dashboard/communities"
+              }
+              trend={neutralDelta(newPendingWk, "new this week")}
               footer={
                 <p
                   className="text-xs font-medium"
@@ -344,6 +410,12 @@ export default async function DashboardPage({
               }
               icon={<AlertTriangle size={22} style={{ color: "var(--nly-error)" }} />}
               accentColor="var(--nly-error)"
+              href={
+                single
+                  ? `/dashboard/communities/${firstId}/alerts`
+                  : "/dashboard/communities"
+              }
+              trend={neutralDelta(newAlertsWk, "this week")}
               footer={
                 <p
                   className="text-xs"
@@ -359,10 +431,27 @@ export default async function DashboardPage({
           </div>
         </DashboardSection>
 
+        {/* Quick actions */}
+        <DashboardSection delay={0.05}>
+          <QuickActions singleCommunityId={single ? firstId : null} />
+        </DashboardSection>
+
         {/* Smart nudges */}
         {nudges.length > 0 && (
           <DashboardSection delay={0.1}>
             <NudgeCards nudges={nudges} />
+          </DashboardSection>
+        )}
+
+        {/* Pending approvals (inline) */}
+        {pendingRows.length > 0 && (
+          <DashboardSection delay={0.15}>
+            <PendingApprovalsPanel
+              rows={pendingRows}
+              communityMap={communityMap}
+              communityNameMap={communityNameMap}
+              showCommunity={communities.length > 1}
+            />
           </DashboardSection>
         )}
 
@@ -396,7 +485,10 @@ export default async function DashboardPage({
                   View all →
                 </Link>
               </div>
-              <div className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>
+              <div
+                className="divide-y max-h-96 overflow-y-auto"
+                style={{ borderColor: "var(--nly-divider)" }}
+              >
                 {communities.map((c) => (
                   <Link
                     key={c.id}
@@ -449,7 +541,7 @@ export default async function DashboardPage({
 
             {/* Activity feed */}
             <div data-tour="activity-feed" className="lg:col-span-3">
-              <ActivityFeed items={recentActivity} />
+              <ActivityFeed items={recentActivity} communityCodes={communityCodes} />
             </div>
           </div>
         </DashboardSection>

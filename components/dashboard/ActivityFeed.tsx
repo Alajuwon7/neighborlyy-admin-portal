@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from "date-fns";
 import { motion } from "motion/react";
+import { createClient } from "@/lib/supabase/client";
 
 export interface ActivityItem {
   id: string;
@@ -51,9 +54,45 @@ function groupByTime(items: ActivityItem[]): { label: string; items: ActivityIte
 interface ActivityFeedProps {
   items: ActivityItem[];
   loading?: boolean;
+  communityCodes?: string[];
 }
 
-export function ActivityFeed({ items, loading }: ActivityFeedProps) {
+export function ActivityFeed({ items, loading, communityCodes }: ActivityFeedProps) {
+  const router = useRouter();
+  const codesKey = (communityCodes ?? []).join(",");
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!codesKey) return;
+    const codes = codesKey.split(",");
+    const supabase = createClient();
+    const scheduleRefresh = () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      refreshTimer.current = setTimeout(() => router.refresh(), 800);
+    };
+    const channel = supabase.channel("dashboard-activity");
+    // These are exactly the tables the server builds recentActivity from
+    // (profiles / pending_users / events / alerts in dashboard/page.tsx).
+    // Supabase postgres_changes filters only support single equality, so we
+    // bind one filter per (table, community_code) pair to scope the
+    // subscription to this PM's own communities rather than the whole
+    // shared multi-tenant DB.
+    for (const table of ["profiles", "pending_users", "events", "alerts"]) {
+      for (const code of codes) {
+        channel.on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table, filter: `community_code=eq.${code}` },
+          scheduleRefresh,
+        );
+      }
+    }
+    channel.subscribe();
+    return () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      supabase.removeChannel(channel);
+    };
+  }, [codesKey, router]);
+
   return (
     <div
       className="nly-card-hover rounded-2xl border"
@@ -82,7 +121,10 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
         </span>
       </div>
 
-      <div className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>
+      <div
+        className="divide-y max-h-96 overflow-y-auto"
+        style={{ borderColor: "var(--nly-divider)" }}
+      >
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="px-5 py-3 flex items-center gap-3">
