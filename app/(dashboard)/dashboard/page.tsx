@@ -16,6 +16,7 @@ import { getNotificationCount } from "@/app/(dashboard)/dashboard/notifications/
 import { NudgeCards } from "@/components/dashboard/NudgeCards";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
 import { QuickActions } from "@/components/dashboard/QuickActions";
+import { PendingApprovalsPanel, type PendingRow } from "@/components/dashboard/PendingApprovalsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -237,6 +238,19 @@ export default async function DashboardPage({
     communityNameMap[c.community_code] = c.name;
   }
 
+  // Top-5 oldest pending residents for the inline approvals panel
+  let pendingRows: PendingRow[] = [];
+  if ((pendingCount ?? 0) > 0) {
+    const { data: pendingRaw } = await supabase
+      .from("pending_users")
+      .select("id, full_name, email, unit_number, created_at, community_code")
+      .in("community_code", communityCodes)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
+      .limit(5);
+    pendingRows = (pendingRaw as PendingRow[] | null) ?? [];
+  }
+
   // Compute smart nudges
   const communityNames = new Map(communities.map((c) => [c.id, c.name]));
   const nudges = await computeNudges(
@@ -426,6 +440,18 @@ export default async function DashboardPage({
         {nudges.length > 0 && (
           <DashboardSection delay={0.1}>
             <NudgeCards nudges={nudges} />
+          </DashboardSection>
+        )}
+
+        {/* Pending approvals (inline) */}
+        {pendingRows.length > 0 && (
+          <DashboardSection delay={0.15}>
+            <PendingApprovalsPanel
+              rows={pendingRows}
+              communityMap={communityMap}
+              communityNameMap={communityNameMap}
+              showCommunity={communities.length > 1}
+            />
           </DashboardSection>
         )}
 
