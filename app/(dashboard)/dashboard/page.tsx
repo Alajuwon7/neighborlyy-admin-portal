@@ -396,7 +396,10 @@ export default async function DashboardPage({
                   View all →
                 </Link>
               </div>
-              <div className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>
+              <div
+                className="divide-y max-h-96 overflow-y-auto"
+                style={{ borderColor: "var(--nly-divider)" }}
+              >
                 {communities.map((c) => (
                   <Link
                     key={c.id}

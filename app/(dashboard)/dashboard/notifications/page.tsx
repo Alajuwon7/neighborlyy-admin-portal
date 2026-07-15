@@ -85,6 +85,7 @@ export default async function NotificationsPage({
         </div>
 
         <NotificationList
+          key={filter ?? "all"}
           notifications={notifications}
           total={total}
           communityCodes={communityCodes}

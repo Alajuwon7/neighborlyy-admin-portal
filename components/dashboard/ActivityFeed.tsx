@@ -82,7 +82,10 @@ export function ActivityFeed({ items, loading }: ActivityFeedProps) {
         </span>
       </div>
 
-      <div className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>
+      <div
+        className="divide-y max-h-96 overflow-y-auto"
+        style={{ borderColor: "var(--nly-divider)" }}
+      >
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="px-5 py-3 flex items-center gap-3">

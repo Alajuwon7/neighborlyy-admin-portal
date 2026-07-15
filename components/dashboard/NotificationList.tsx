@@ -13,6 +13,14 @@ import {
   markAllNotificationsRead,
 } from "@/app/(dashboard)/dashboard/notifications/actions";
 
+const EMPTY_MESSAGES: Record<string, string> = {
+  all: "No notifications yet. Activity will appear here as residents use the app.",
+  pending_resident: "No resident notifications right now.",
+  event_rsvp: "No RSVP notifications right now.",
+  facility_reservation: "No reservation notifications right now.",
+  help_request: "No help request notifications right now.",
+};
+
 interface NotificationListProps {
   notifications: AdminNotification[];
   total: number;
@@ -34,6 +42,9 @@ export function NotificationList({
   const [loadingMore, setLoadingMore] = useState(false);
   const router = useRouter();
   const hasMore = notifications.length < total;
+
+  const emptyMessage =
+    EMPTY_MESSAGES[filter ?? "all"] ?? EMPTY_MESSAGES.all;
 
   async function handleClick(notification: AdminNotification) {
     if (!notification.is_read) {
@@ -92,11 +103,14 @@ export function NotificationList({
         </div>
       )}
 
-      <div className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>
+      <div
+        className="divide-y max-h-[32rem] overflow-y-auto"
+        style={{ borderColor: "var(--nly-divider)" }}
+      >
         {notifications.length === 0 ? (
           <div className="px-4 py-12 text-center">
             <p className="text-sm" style={{ color: "var(--nly-text-tertiary)" }}>
-              No notifications yet. Activity will appear here as residents use the app.
+              {emptyMessage}
             </p>
           </div>
         ) : (
