@@ -15,6 +15,7 @@ import { computeNudges } from "@/lib/nudges";
 import { getNotificationCount } from "@/app/(dashboard)/dashboard/notifications/actions";
 import { NudgeCards } from "@/components/dashboard/NudgeCards";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
+import { QuickActions } from "@/components/dashboard/QuickActions";
 
 export const dynamic = "force-dynamic";
 
@@ -414,6 +415,11 @@ export default async function DashboardPage({
               index={3}
             />
           </div>
+        </DashboardSection>
+
+        {/* Quick actions */}
+        <DashboardSection delay={0.05}>
+          <QuickActions singleCommunityId={single ? firstId : null} />
         </DashboardSection>
 
         {/* Smart nudges */}
