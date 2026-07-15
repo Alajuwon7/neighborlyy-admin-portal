@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 
@@ -9,10 +10,11 @@ interface SummaryCardProps {
   value: string | number;
   subtext?: string;
   icon: ReactNode;
-  trend?: { value: string; positive: boolean };
+  trend?: { value: string; tone?: "positive" | "neutral" | "negative"; label?: string };
   footer?: ReactNode;
   accentColor?: string;
   index?: number;
+  href?: string;
 }
 
 export function SummaryCard({
@@ -24,11 +26,12 @@ export function SummaryCard({
   footer,
   accentColor = "var(--nly-brand)",
   index = 0,
+  href,
 }: SummaryCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-40px 0px" });
 
-  return (
+  const card = (
     <motion.div
       ref={ref}
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
@@ -88,16 +91,38 @@ export function SummaryCard({
           <span
             className="text-xs font-semibold"
             style={{
-              color: trend.positive ? "var(--nly-success)" : "var(--nly-error)",
+              color:
+                trend.tone === "negative"
+                  ? "var(--nly-error)"
+                  : trend.tone === "neutral"
+                  ? "var(--nly-text-secondary)"
+                  : "var(--nly-success)",
             }}
           >
-            {trend.positive ? "\u2191" : "\u2193"} {trend.value}
+            {trend.tone === "negative"
+              ? "\u2193 "
+              : trend.tone === "neutral"
+              ? ""
+              : "\u2191 "}
+            {trend.value}
           </span>
           <span className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-            vs last month
+            {trend.label ?? "vs last month"}
           </span>
         </div>
       )}
     </motion.div>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nly-brand)]"
+      >
+        {card}
+      </Link>
+    );
+  }
+  return card;
 }
