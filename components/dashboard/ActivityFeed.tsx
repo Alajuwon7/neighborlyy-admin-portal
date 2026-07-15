@@ -64,6 +64,7 @@ export function ActivityFeed({ items, loading, communityCodes }: ActivityFeedPro
 
   useEffect(() => {
     if (!codesKey) return;
+    const codes = codesKey.split(",");
     const supabase = createClient();
     const scheduleRefresh = () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
@@ -72,12 +73,18 @@ export function ActivityFeed({ items, loading, communityCodes }: ActivityFeedPro
     const channel = supabase.channel("dashboard-activity");
     // These are exactly the tables the server builds recentActivity from
     // (profiles / pending_users / events / alerts in dashboard/page.tsx).
+    // Supabase postgres_changes filters only support single equality, so we
+    // bind one filter per (table, community_code) pair to scope the
+    // subscription to this PM's own communities rather than the whole
+    // shared multi-tenant DB.
     for (const table of ["profiles", "pending_users", "events", "alerts"]) {
-      channel.on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table },
-        scheduleRefresh,
-      );
+      for (const code of codes) {
+        channel.on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table, filter: `community_code=eq.${code}` },
+          scheduleRefresh,
+        );
+      }
     }
     channel.subscribe();
     return () => {
