@@ -541,7 +541,7 @@ export default async function DashboardPage({
 
             {/* Activity feed */}
             <div data-tour="activity-feed" className="lg:col-span-3">
-              <ActivityFeed items={recentActivity} />
+              <ActivityFeed items={recentActivity} communityCodes={communityCodes} />
             </div>
           </div>
         </DashboardSection>

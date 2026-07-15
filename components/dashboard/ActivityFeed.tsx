@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from "date-fns";
 import { motion } from "motion/react";
+import { createClient } from "@/lib/supabase/client";
 
 export interface ActivityItem {
   id: string;
@@ -51,9 +54,38 @@ function groupByTime(items: ActivityItem[]): { label: string; items: ActivityIte
 interface ActivityFeedProps {
   items: ActivityItem[];
   loading?: boolean;
+  communityCodes?: string[];
 }
 
-export function ActivityFeed({ items, loading }: ActivityFeedProps) {
+export function ActivityFeed({ items, loading, communityCodes }: ActivityFeedProps) {
+  const router = useRouter();
+  const codesKey = (communityCodes ?? []).join(",");
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!codesKey) return;
+    const supabase = createClient();
+    const scheduleRefresh = () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      refreshTimer.current = setTimeout(() => router.refresh(), 800);
+    };
+    const channel = supabase.channel("dashboard-activity");
+    // These are exactly the tables the server builds recentActivity from
+    // (profiles / pending_users / events / alerts in dashboard/page.tsx).
+    for (const table of ["profiles", "pending_users", "events", "alerts"]) {
+      channel.on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table },
+        scheduleRefresh,
+      );
+    }
+    channel.subscribe();
+    return () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      supabase.removeChannel(channel);
+    };
+  }, [codesKey, router]);
+
   return (
     <div
       className="nly-card-hover rounded-2xl border"
