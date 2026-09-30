@@ -451,6 +451,9 @@ export default async function DashboardPage({
         {pendingRows.length > 0 && (
           <DashboardSection delay={0.15}>
             <PendingApprovalsPanel
+              // Remount when the server's queue changes so router.refresh()
+              // replaces the panel's local copy of the rows.
+              key={pendingRows.map((r) => r.id).join(",")}
               rows={pendingRows}
               communityMap={communityMap}
               communityNameMap={communityNameMap}
