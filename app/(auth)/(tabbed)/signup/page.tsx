@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Mail, User, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { explainWeakPassword } from "@/lib/password-policy";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,7 +62,8 @@ export default function SignupPage() {
       toast.success("Account created! Please check your email to verify.");
       router.push("/verify-email");
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Something went wrong");
+      const weak = explainWeakPassword(formData.password, error);
+      toast.error(weak ?? (error instanceof Error ? error.message : "Something went wrong"));
     } finally {
       setLoading(false);
     }

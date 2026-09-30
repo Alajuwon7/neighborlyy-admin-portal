@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { explainWeakPassword } from "@/lib/password-policy";
 import {
   signApprovalToken,
   TOKEN_TTL,
@@ -73,7 +74,12 @@ export async function changePassword(formData: FormData) {
     password: newPassword,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    const weak = explainWeakPassword(newPassword, error);
+    if (weak) return { error: weak };
+    console.error("changePassword failed:", error);
+    return { error: "Couldn't update your password. Please try again." };
+  }
 
   return { success: true };
 }

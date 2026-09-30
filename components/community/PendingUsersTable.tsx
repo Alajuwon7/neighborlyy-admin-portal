@@ -98,12 +98,13 @@ export function PendingUsersTable({
     setLoading("bulk");
     const result = await bulkApproveResidents(ids, communityId);
     setLoading(null);
-    if (result.error) toast.error(result.error);
-    else {
-      toast.success(`${ids.length} residents approved`);
-      setUsers((prev) => prev.filter((u) => !ids.includes(u.id)));
-      setSelected(new Set());
+    const approved = result.approvedIds;
+    if (approved.length > 0) {
+      toast.success(`${approved.length} ${approved.length === 1 ? "resident" : "residents"} approved`);
+      setUsers((prev) => prev.filter((u) => !approved.includes(u.id)));
+      setSelected((prev) => new Set([...prev].filter((id) => !approved.includes(id))));
     }
+    if (result.error) toast.error(result.error);
   }
 
   if (users.length === 0) {

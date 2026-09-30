@@ -48,8 +48,10 @@ export function PendingApprovalsPanel({
         kind === "approve"
           ? await approveResident(row.id, communityId)
           : await denyResident(row.id, communityId);
-      if ("error" in res && res.error) {
-        toast.error("Something went wrong. Please try again.");
+      if (res.error) {
+        toast.error(res.error);
+        // e.g. already reviewed by another admin — pull the fresh queue.
+        router.refresh();
         return;
       }
       setRows((prev) => prev.filter((r) => r.id !== row.id));

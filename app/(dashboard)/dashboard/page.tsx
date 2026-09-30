@@ -17,6 +17,14 @@ import { NudgeCards } from "@/components/dashboard/NudgeCards";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PendingApprovalsPanel, type PendingRow } from "@/components/dashboard/PendingApprovalsPanel";
+import { WeeklySummaryCard, type WeeklySummaryEntry } from "@/components/dashboard/WeeklySummaryCard";
+import {
+  DIGEST_COLUMNS,
+  SUGGESTION_COLUMNS,
+  attachSuggestions,
+  type Digest,
+  type Suggestion,
+} from "@/lib/digest";
 
 export const dynamic = "force-dynamic";
 
@@ -255,6 +263,43 @@ export default async function DashboardPage({
     pendingRows = (pendingRaw as PendingRow[] | null) ?? [];
   }
 
+  // Latest weekly digest per community (written Mondays by the mobile repo's
+  // build-community-digest job). Only the newest ~2 weeks can be the latest,
+  // so bound the read instead of pulling every community's history.
+  const twoWeeksAgo = new Date(new Date().getTime() - 14 * 864e5).toISOString().slice(0, 10);
+  const [
+    { data: digestsRaw, error: digestsError },
+    { data: digestSuggestionsRaw, error: digestSuggestionsError },
+  ] = await Promise.all([
+    supabase
+      .from("community_digests")
+      .select(DIGEST_COLUMNS)
+      .in("community_code", communityCodes)
+      .gte("week_start", twoWeeksAgo)
+      .order("week_start", { ascending: false }),
+    supabase
+      .from("community_suggestions")
+      .select(SUGGESTION_COLUMNS)
+      .in("community_code", communityCodes)
+      .gte("week_start", twoWeeksAgo),
+  ]);
+  // Non-critical teaser: on failure, log and omit the card rather than render
+  // a half-loaded one (the Weekly Summary tab shows the error state).
+  if (digestsError) console.error("dashboard community_digests read failed:", digestsError);
+  if (digestSuggestionsError) console.error("dashboard community_suggestions read failed:", digestSuggestionsError);
+  const latestDigestByCode = new Map<string, Digest>();
+  for (const d of digestsError || digestSuggestionsError ? [] : ((digestsRaw as unknown as Digest[] | null) ?? [])) {
+    if (!latestDigestByCode.has(d.community_code)) latestDigestByCode.set(d.community_code, d);
+  }
+  const weeklySummaries: WeeklySummaryEntry[] = attachSuggestions(
+    [...latestDigestByCode.values()],
+    (digestSuggestionsRaw as Suggestion[] | null) ?? [],
+  ).map((digest) => ({
+    communityId: communityMap[digest.community_code],
+    communityName: communityNameMap[digest.community_code],
+    digest,
+  }));
+
   // Compute smart nudges
   const communityNames = new Map(communities.map((c) => [c.id, c.name]));
   const nudges = await computeNudges(
@@ -451,11 +496,21 @@ export default async function DashboardPage({
         {pendingRows.length > 0 && (
           <DashboardSection delay={0.15}>
             <PendingApprovalsPanel
+              // Remount when the server's queue changes so router.refresh()
+              // replaces the panel's local copy of the rows.
+              key={pendingRows.map((r) => r.id).join(",")}
               rows={pendingRows}
               communityMap={communityMap}
               communityNameMap={communityNameMap}
               showCommunity={communities.length > 1}
             />
+          </DashboardSection>
+        )}
+
+        {/* Last week's digest per community */}
+        {weeklySummaries.length > 0 && (
+          <DashboardSection delay={0.18}>
+            <WeeklySummaryCard entries={weeklySummaries} showCommunity={communities.length > 1} />
           </DashboardSection>
         )}
 

@@ -36,7 +36,7 @@ export default async function EventsPage({
   const past = events.filter((e) => new Date(e.event_date) < now);
 
   return (
-    <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl">
+    <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2
@@ -84,7 +84,7 @@ export default async function EventsPage({
               >
                 Upcoming
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {upcoming.map((e) => (
                   <EventCard key={e.id} event={e} communityId={id} />
                 ))}
@@ -99,7 +99,7 @@ export default async function EventsPage({
               >
                 Past
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-60">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-60">
                 {past.map((e) => (
                   <EventCard key={e.id} event={e} communityId={id} />
                 ))}
