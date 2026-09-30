@@ -40,23 +40,28 @@ export default async function FacilitiesPage({
       available: boolean;
     }[]) ?? [];
 
-  // Get reservation counts for each facility
+  // Upcoming reservation counts per facility. reservation_status is
+  // ('active','cancelled','pending','approved','denied') — there is no
+  // 'confirmed'; filtering on it made Postgres reject the query, so every
+  // facility showed zero. New app bookings start 'pending' until an admin
+  // approves them, so those are counted (and surfaced) too.
   const facilityIds = facilities.map((f) => f.id);
-  const { data: reservationsRaw } = facilityIds.length
+  const { data: reservationsRaw, error: reservationsError } = facilityIds.length
     ? await supabase
         .from("reservations")
-        .select("facility_id")
+        .select("facility_id, status")
         .in("facility_id", facilityIds)
-        .eq("status", "confirmed")
+        .in("status", ["pending", "approved", "active"])
         .gte("start_time", new Date().toISOString())
-    : { data: [] };
+    : { data: [], error: null };
+  if (reservationsError) console.error("facility reservations read failed:", reservationsError);
 
-  const reservationCounts = new Map<string, number>();
-  ((reservationsRaw as { facility_id: string }[]) ?? []).forEach((r) => {
-    reservationCounts.set(
-      r.facility_id,
-      (reservationCounts.get(r.facility_id) ?? 0) + 1
-    );
+  const reservationCounts = new Map<string, { total: number; pending: number }>();
+  ((reservationsRaw as { facility_id: string; status: string }[]) ?? []).forEach((r) => {
+    const c = reservationCounts.get(r.facility_id) ?? { total: 0, pending: 0 };
+    c.total += 1;
+    if (r.status === "pending") c.pending += 1;
+    reservationCounts.set(r.facility_id, c);
   });
 
   return (
@@ -98,7 +103,8 @@ export default async function FacilitiesPage({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
           {facilities.map((f) => {
-            const upcomingReservations = reservationCounts.get(f.id) ?? 0;
+            const { total: upcomingReservations, pending: pendingReservations } =
+              reservationCounts.get(f.id) ?? { total: 0, pending: 0 };
             const openLabel = formatTime(f.open_time);
             const closeLabel = formatTime(f.close_time);
             const hoursLabel =
@@ -207,6 +213,12 @@ export default async function FacilitiesPage({
                       {upcomingReservations === 1
                         ? "reservation"
                         : "reservations"}
+                      {pendingReservations > 0 && (
+                        <span style={{ color: "var(--nly-warning)" }}>
+                          {" "}
+                          · {pendingReservations} awaiting approval
+                        </span>
+                      )}
                     </span>
                   )}
                 </div>
