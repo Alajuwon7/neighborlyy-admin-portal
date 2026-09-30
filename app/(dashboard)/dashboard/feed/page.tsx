@@ -51,7 +51,7 @@ export default async function FeedPage() {
         title="Community Feed"
         subtitle={`Posts and announcements for ${community.name}`}
       />
-      <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl">
+      <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <p
@@ -84,7 +84,7 @@ export default async function FeedPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
             {posts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}

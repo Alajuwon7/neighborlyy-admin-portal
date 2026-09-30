@@ -60,7 +60,7 @@ export default async function FacilitiesPage({
   });
 
   return (
-    <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl">
+    <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2
@@ -96,7 +96,7 @@ export default async function FacilitiesPage({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
           {facilities.map((f) => {
             const upcomingReservations = reservationCounts.get(f.id) ?? 0;
             const openLabel = formatTime(f.open_time);

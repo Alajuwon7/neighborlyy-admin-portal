@@ -531,6 +531,19 @@
   border-color: rgba(255, 255, 255, 0.18) !important;
 }
 
+/* Weekly summary cards: brand border on hover/focus so a PM can tell which
+   week they're on when two sit side by side. !important beats the inline
+   border colour the card sets for its resting state. */
+.nly-week-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nly-week-card:hover,
+.nly-week-card:focus-within {
+  border-color: var(--nly-brand) !important;
+  box-shadow: 0 0 0 1px var(--nly-brand), 0 8px 28px rgba(47, 196, 211, 0.12);
+}
+
 /* Subtle scale hover for interactive elements */
 .nly-hover-scale {
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
