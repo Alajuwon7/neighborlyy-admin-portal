@@ -10,7 +10,12 @@ import {
   parseRange,
   rangeStart,
   summarizeDecisions,
+  summarizeHelp,
+  helpByCategory,
+  helpCategory,
+  formatAge,
   type DecisionRow,
+  type HelpRow,
 } from "@/lib/insights";
 import { DecisionsChart, WeeklyTookPartChart } from "@/components/insights/InsightsCharts";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
@@ -45,25 +50,49 @@ export default async function InsightsPage({
   const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
   // PostgREST caps every response at max_rows (1000) regardless of .limit(),
-  // so page through the ledger rather than silently dropping rows.
-  const readLedger = async (): Promise<{ data: DecisionRow[]; error: unknown }> => {
+  // so page through rather than silently dropping rows. `page` must apply a
+  // stable order and .range(from, to).
+  async function readAll<T>(
+    page: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>,
+  ): Promise<{ data: T[]; error: unknown }> {
     const PAGE = 1000;
-    const rows: DecisionRow[] = [];
+    const rows: T[] = [];
     for (let from = 0; ; from += PAGE) {
+      const { data, error } = await page(from, from + PAGE - 1);
+      if (error) return { data: rows, error };
+      const batch = (data as T[] | null) ?? [];
+      rows.push(...batch);
+      if (batch.length < PAGE) return { data: rows, error: null };
+    }
+  }
+
+  const readLedger = () =>
+    readAll<DecisionRow>((from, to) => {
       let q = supabase
         .from("user_application_decisions")
         .select("decision, decided_at, applied_at")
         .eq("community_code", code)
         .order("decided_at", { ascending: false })
         .order("id", { ascending: true })
-        .range(from, from + PAGE - 1);
+        .range(from, to);
       if (ledgerFrom) q = q.gte("decided_at", ledgerFrom.toISOString());
-      const { data, error } = await q;
-      if (error) return { data: rows, error };
-      rows.push(...((data as DecisionRow[] | null) ?? []));
-      if (!data || data.length < PAGE) return { data: rows, error: null };
-    }
-  };
+      return q;
+    });
+
+  // Help requests CREATED in the range (a request's outcome belongs to the
+  // period it was asked in, so completion rate isn't skewed by old backlogs).
+  const readHelp = () =>
+    readAll<HelpRow>((from, to) => {
+      let q = supabase
+        .from("help_requests")
+        .select("request_type, metadata, status, created_at, resolved_at")
+        .eq("community_code", code)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: true })
+        .range(from, to);
+      if (start) q = q.gte("created_at", start.toISOString());
+      return q;
+    });
 
   const activeCount = (from: Date, to: Date) =>
     supabase.rpc("get_active_resident_count", {
@@ -72,7 +101,14 @@ export default async function InsightsPage({
       p_end: to.toISOString(),
     });
 
-  const [{ count: residentCount, error: residentError }, ledgerRes, activeRes, weeklyRes] = await Promise.all([
+  const [
+    { count: residentCount, error: residentError },
+    ledgerRes,
+    activeRes,
+    weeklyRes,
+    helpRes,
+    openHelpRes,
+  ] = await Promise.all([
     filterResidents(
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("community_code", code),
     ),
@@ -88,15 +124,33 @@ export default async function InsightsPage({
       .eq("community_code", code)
       .gte("week_start", isoDate(weeks[0].start))
       .lte("week_start", isoDate(weeks[weeks.length - 1].start)),
+    readHelp(),
+    // Open now (any age) and the five waiting longest.
+    supabase
+      .from("help_requests")
+      .select("id, title, request_type, metadata, status, created_at", { count: "exact" })
+      .eq("community_code", code)
+      .in("status", ["open", "in_progress"])
+      .order("created_at", { ascending: true })
+      .limit(5),
   ]);
 
   const loadError =
-    residentError ?? ledgerRes.error ?? activeRes.error ?? weeklyRes.error ?? null;
+    residentError ?? ledgerRes.error ?? activeRes.error ?? weeklyRes.error ?? helpRes.error ?? openHelpRes.error ?? null;
   if (loadError) console.error("insights read failed:", loadError);
 
   const ledger = ledgerRes.data;
   const inRange = start ? ledger.filter((r) => new Date(r.decided_at) >= start) : ledger;
   const decisions = summarizeDecisions(inRange);
+  const helpSummary = summarizeHelp(helpRes.data);
+  const helpCategories = helpByCategory(helpRes.data);
+  // The folded tail sits last but can be the biggest bucket — scale to the max.
+  const maxCategoryCount = Math.max(1, ...helpCategories.map((c) => c.count));
+  const openHelpCount = openHelpRes.count ?? 0;
+  const oldestOpen = (openHelpRes.data as (Pick<HelpRow, "request_type" | "metadata" | "status" | "created_at"> & {
+    id: string;
+    title: string;
+  })[] | null) ?? [];
   const wait = medianWaitHours(inRange);
   const active = (activeRes.data as number | null) ?? 0;
   const residents = residentCount ?? 0;
@@ -125,7 +179,7 @@ export default async function InsightsPage({
             Resident Insights
           </h2>
           <p className="text-xs mt-0.5" style={{ color: "var(--nly-text-tertiary)" }}>
-            Who&apos;s joining, who&apos;s active, and how quickly applicants hear back
+            Who&apos;s joining, who&apos;s active, how quickly applicants hear back, and how neighbours help each other
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -216,6 +270,108 @@ export default async function InsightsPage({
               <DecisionsChart data={monthly} />
             </Panel>
           </div>
+
+          {/* ── Help requests (the neighbour help board) ───────────────── */}
+          <section className="space-y-3 pt-2" aria-labelledby="help-heading">
+            <div>
+              <h3 id="help-heading" className="text-sm font-semibold" style={{ color: "var(--nly-text-primary)" }}>
+                Help requests
+              </h3>
+              <p className="text-xs mt-0.5" style={{ color: "var(--nly-text-tertiary)" }}>
+                Neighbours asking each other for help · requests made in the last {rangeLabel}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+              <Tile
+                label="Requests"
+                value={String(helpSummary.total)}
+                note={helpSummary.cancelled > 0 ? `${helpSummary.cancelled} withdrawn by the resident` : `asked in the last ${rangeLabel}`}
+              />
+              <Tile
+                label="Completed"
+                value={helpSummary.completionRate === null ? String(helpSummary.completed) : `${helpSummary.completionRate}%`}
+                note={
+                  helpSummary.completionRate === null
+                    ? "No requests to complete yet"
+                    : `${helpSummary.completed} of ${helpSummary.total - helpSummary.cancelled} requests (withdrawn excluded) completed so far — recent ones may still be open`
+                }
+              />
+              <Tile
+                label="Typical time to help"
+                value={helpSummary.medianResolveHours === null ? "—" : formatWait(helpSummary.medianResolveHours)}
+                note={
+                  helpSummary.medianResolveHours === null
+                    ? "No completed requests yet"
+                    : "Median from asking to completed (before 17 Sep: estimated)"
+                }
+              />
+              <Tile
+                label="Open now"
+                value={String(openHelpCount)}
+                note={openHelpCount === 0 ? "Nobody is waiting for help" : "Still waiting for a neighbour, any age"}
+              />
+            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <Panel>
+                <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--nly-text-primary)" }}>
+                  What residents ask for
+                </h4>
+                {helpCategories.length === 0 ? (
+                  <p className="text-sm" style={{ color: "var(--nly-text-tertiary)" }}>
+                    No help requests in the last {rangeLabel}.
+                  </p>
+                ) : (
+                  <ul className="space-y-2.5">
+                    {helpCategories.map((c) => (
+                      <li key={c.label} className="grid grid-cols-[8rem_1fr_2rem] items-center gap-3 text-xs">
+                        <span className="truncate" style={{ color: "var(--nly-text-secondary)" }}>
+                          {c.label}
+                        </span>
+                        <span className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "var(--nly-surface-hover)" }}>
+                          <span
+                            className="block h-full rounded-full"
+                            style={{ width: `${(c.count / maxCategoryCount) * 100}%`, backgroundColor: "#16A3B3" }}
+                          />
+                        </span>
+                        <span className="text-right tabular-nums" style={{ color: "var(--nly-text-primary)" }}>
+                          {c.count}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Panel>
+              <Panel>
+                <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--nly-text-primary)" }}>
+                  Waiting longest
+                </h4>
+                {oldestOpen.length === 0 ? (
+                  <p className="text-sm" style={{ color: "var(--nly-text-tertiary)" }}>
+                    No open requests right now.
+                  </p>
+                ) : (
+                  <ul className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>
+                    {oldestOpen.map((r) => (
+                      <li key={r.id} className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm truncate" style={{ color: "var(--nly-text-primary)" }}>
+                            {r.title}
+                          </p>
+                          <p className="text-[11px]" style={{ color: "var(--nly-text-tertiary)" }}>
+                            {helpCategory(r)}
+                            {r.status === "in_progress" ? " · a neighbour is on it" : ""}
+                          </p>
+                        </div>
+                        <span className="text-xs shrink-0 tabular-nums" style={{ color: "var(--nly-text-secondary)" }}>
+                          {formatAge(r.created_at, now)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Panel>
+            </div>
+          </section>
         </>
       )}
     </main>

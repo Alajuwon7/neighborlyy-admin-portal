@@ -129,3 +129,88 @@ export function monthlyDecisions(rows: DecisionRow[], now: Date, n: number): Mon
   }
   return buckets;
 }
+
+// ─── Help requests ──────────────────────────────────────────────────────────
+// help_requests is resident-to-resident (the neighbour help board). PMs read it
+// via Miyora 20260930190000. resolved_at is exact for requests completed after
+// 2026-09-17; earlier ones were backfilled from updated_at (an over-estimate).
+
+export type HelpRow = {
+  request_type: string;
+  metadata: { category?: unknown } | null;
+  status: "open" | "in_progress" | "completed" | "cancelled";
+  created_at: string;
+  resolved_at: string | null;
+};
+
+// Exactly the app's REQUEST_TYPES labels (HelpRequestScreen.tsx).
+const HELP_TYPE_LABELS: Record<string, string> = {
+  dog_walking: "Dog Walking",
+  groceries: "Groceries",
+  moving: "Moving Help",
+  custom: "Custom Request",
+};
+
+/** Label for the folded tail — not "Other", which a resident can type as a category. */
+export const HELP_TAIL_LABEL = "Everything else";
+
+/** Same precedence as the app: a free-text metadata.category, else the type's label. */
+export function helpCategory(row: Pick<HelpRow, "request_type" | "metadata">): string {
+  const custom = row.metadata?.category;
+  if (typeof custom === "string" && custom.trim()) return custom.trim();
+  return Object.prototype.hasOwnProperty.call(HELP_TYPE_LABELS, row.request_type)
+    ? HELP_TYPE_LABELS[row.request_type]
+    : "Custom Request";
+}
+
+export function summarizeHelp(rows: HelpRow[]) {
+  const completed = rows.filter((r) => r.status === "completed");
+  const cancelled = rows.filter((r) => r.status === "cancelled").length;
+  // Cancelled requests were withdrawn, not failed — leave them out of the rate.
+  const decidable = rows.length - cancelled;
+  // A request inserted already-completed gets resolved_at = created_at
+  // (a helper-flow artefact, not a 0-second rescue) — leave it out of timing.
+  const hours = completed
+    .filter((r) => r.resolved_at && r.resolved_at !== r.created_at)
+    .map((r) => (new Date(r.resolved_at!).getTime() - new Date(r.created_at).getTime()) / 3600000)
+    .filter((h) => Number.isFinite(h) && h >= 0)
+    .sort((a, b) => a - b);
+  const mid = Math.floor(hours.length / 2);
+  return {
+    total: rows.length,
+    completed: completed.length,
+    cancelled,
+    completionRate: decidable > 0 ? Math.round((completed.length / decidable) * 100) : null,
+    medianResolveHours:
+      hours.length === 0 ? null : hours.length % 2 ? hours[mid] : (hours[mid - 1] + hours[mid]) / 2,
+  };
+}
+
+/**
+ * Counts per category, largest first. Categories merge case-insensitively
+ * (a typed "groceries" joins the Groceries type), keeping the first-seen
+ * spelling. Beyond `max` bars the tail folds into HELP_TAIL_LABEL, always last.
+ */
+export function helpByCategory(rows: HelpRow[], max = 6): { label: string; count: number }[] {
+  const counts = new Map<string, { label: string; count: number }>();
+  for (const r of rows) {
+    const label = helpCategory(r);
+    const key = label.toLowerCase();
+    const c = counts.get(key) ?? { label, count: 0 };
+    c.count += 1;
+    counts.set(key, c);
+  }
+  const sorted = [...counts.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  if (sorted.length <= max) return sorted;
+  const kept = sorted.slice(0, max - 1);
+  const rest = sorted.slice(max - 1).reduce((sum, c) => sum + c.count, 0);
+  return [...kept, { label: HELP_TAIL_LABEL, count: rest }];
+}
+
+/** "3 hours" / "5 days" — age of an open request. */
+export function formatAge(fromIso: string, now: Date): string {
+  const hours = (now.getTime() - new Date(fromIso).getTime()) / 3600000;
+  if (hours < 1) return "Under an hour";
+  if (hours < 48) return `${Math.round(hours)} hours`;
+  return `${Math.round(hours / 24)} days`;
+}
