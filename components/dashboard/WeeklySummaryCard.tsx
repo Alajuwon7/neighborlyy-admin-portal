@@ -42,7 +42,7 @@ export function WeeklySummaryCard({
       <div className="divide-y" style={{ borderColor: "var(--nly-divider)" }}>
         {entries.map(({ communityId, communityName, digest }) => {
           const quiet = isQuiet(digest);
-          // Active residents first — it's the headline number — then the
+          // Residents who took part first — the headline number — then the
           // busiest activity metrics.
           const metrics = [
             ...(digest.active_residents > 0 ? (["active_residents"] as const) : []),

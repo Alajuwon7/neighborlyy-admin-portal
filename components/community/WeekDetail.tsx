@@ -76,7 +76,7 @@ export function WeekDetail({ communityId, digest: initialDigest, comparisons, is
             <span className="font-semibold">{digest.active_residents}</span>
             <span style={{ color: "var(--nly-text-secondary)" }}>
               {" "}
-              of {digest.residents_total} residents were active ({activeShare}%)
+              of {digest.residents_total} residents took part ({activeShare}%)
             </span>
           </p>
         )}

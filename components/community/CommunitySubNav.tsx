@@ -10,11 +10,13 @@ import {
   Bell,
   Dumbbell,
   BarChart3,
+  LineChart,
 } from "lucide-react";
 
 const TABS = [
   { href: "", label: "Overview", icon: LayoutDashboard },
   { href: "/summary", label: "Weekly Summary", icon: BarChart3 },
+  { href: "/insights", label: "Insights", icon: LineChart },
   { href: "/pending", label: "Pending", icon: Clock },
   { href: "/residents", label: "Residents", icon: Users },
   { href: "/events", label: "Events", icon: Calendar },
