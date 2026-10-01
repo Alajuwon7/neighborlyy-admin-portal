@@ -116,7 +116,12 @@ const METRIC_NOUNS: Record<MetricKey, [string, string]> = {
   event_rsvps: ["event RSVP", "event RSVPs"],
   events_held: ["event held", "events held"],
   residents_joined: ["resident joined", "residents joined"],
-  active_residents: ["active resident", "active residents"],
+  // The digest's active_residents counts residents who posted, commented,
+  // asked for help, RSVPed, answered a survey or sent a Connect request —
+  // narrower than get_active_resident_count (which adds app opens, likes,
+  // bookings, marketplace). The portal's Insights tab owns "active residents",
+  // so this one reads "took part" and the two never look like the same metric.
+  active_residents: ["resident took part", "residents took part"],
   survey_responses: ["survey response", "survey responses"],
   connection_requests: ["Connect request", "Connect requests"],
 };
