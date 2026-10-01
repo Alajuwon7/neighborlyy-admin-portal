@@ -33,7 +33,7 @@ export async function getAuthenticatedPM() {
 }
 
 export async function getCommunityWithAuth(communityId: string) {
-  const { supabase, pm } = await getAuthenticatedPM();
+  const { supabase, user, pm } = await getAuthenticatedPM();
 
   // Use organization_id for access check when available (allows org-level access),
   // fall back to property_manager_id for PMs without an org yet.
@@ -54,6 +54,7 @@ export async function getCommunityWithAuth(communityId: string) {
 
   return {
     supabase,
+    user,
     pm,
     community: community as NonNullable<typeof community>,
   };

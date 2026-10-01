@@ -89,3 +89,62 @@ test("monthlyDecisions buckets by UTC month and drops out-of-window rows", () =>
   assert.equal(m.find((b) => b.key === "2026-01")?.label, "Jan 26");
   assert.equal(m.find((b) => b.key === "2026-01")?.approved, 1);
 });
+
+import { formatAge, helpByCategory, helpCategory, summarizeHelp, type HelpRow } from "../../lib/insights";
+
+const help = (over: Partial<HelpRow>): HelpRow => ({
+  request_type: "groceries",
+  metadata: null,
+  status: "open",
+  created_at: "2026-09-20T10:00:00Z",
+  resolved_at: null,
+  ...over,
+});
+
+test("helpCategory: metadata.category wins, then the type label, unknown -> Other", () => {
+  assert.equal(helpCategory(help({ metadata: { category: " Tech support " } })), "Tech support");
+  assert.equal(helpCategory(help({ request_type: "dog_walking" })), "Dog Walking");
+  assert.equal(helpCategory(help({ request_type: "custom" })), "Custom Request");
+  assert.equal(helpCategory(help({ request_type: "constructor" })), "Custom Request");
+  assert.equal(helpCategory(help({ metadata: { category: 42 } })), "Groceries");
+});
+
+test("summarizeHelp excludes cancelled from the rate and uses median resolve time", () => {
+  const s = summarizeHelp([
+    help({ status: "completed", resolved_at: "2026-09-20T12:00:00Z" }), // 2h
+    help({ status: "completed", resolved_at: "2026-09-21T10:00:00Z" }), // 24h
+    help({ status: "completed", resolved_at: "2026-09-20T16:00:00Z" }), // 6h
+    help({ status: "open" }),
+    help({ status: "cancelled" }),
+    help({ status: "completed", resolved_at: "2026-09-20T10:00:00Z" }), // created already-completed: no timing
+  ]);
+  assert.deepEqual(s, { total: 6, completed: 4, cancelled: 1, completionRate: 80, medianResolveHours: 6 });
+  assert.equal(summarizeHelp([help({ status: "cancelled" })]).completionRate, null);
+});
+
+test("helpByCategory merges case-insensitively and folds the tail last", () => {
+  const rows = [
+    ...Array(3).fill(help({ request_type: "groceries" })),
+    help({ metadata: { category: "groceries" } }), // joins Groceries
+    help({ request_type: "moving" }),
+    help({ metadata: { category: "A" } }),
+    help({ metadata: { category: "B" } }),
+    help({ metadata: { category: "Other" } }), // a resident's own "Other" stays its own bar
+  ];
+  assert.deepEqual(helpByCategory(rows, 3), [
+    { label: "Groceries", count: 4 },
+    { label: "A", count: 1 },
+    { label: "Everything else", count: 3 }, // B, Moving Help, Other
+  ]);
+  assert.deepEqual(helpByCategory([help({}), help({ request_type: "moving" })]), [
+    { label: "Groceries", count: 1 },
+    { label: "Moving Help", count: 1 },
+  ]);
+});
+
+test("formatAge", () => {
+  const now = new Date("2026-09-25T10:00:00Z");
+  assert.equal(formatAge("2026-09-25T09:30:00Z", now), "Under an hour");
+  assert.equal(formatAge("2026-09-24T10:00:00Z", now), "24 hours");
+  assert.equal(formatAge("2026-09-20T10:00:00Z", now), "5 days");
+});
