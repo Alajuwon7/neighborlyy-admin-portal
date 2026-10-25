@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { differenceInHours } from "date-fns";
 import { soonestTrialDaysLeft } from "@/lib/trial-days";
-import { filterResidents } from "@/lib/residents";
+import { filterCountedResidents, filterResidents } from "@/lib/residents";
 import { Building2, Users, Clock, AlertTriangle } from "lucide-react";
 import { Header } from "@/components/dashboard/Header";
 import { SummaryCard } from "@/components/dashboard/SummaryCard";
@@ -126,10 +126,10 @@ export default async function DashboardPage({
     { count: newAlertsWk },
   ] = await Promise.all([
     supabase.from("events").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
-    filterResidents(supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes)),
+    filterCountedResidents(supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes)),
     supabase.from("pending_users").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
     supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
-    filterResidents(
+    filterCountedResidents(
       supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })

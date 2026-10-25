@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { filterResidents } from "@/lib/residents";
+import { filterCountedResidents } from "@/lib/residents";
 
 export interface Nudge {
   id: string;
@@ -109,7 +109,7 @@ export async function computeNudges(
     const cCodes = pairs
       .filter((p) => p.id === cId)
       .map((p) => p.community_code);
-    const { count: residentCount } = await filterResidents(
+    const { count: residentCount } = await filterCountedResidents(
       supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })

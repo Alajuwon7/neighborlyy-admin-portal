@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCommunityWithAuth } from "@/lib/queries";
-import { filterResidents } from "@/lib/residents";
+import { excludeAuthors, filterCountedResidents, nonResidentIds } from "@/lib/residents";
 import {
   RANGES,
   formatWait,
@@ -79,14 +79,21 @@ export default async function InsightsPage({
       return q;
     });
 
+  // Management and the founder's own account are not resident engagement
+  // (same rule as the mobile app and the database metrics).
+  const notResidents = await nonResidentIds(supabase, [code]);
+
   // Help requests CREATED in the range (a request's outcome belongs to the
   // period it was asked in, so completion rate isn't skewed by old backlogs).
   const readHelp = () =>
     readAll<HelpRow>((from, to) => {
-      let q = supabase
-        .from("help_requests")
-        .select("request_type, metadata, status, created_at, resolved_at")
-        .eq("community_code", code)
+      let q = excludeAuthors(
+        supabase
+          .from("help_requests")
+          .select("request_type, metadata, status, created_at, resolved_at")
+          .eq("community_code", code),
+        notResidents,
+      )
         .order("created_at", { ascending: false })
         .order("id", { ascending: true })
         .range(from, to);
@@ -109,7 +116,7 @@ export default async function InsightsPage({
     helpRes,
     openHelpRes,
   ] = await Promise.all([
-    filterResidents(
+    filterCountedResidents(
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("community_code", code),
     ),
     readLedger(),
@@ -126,10 +133,13 @@ export default async function InsightsPage({
       .lte("week_start", isoDate(weeks[weeks.length - 1].start)),
     readHelp(),
     // Open now (any age) and the five waiting longest.
-    supabase
-      .from("help_requests")
-      .select("id, title, request_type, metadata, status, created_at", { count: "exact" })
-      .eq("community_code", code)
+    excludeAuthors(
+      supabase
+        .from("help_requests")
+        .select("id, title, request_type, metadata, status, created_at", { count: "exact" })
+        .eq("community_code", code),
+      notResidents,
+    )
       .in("status", ["open", "in_progress"])
       .order("created_at", { ascending: true })
       .limit(5),
