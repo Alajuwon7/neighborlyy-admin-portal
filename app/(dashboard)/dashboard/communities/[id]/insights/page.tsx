@@ -115,6 +115,7 @@ export default async function InsightsPage({
     weeklyRes,
     helpRes,
     openHelpRes,
+    waitingHelpRes,
   ] = await Promise.all([
     filterCountedResidents(
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("community_code", code),
@@ -143,10 +144,19 @@ export default async function InsightsPage({
       .in("status", ["open", "in_progress"])
       .order("created_at", { ascending: true })
       .limit(5),
+    // Status 'open' only: nobody has offered to help yet. Matches the app's
+    // admin analytics, which counts in-progress requests separately.
+    excludeAuthors(
+      supabase
+        .from("help_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("community_code", code),
+      notResidents,
+    ).eq("status", "open"),
   ]);
 
   const loadError =
-    residentError ?? ledgerRes.error ?? activeRes.error ?? weeklyRes.error ?? helpRes.error ?? openHelpRes.error ?? null;
+    residentError ?? ledgerRes.error ?? activeRes.error ?? weeklyRes.error ?? helpRes.error ?? openHelpRes.error ?? waitingHelpRes.error ?? null;
   if (loadError) console.error("insights read failed:", loadError);
 
   const ledger = ledgerRes.data;
@@ -156,7 +166,9 @@ export default async function InsightsPage({
   const helpCategories = helpByCategory(helpRes.data);
   // The folded tail sits last but can be the biggest bucket — scale to the max.
   const maxCategoryCount = Math.max(1, ...helpCategories.map((c) => c.count));
-  const openHelpCount = openHelpRes.count ?? 0;
+  const unfinishedHelpCount = openHelpRes.count ?? 0;
+  const waitingHelpCount = waitingHelpRes.count ?? 0;
+  const inProgressHelpCount = Math.max(0, unfinishedHelpCount - waitingHelpCount);
   const oldestOpen = (openHelpRes.data as (Pick<HelpRow, "request_type" | "metadata" | "status" | "created_at"> & {
     id: string;
     title: string;
@@ -317,8 +329,15 @@ export default async function InsightsPage({
               />
               <Tile
                 label="Open now"
-                value={String(openHelpCount)}
-                note={openHelpCount === 0 ? "Nobody is waiting for help" : "Still waiting for a neighbour, any age"}
+                value={String(waitingHelpCount)}
+                note={
+                  (waitingHelpCount === 0
+                    ? "Nobody is waiting for a helper"
+                    : "Waiting for a neighbour to offer help, any age") +
+                  (inProgressHelpCount > 0
+                    ? ` · ${inProgressHelpCount} more in progress`
+                    : "")
+                }
               />
             </div>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -353,7 +372,7 @@ export default async function InsightsPage({
               </Panel>
               <Panel>
                 <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--nly-text-primary)" }}>
-                  Waiting longest
+                  Oldest unfinished requests
                 </h4>
                 {oldestOpen.length === 0 ? (
                   <p className="text-sm" style={{ color: "var(--nly-text-tertiary)" }}>

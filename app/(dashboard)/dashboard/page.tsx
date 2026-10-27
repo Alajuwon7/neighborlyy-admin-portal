@@ -111,6 +111,7 @@ export default async function DashboardPage({
   // already-fetched list (no query); residents/pending/alerts deltas are scoped
   // count queries batched together with the base counts below so the dashboard
   // issues a single round-trip instead of two serial ones.
+  const nowIso = new Date().toISOString();
   const weekAgoIso = new Date(new Date().getTime() - 7 * 864e5).toISOString();
   const newCommunitiesWk = communities.filter(
     (c) => c.created_at >= weekAgoIso,
@@ -128,7 +129,8 @@ export default async function DashboardPage({
     supabase.from("events").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
     filterCountedResidents(supabase.from("profiles").select("id", { count: "exact", head: true }).in("community_code", communityCodes)),
     supabase.from("pending_users").select("id", { count: "exact", head: true }).in("community_code", communityCodes).eq("status", "pending"),
-    supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes),
+    // Match the app's AlertService.getActiveAlerts: unexpired alerts only.
+    supabase.from("alerts").select("id", { count: "exact", head: true }).in("community_code", communityCodes).or(`valid_until.is.null,valid_until.gt.${nowIso}`),
     filterCountedResidents(
       supabase
         .from("profiles")
@@ -146,6 +148,7 @@ export default async function DashboardPage({
       .from("alerts")
       .select("id", { count: "exact", head: true })
       .in("community_code", communityCodes)
+      .or(`valid_until.is.null,valid_until.gt.${nowIso}`)
       .gte("created_at", weekAgoIso),
   ]);
 
