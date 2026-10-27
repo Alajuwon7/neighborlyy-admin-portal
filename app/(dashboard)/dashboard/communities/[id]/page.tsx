@@ -29,7 +29,9 @@ export default async function CommunityOverviewPage({
     supabase
       .from("alerts")
       .select("id", { count: "exact", head: true })
-      .eq("community_code", community.community_code),
+      .eq("community_code", community.community_code)
+      // Match the app's AlertService.getActiveAlerts: unexpired alerts only.
+      .or(`valid_until.is.null,valid_until.gt.${new Date().toISOString()}`),
   ]);
 
   const trialDaysLeft =
@@ -222,7 +224,7 @@ export default async function CommunityOverviewPage({
           <div className="grid grid-cols-3 gap-4">
             <StatBlock label="Units" value={community.unit_count ?? 0} />
             <StatBlock label="Pending" value={pendingCount ?? 0} />
-            <StatBlock label="Alerts" value={alertsCount ?? 0} />
+            <StatBlock label="Active Alerts" value={alertsCount ?? 0} />
           </div>
         </section>
       </div>

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { createEvent } from "@/app/(dashboard)/dashboard/communities/[id]/events/actions";
 import { EventImageField } from "@/components/community/EventImageField";
+import { localInputsToIso } from "@/lib/event-time";
 import { toast } from "sonner";
 
 export function EventFormDialog({
@@ -34,11 +35,22 @@ export function EventFormDialog({
       const timeStart = formData.get("event_time_start") as string;
       const timeEnd = formData.get("event_time_end") as string;
 
-      const startLocal = new Date(`${date}T${timeStart}`);
-      formData.set("event_date", startLocal.toISOString());
+      const startIso = localInputsToIso(date, timeStart);
+      if (!startIso) {
+        toast.error("Please enter a valid date and start time.");
+        return;
+      }
+      formData.set("event_date", startIso);
 
       if (timeEnd) {
         const endLocal = new Date(`${date}T${timeEnd}`);
+        const startMs = new Date(startIso).getTime();
+        if (endLocal.getTime() === startMs) {
+          toast.error("End time must be different from the start time.");
+          return;
+        }
+        // An end time earlier than the start means the event runs past midnight.
+        if (endLocal.getTime() < startMs) endLocal.setDate(endLocal.getDate() + 1);
         const endFormatted = endLocal.toLocaleString("en-US", {
           month: "short",
           day: "numeric",
@@ -79,7 +91,7 @@ export function EventFormDialog({
         Create Event
       </DialogTrigger>
       <DialogContent
-        className="border sm:max-w-md max-h-[90vh] overflow-y-auto"
+        className="border sm:max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",
@@ -111,7 +123,7 @@ export function EventFormDialog({
             <Textarea
               name="description"
               placeholder="Event details..."
-              className="border min-h-[80px]"
+              className="border min-h-[120px] max-h-[40vh] break-words [overflow-wrap:anywhere]"
               style={inputStyle}
             />
           </div>
@@ -127,7 +139,7 @@ export function EventFormDialog({
             />
           </div>
           <EventImageField />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label style={{ color: "var(--nly-text-secondary)" }}>Date</Label>
               <Input
@@ -150,18 +162,36 @@ export function EventFormDialog({
                 style={inputStyle}
               />
             </div>
+            <div className="space-y-2">
+              <Label style={{ color: "var(--nly-text-secondary)" }}>
+                End Time{" "}
+                <span style={{ color: "var(--nly-text-tertiary)" }}>
+                  (optional)
+                </span>
+              </Label>
+              <Input
+                name="event_time_end"
+                type="time"
+                className="border"
+                style={inputStyle}
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label style={{ color: "var(--nly-text-secondary)" }}>
-              End Time{" "}
+              Max Attendees{" "}
               <span style={{ color: "var(--nly-text-tertiary)" }}>
                 (optional)
               </span>
             </Label>
             <Input
-              name="event_time_end"
-              type="time"
-              className="border"
+              name="max_attendees"
+              type="number"
+              min="1"
+                max="100000"
+              step="1"
+              placeholder="No limit"
+              className="border sm:max-w-[200px]"
               style={inputStyle}
             />
           </div>

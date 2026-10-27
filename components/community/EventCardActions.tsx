@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { updateEvent, deleteEvent } from "@/app/(dashboard)/dashboard/communities/[id]/events/actions";
 import { EventImageField } from "@/components/community/EventImageField";
+import { localInputsToIso, toLocalDateInput, toLocalTimeInput } from "@/lib/event-time";
 import { toast } from "sonner";
 
 interface EventCardActionsProps {
@@ -55,6 +56,17 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
   const handleEdit = async (formData: FormData) => {
     setEditLoading(true);
     try {
+      const startIso = localInputsToIso(
+        formData.get("event_date") as string,
+        formData.get("event_time_start") as string,
+      );
+      if (!startIso) {
+        toast.error("Please enter a valid date and start time.");
+        return;
+      }
+      formData.set("event_date", startIso);
+      formData.delete("event_time_start");
+
       const result = await updateEvent(event.id, formData, communityId);
       if (result.error) {
         toast.error(result.error);
@@ -70,10 +82,9 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
     }
   };
 
-  // Format event_date for datetime-local input
-  const eventDateLocal = event.event_date
-    ? new Date(event.event_date).toISOString().slice(0, 16)
-    : "";
+  // Prefill in the PM's local time. (toISOString() would show UTC.)
+  const eventDateLocal = event.event_date ? toLocalDateInput(event.event_date) : "";
+  const eventTimeLocal = event.event_date ? toLocalTimeInput(event.event_date) : "";
 
   const inputStyle = {
     backgroundColor: "var(--nly-input-bg)",
@@ -88,6 +99,7 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
           onClick={() => setEditOpen(true)}
           className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--nly-border)] bg-[var(--nly-surface-hover)] text-[var(--nly-text-secondary)] transition-all hover:text-[var(--nly-brand)] hover:border-[var(--nly-border-hover)]"
           title="Edit event"
+          aria-label={`Edit ${event.title}`}
         >
           <Pencil size={15} />
         </button>
@@ -96,6 +108,7 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
           disabled={deleting}
           className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--nly-border)] bg-[var(--nly-surface-hover)] text-[var(--nly-text-secondary)] transition-all hover:text-[var(--nly-error)] hover:border-[var(--nly-error)] hover:bg-[var(--nly-error-bg)] disabled:opacity-50"
           title="Delete event"
+          aria-label={`Delete ${event.title}`}
         >
           <Trash2 size={15} />
         </button>
@@ -103,7 +116,7 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent
-          className="border sm:max-w-md max-h-[90vh] overflow-y-auto"
+          className="border sm:max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0"
           style={{
             backgroundColor: "var(--nly-surface)",
             borderColor: "var(--nly-border)",
@@ -130,7 +143,7 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
               <Textarea
                 name="description"
                 defaultValue={event.description ?? ""}
-                className="border min-h-[80px]"
+                className="border min-h-[120px] max-h-[40vh] break-words [overflow-wrap:anywhere]"
                 style={inputStyle}
               />
             </div>
@@ -144,12 +157,12 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
               />
             </div>
             <EventImageField existingUrl={event.image_url} />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label style={{ color: "var(--nly-text-secondary)" }}>Date & Time</Label>
+                <Label style={{ color: "var(--nly-text-secondary)" }}>Date</Label>
                 <Input
                   name="event_date"
-                  type="datetime-local"
+                  type="date"
                   required
                   defaultValue={eventDateLocal}
                   className="border"
@@ -157,11 +170,28 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
                 />
               </div>
               <div className="space-y-2">
-                <Label style={{ color: "var(--nly-text-secondary)" }}>Max Attendees</Label>
+                <Label style={{ color: "var(--nly-text-secondary)" }}>Start Time</Label>
+                <Input
+                  name="event_time_start"
+                  type="time"
+                  required
+                  defaultValue={eventTimeLocal}
+                  className="border"
+                  style={inputStyle}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label style={{ color: "var(--nly-text-secondary)" }}>
+                  Max Attendees{" "}
+                  <span style={{ color: "var(--nly-text-tertiary)" }}>(optional)</span>
+                </Label>
                 <Input
                   name="max_attendees"
                   type="number"
                   min="1"
+                max="100000"
+                  step="1"
+                  placeholder="No limit"
                   defaultValue={event.max_attendees ?? ""}
                   className="border"
                   style={inputStyle}
