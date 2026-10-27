@@ -189,6 +189,7 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
                   name="max_attendees"
                   type="number"
                   min="1"
+                max="100000"
                   step="1"
                   placeholder="No limit"
                   defaultValue={event.max_attendees ?? ""}

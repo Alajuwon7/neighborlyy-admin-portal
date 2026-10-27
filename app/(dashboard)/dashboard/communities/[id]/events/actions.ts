@@ -6,12 +6,15 @@ import { revalidatePath } from "next/cache";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-// Empty -> null (no limit); otherwise a positive whole number.
+const MAX_ATTENDEES_LIMIT = 100_000;
+
+// Empty -> null (no limit); otherwise a whole number from 1 to MAX_ATTENDEES_LIMIT.
 function parseMaxAttendees(raw: FormDataEntryValue | null): number | null | "invalid" {
   const value = typeof raw === "string" ? raw.trim() : "";
   if (!value) return null;
+  if (!/^\d+$/.test(value)) return "invalid";
   const n = Number(value);
-  return Number.isInteger(n) && n >= 1 ? n : "invalid";
+  return n >= 1 && n <= MAX_ATTENDEES_LIMIT ? n : "invalid";
 }
 
 const EXT_BY_TYPE: Record<string, string> = {
@@ -66,7 +69,7 @@ export async function createEvent(formData: FormData, communityCode: string, com
 
   const maxAttendees = parseMaxAttendees(formData.get("max_attendees"));
   if (maxAttendees === "invalid") {
-    return { error: "Max attendees must be a whole number of 1 or more." };
+    return { error: "Max attendees must be a whole number from 1 to 100,000." };
   }
 
   let imageUrl: string | null = null;
@@ -116,7 +119,7 @@ export async function updateEvent(
 
   if (!title || !eventDate) return { error: "Title and date are required" };
   if (maxAttendees === "invalid") {
-    return { error: "Max attendees must be a whole number of 1 or more." };
+    return { error: "Max attendees must be a whole number from 1 to 100,000." };
   }
 
   const updates: Record<string, unknown> = {

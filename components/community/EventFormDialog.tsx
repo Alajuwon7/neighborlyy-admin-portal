@@ -44,10 +44,13 @@ export function EventFormDialog({
 
       if (timeEnd) {
         const endLocal = new Date(`${date}T${timeEnd}`);
-        if (endLocal.getTime() <= new Date(startIso).getTime()) {
-          toast.error("End time must be after the start time.");
+        const startMs = new Date(startIso).getTime();
+        if (endLocal.getTime() === startMs) {
+          toast.error("End time must be different from the start time.");
           return;
         }
+        // An end time earlier than the start means the event runs past midnight.
+        if (endLocal.getTime() < startMs) endLocal.setDate(endLocal.getDate() + 1);
         const endFormatted = endLocal.toLocaleString("en-US", {
           month: "short",
           day: "numeric",
@@ -185,6 +188,7 @@ export function EventFormDialog({
               name="max_attendees"
               type="number"
               min="1"
+                max="100000"
               step="1"
               placeholder="No limit"
               className="border sm:max-w-[200px]"
