@@ -14,7 +14,7 @@ export default async function CommunityLayout({
   const { community } = await getCommunityWithAuth(id);
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col flex-1 min-w-0">
       {/* Community header */}
       <div
         className="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b relative overflow-hidden"
@@ -54,7 +54,7 @@ export default async function CommunityLayout({
           </p>
         </div>
         <span
-          className="text-xs px-2.5 py-1 rounded-full font-medium"
+          className="text-xs px-2.5 py-1 rounded-full font-medium shrink-0 whitespace-nowrap"
           style={{
             backgroundColor:
               community.status === "active"

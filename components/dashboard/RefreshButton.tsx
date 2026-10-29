@@ -18,7 +18,7 @@ export function RefreshButton() {
   return (
     <button
       onClick={handleRefresh}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all hover:opacity-80"
+      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-medium border transition-all hover:opacity-80"
       style={{
         borderColor: "var(--nly-border)",
         color: "var(--nly-text-secondary)",

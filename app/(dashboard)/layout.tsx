@@ -22,7 +22,7 @@ export default function DashboardLayout({
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main content — offset by sidebar width on desktop */}
-      <div className="flex-1 flex flex-col lg:ml-60 min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-60 min-h-screen">
         {/* Trial-end reminder — sticky at the top of every dashboard page */}
         <TrialBanner />
 

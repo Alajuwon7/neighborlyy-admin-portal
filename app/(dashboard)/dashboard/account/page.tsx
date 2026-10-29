@@ -19,7 +19,7 @@ export default async function AccountPage() {
     <div className="flex flex-col flex-1">
       <Header title="Account" subtitle="Manage your profile and settings" />
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-4 sm:p-6">
         <AccountForm
           pm={pm}
           corpContactEmail={corpContactEmail}

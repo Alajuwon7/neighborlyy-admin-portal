@@ -18,7 +18,7 @@ export default function OffboardingPublicLayout({
           borderColor: "var(--nly-border)",
         }}
       >
-        <div className="max-w-3xl mx-auto px-6 py-4">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
           <span
             className="text-base font-bold tracking-wider"
             style={{ color: "var(--nly-brand)" }}
@@ -27,7 +27,7 @@ export default function OffboardingPublicLayout({
           </span>
         </div>
       </header>
-      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-10">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-10">
         {children}
       </main>
       <footer
@@ -37,7 +37,7 @@ export default function OffboardingPublicLayout({
           color: "var(--nly-text-tertiary)",
         }}
       >
-        <div className="max-w-3xl mx-auto px-6 py-4">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
           Miyora Admin Portal · support@miyora-app.com
         </div>
       </footer>

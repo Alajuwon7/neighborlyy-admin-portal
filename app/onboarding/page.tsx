@@ -279,7 +279,7 @@ function OnboardingContent() {
             </div>
 
             {/* Step title + time estimate */}
-            <div className="mb-6 flex items-end justify-between">
+            <div className="mb-6 flex items-end justify-between gap-3">
               <div>
                 <p className="text-xs font-medium mb-1" style={{ color: "var(--nly-text-tertiary)" }}>
                   STEP {step} OF 6
@@ -288,7 +288,7 @@ function OnboardingContent() {
                   {STEP_TITLES[step - 1]}
                 </h2>
               </div>
-              <p className="text-xs" style={{ color: "var(--nly-text-placeholder)" }}>
+              <p className="text-xs shrink-0 whitespace-nowrap" style={{ color: "var(--nly-text-placeholder)" }}>
                 ~{Math.max(1, 7 - step)} min left
               </p>
             </div>
