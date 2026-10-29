@@ -5,14 +5,20 @@ import {
   AreaChart,
   Bar,
   BarChart,
+  BarStack,
   CartesianGrid,
+  Rectangle,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  type BarShapeProps,
   type TooltipContentProps,
+  type XAxisTickContentProps,
 } from "recharts";
 import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
+import type { ActivityWeek } from "@/lib/activity-trend";
 import type { MonthBucket } from "@/lib/insights";
 
 /*
@@ -27,6 +33,10 @@ const APPROVED = "#16A3B3";
 const REJECTED = "#d95926";
 const SURFACE = "#1A2B3D"; // 2px gaps between adjacent bars use the surface colour
 
+// PM markers: alerts reuse the app's alert yellow; events are neutral ink.
+const MARK_ALERT = "#E8C547";
+const MARK_EVENT = "#E8EEF3";
+
 const AXIS_TICK = { fill: "var(--nly-text-tertiary)", fontSize: 11 };
 const GRID = "rgba(255, 255, 255, 0.06)";
 
@@ -37,7 +47,7 @@ export function WeeklyTookPartChart({ data }: { data: WeeklyPoint[] }) {
   if (data.length === 0) {
     return (
       <p className="text-sm py-10 text-center" style={{ color: "var(--nly-text-tertiary)" }}>
-        No weekly summaries yet — the first one publishes on Monday.
+        {EMPTY_WEEKLY_COPY}
       </p>
     );
   }
@@ -142,6 +152,212 @@ export function DecisionsChart({ data }: { data: MonthBucket[] }) {
   );
 }
 
+// ─── Weekly activity (stacked: took part + quietly active) ──────────────────
+
+const EMPTY_WEEKLY_COPY = "No weekly summaries yet — the first one publishes on Monday.";
+
+/** Render row. Recharts can't stack nulls, so nulls become 0 here only —
+ * tooltip, caption and table read the real values from `week`. */
+type ActivityRow = { label: string; tookPart: number; quiet: number; week: ActivityWeek };
+
+/** Rough width an 11px "Sep 14" label needs, plus breathing room. */
+const X_LABEL_SPACE = 46;
+
+export function WeeklyActivityChart({ data }: { data: ActivityWeek[] }) {
+  if (data.length === 0) {
+    return (
+      <p className="text-sm py-10 text-center" style={{ color: "var(--nly-text-tertiary)" }}>
+        {EMPTY_WEEKLY_COPY}
+      </p>
+    );
+  }
+  const rows: ActivityRow[] = data.map((w) => ({
+    label: w.label,
+    tookPart: w.tookPart ?? 0,
+    quiet: w.quiet ?? 0,
+    week: w,
+  }));
+  const marked = data.filter((w) => w.markers.length > 0);
+
+  return (
+    <figure>
+      <div
+        className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-2 text-xs"
+        style={{ color: "var(--nly-text-secondary)" }}
+      >
+        <span className="whitespace-nowrap">
+          <LegendKey color={REJECTED} label="Took part" />
+        </span>
+        <span className="whitespace-nowrap">
+          <LegendKey color={APPROVED} opacity={QUIET_OPACITY} label="Quietly active" />
+        </span>
+        <span className="flex items-center gap-1.5 whitespace-nowrap">
+          <Diamond color={MARK_EVENT} /> Your event
+        </span>
+        <span className="flex items-center gap-1.5 whitespace-nowrap">
+          <Diamond color={MARK_ALERT} /> Your alert
+        </span>
+      </div>
+      <figcaption className="sr-only">{describeActivity(data)}</figcaption>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -20 }} barCategoryGap="28%">
+            <CartesianGrid vertical={false} stroke={GRID} />
+            {marked.map((w) => (
+              <ReferenceLine
+                key={w.weekStart}
+                x={w.label}
+                stroke={w.markers.some((m) => m.kind === "alert") ? MARK_ALERT : MARK_EVENT}
+                strokeOpacity={0.35}
+                strokeDasharray="2 4"
+                zIndex={150} // behind the bars (300), above the grid
+              />
+            ))}
+            <XAxis
+              dataKey="label"
+              axisLine={false}
+              tickLine={false}
+              interval={0}
+              height={40}
+              tick={(props: XAxisTickContentProps) => <ActivityTick {...props} rows={rows} />}
+            />
+            <YAxis allowDecimals={false} tick={AXIS_TICK} tickLine={false} axisLine={false} width={48} />
+            <Tooltip cursor={{ fill: "rgba(255, 255, 255, 0.04)" }} content={(props) => <ActivityTooltip {...props} />} />
+            <BarStack stackId="a" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="tookPart" name="Took part" fill={REJECTED} maxBarSize={28} isAnimationActive={false} />
+              <Bar
+                dataKey="quiet"
+                name="Quietly active"
+                fill={APPROVED}
+                fillOpacity={QUIET_OPACITY}
+                maxBarSize={28}
+                shape={QuietSlice}
+                isAnimationActive={false}
+              />
+            </BarStack>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <TableView caption="Residents active by week">
+        <thead>
+          <tr>
+            <Th>Week of</Th>
+            <Th align="right">Active</Th>
+            <Th align="right">Took part</Th>
+            <Th align="right">Quietly active</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((w) => (
+            <tr key={w.weekStart}>
+              <Td>
+                {w.label}
+                {w.markers.length > 0 && (
+                  <span className="block text-[11px]" style={{ color: "var(--nly-text-tertiary)" }}>
+                    {w.markers.map(markerText).join(" · ")}
+                  </span>
+                )}
+              </Td>
+              <Td align="right">{w.active === null ? "—" : `${w.active} (${pctText(w.pctActive)})`}</Td>
+              <Td align="right">{w.tookPart ?? "—"}</Td>
+              <Td align="right">{w.tracked ? (w.quiet ?? "—") : "Not tracked"}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </TableView>
+    </figure>
+  );
+}
+
+const QUIET_OPACITY = 0.55;
+
+/** Top slice, 2px shorter at its base so a surface gap separates it from "took part". */
+function QuietSlice(props: BarShapeProps) {
+  const height = Number(props.height ?? 0);
+  if (height <= 0) return null;
+  const tookPart = (props.payload as ActivityRow | undefined)?.tookPart ?? 0;
+  const gap = tookPart > 0 ? Math.min(2, height) : 0;
+  return <Rectangle {...props} height={height - gap} />;
+}
+
+/** X tick: thinned week labels (latest week always labelled) + ◆ for every marked week. */
+function ActivityTick({ x, y, index, width, visibleTicksCount, payload, rows }: XAxisTickContentProps & { rows: ActivityRow[] }) {
+  const cx = Number(x);
+  const cy = Number(y);
+  const slot = Number(width ?? 0) / Math.max(visibleTicksCount, 1);
+  const stride = slot > 0 ? Math.max(1, Math.ceil(X_LABEL_SPACE / slot)) : 1;
+  const showLabel = (visibleTicksCount - 1 - index) % stride === 0;
+  const markers = rows[index]?.week.markers ?? [];
+  const hasEvent = markers.some((m) => m.kind === "event");
+  const hasAlert = markers.some((m) => m.kind === "alert");
+  const glyphs = [hasEvent && MARK_EVENT, hasAlert && MARK_ALERT].filter((c): c is string => !!c);
+  return (
+    <g>
+      {showLabel && (
+        <text x={cx} y={cy + 4} dy="0.71em" textAnchor="middle" fill={AXIS_TICK.fill} fontSize={AXIS_TICK.fontSize}>
+          {payload.value}
+        </text>
+      )}
+      {glyphs.map((color, i) => {
+        const gx = cx + (i - (glyphs.length - 1) / 2) * 11;
+        const gy = cy + 28;
+        return <path key={color} d={`M${gx} ${gy - 5}L${gx + 5} ${gy}L${gx} ${gy + 5}L${gx - 5} ${gy}Z`} fill={color} />;
+      })}
+    </g>
+  );
+}
+
+function ActivityTooltip({ active, payload }: TooltipContentProps<ValueType, NameType>) {
+  if (!active || !payload?.length) return null;
+  const w = (payload[0].payload as ActivityRow).week;
+  return (
+    <TooltipShell>
+      <p style={{ color: "var(--nly-text-tertiary)" }}>Week of {w.label}</p>
+      <p className="font-semibold mt-0.5">
+        {w.active === null ? "No activity data for this week" : `${w.active} active (${pctText(w.pctActive)} of residents)`}
+      </p>
+      <p className="mt-0.5 flex items-center gap-1.5">
+        <Swatch color={REJECTED} /> {w.tookPart === null ? "No weekly summary" : `${w.tookPart} took part`}
+      </p>
+      <p className="flex items-center gap-1.5">
+        <Swatch color={APPROVED} opacity={QUIET_OPACITY} />
+        {w.tracked && w.quiet !== null ? `${w.quiet} quietly active` : "Quiet activity not tracked yet"}
+      </p>
+      {w.markers.map((m, i) => (
+        <p key={i} className="mt-0.5 flex items-center gap-1.5">
+          <Diamond color={m.kind === "alert" ? MARK_ALERT : MARK_EVENT} /> {m.title}
+        </p>
+      ))}
+    </TooltipShell>
+  );
+}
+
+function pctText(pct: number | null): string {
+  return pct === null ? "—" : `${pct}%`;
+}
+
+function markerText(m: ActivityWeek["markers"][number]): string {
+  return `${m.kind === "alert" ? "Alert" : "Event"}: ${m.title}`;
+}
+
+function describeActivity(data: ActivityWeek[]): string {
+  const weeks = data.map((w) => {
+    let s: string;
+    if (!w.tracked) {
+      s = w.tookPart === null ? "no data" : `${w.tookPart} took part only`;
+    } else if (w.active === null) {
+      s = "no data";
+    } else {
+      const pct = w.pctActive === null ? "" : ` (${w.pctActive}% of residents)`;
+      const took = w.tookPart === null ? "no weekly summary" : `${w.tookPart} took part`;
+      s = `${w.active} active${pct}, ${took}, ${w.quiet ?? 0} quietly active`;
+    }
+    const marks = w.markers.length ? `; ${w.markers.map(markerText).join("; ")}` : "";
+    return `Week of ${w.label}: ${s}${marks}.`;
+  });
+  return `Residents active each week over ${data.length} weeks, split into took part and quietly active. ${weeks.join(" ")}`;
+}
+
 // ─── Pieces ─────────────────────────────────────────────────────────────────
 
 function describeWeekly(data: WeeklyPoint[]): string {
@@ -194,14 +410,22 @@ function DecisionsTooltip({ active, payload }: TooltipContentProps<ValueType, Na
   );
 }
 
-function Swatch({ color }: { color: string }) {
-  return <span aria-hidden className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color }} />;
+function Swatch({ color, opacity }: { color: string; opacity?: number }) {
+  return <span aria-hidden className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color, opacity }} />;
 }
 
-function LegendKey({ color, label }: { color: string; label: string }) {
+function Diamond({ color }: { color: string }) {
+  return (
+    <span aria-hidden className="text-[13px] leading-none" style={{ color }}>
+      ◆
+    </span>
+  );
+}
+
+function LegendKey({ color, label, opacity }: { color: string; label: string; opacity?: number }) {
   return (
     <span className="flex items-center gap-1.5">
-      <Swatch color={color} />
+      <Swatch color={color} opacity={opacity} />
       {label}
     </span>
   );
