@@ -10,10 +10,12 @@ import {
   Rectangle,
   ReferenceLine,
   ResponsiveContainer,
+  LabelList,
   Tooltip,
   XAxis,
   YAxis,
   type BarShapeProps,
+  type LabelProps,
   type TooltipContentProps,
   type XAxisTickContentProps,
 } from "recharts";
@@ -35,7 +37,7 @@ const SURFACE = "#1A2B3D"; // 2px gaps between adjacent bars use the surface col
 
 // PM markers: alerts reuse the app's alert yellow; events are neutral ink.
 const MARK_ALERT = "#E8C547";
-const MARK_EVENT = "#E8EEF3";
+const MARK_EVENT = "var(--nly-text-secondary)";
 
 const AXIS_TICK = { fill: "var(--nly-text-tertiary)", fontSize: 11 };
 const GRID = "rgba(255, 255, 255, 0.06)";
@@ -181,6 +183,7 @@ export function WeeklyActivityChart({ data }: { data: ActivityWeek[] }) {
 
   return (
     <figure>
+      <figcaption className="sr-only">{describeActivity(data)}</figcaption>
       <div
         className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-2 text-xs"
         style={{ color: "var(--nly-text-secondary)" }}
@@ -198,7 +201,6 @@ export function WeeklyActivityChart({ data }: { data: ActivityWeek[] }) {
           <Diamond color={MARK_ALERT} /> Your alert
         </span>
       </div>
-      <figcaption className="sr-only">{describeActivity(data)}</figcaption>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -20 }} barCategoryGap="28%">
@@ -224,7 +226,9 @@ export function WeeklyActivityChart({ data }: { data: ActivityWeek[] }) {
             <YAxis allowDecimals={false} tick={AXIS_TICK} tickLine={false} axisLine={false} width={48} />
             <Tooltip cursor={{ fill: "rgba(255, 255, 255, 0.04)" }} content={(props) => <ActivityTooltip {...props} />} />
             <BarStack stackId="a" radius={[4, 4, 0, 0]}>
-              <Bar dataKey="tookPart" name="Took part" fill={REJECTED} maxBarSize={28} isAnimationActive={false} />
+              <Bar dataKey="tookPart" name="Took part" fill={REJECTED} maxBarSize={28} isAnimationActive={false}>
+                <LabelList dataKey="tookPart" content={(p: LabelProps) => <SliceCount {...p} slice="tookPart" />} />
+              </Bar>
               <Bar
                 dataKey="quiet"
                 name="Quietly active"
@@ -233,7 +237,9 @@ export function WeeklyActivityChart({ data }: { data: ActivityWeek[] }) {
                 maxBarSize={28}
                 shape={QuietSlice}
                 isAnimationActive={false}
-              />
+              >
+                <LabelList dataKey="quiet" content={(p: LabelProps) => <SliceCount {...p} slice="quiet" />} />
+              </Bar>
             </BarStack>
           </BarChart>
         </ResponsiveContainer>
@@ -280,6 +286,34 @@ function QuietSlice(props: BarShapeProps) {
   return <Rectangle {...props} height={height - gap} />;
 }
 
+/** Segments shorter than this get no count (it wouldn't fit). */
+const MIN_LABEL_HEIGHT = 14;
+
+/** Count inside a slice. `value` is the render value, where null was mapped to 0,
+ * and 0 is never drawn — so untracked quiet slices and missing digests get no label.
+ * (Don't index into rows here: LabelList's `index` skips zero-height bars.) */
+function SliceCount({ x, y, width, height, value, slice }: LabelProps & { slice: "tookPart" | "quiet" }) {
+  const n = Number(value);
+  // The quiet slice is drawn 2px short at its base (QuietSlice); centre on what's visible.
+  const h = Number(height ?? 0) - (slice === "quiet" ? 2 : 0);
+  if (!Number.isFinite(n) || n <= 0 || h < MIN_LABEL_HEIGHT) return null;
+  return (
+    <text
+      x={Number(x) + Number(width) / 2}
+      y={Number(y) + h / 2}
+      dy="0.35em"
+      textAnchor="middle"
+      fontSize={10}
+      fontWeight={600}
+      // White on the orange (4.2:1); light ink on the 55% teal over the surface (~5:1).
+      fill={slice === "tookPart" ? "#FFFFFF" : "var(--nly-text-primary)"}
+      pointerEvents="none"
+    >
+      {n}
+    </text>
+  );
+}
+
 /** X tick: thinned week labels (latest week always labelled) + ◆ for every marked week. */
 function ActivityTick({ x, y, index, width, visibleTicksCount, payload, rows }: XAxisTickContentProps & { rows: ActivityRow[] }) {
   const cx = Number(x);
@@ -313,15 +347,21 @@ function ActivityTooltip({ active, payload }: TooltipContentProps<ValueType, Nam
   return (
     <TooltipShell>
       <p style={{ color: "var(--nly-text-tertiary)" }}>Week of {w.label}</p>
-      <p className="font-semibold mt-0.5">
-        {w.active === null ? "No activity data for this week" : `${w.active} active (${pctText(w.pctActive)} of residents)`}
-      </p>
+      {/* Untracked weeks: active just equals took part, so skip the headline line. */}
+      {w.tracked && (
+        <p className="font-semibold mt-0.5">
+          {w.active === null ? "No activity data for this week" : `${w.active} active (${pctText(w.pctActive)} of residents)`}
+        </p>
+      )}
       <p className="mt-0.5 flex items-center gap-1.5">
-        <Swatch color={REJECTED} /> {w.tookPart === null ? "No weekly summary" : `${w.tookPart} took part`}
+        <Swatch color={REJECTED} />
+        {w.tookPart === null ? "No weekly summary" : `${w.tookPart} took part${pctSuffix(w.pctTookPart)}`}
       </p>
       <p className="flex items-center gap-1.5">
         <Swatch color={APPROVED} opacity={QUIET_OPACITY} />
-        {w.tracked && w.quiet !== null ? `${w.quiet} quietly active` : "Quiet activity not tracked yet"}
+        {w.tracked && w.quiet !== null
+          ? `${w.quiet} quietly active${pctSuffix(quietPct(w))}`
+          : "Quiet activity not tracked yet"}
       </p>
       {w.markers.map((m, i) => (
         <p key={i} className="mt-0.5 flex items-center gap-1.5">
@@ -330,6 +370,15 @@ function ActivityTooltip({ active, payload }: TooltipContentProps<ValueType, Nam
       ))}
     </TooltipShell>
   );
+}
+
+/** Quiet share = active share − took-part share, so the slices sum to the headline %. */
+function quietPct(w: ActivityWeek): number | null {
+  return w.pctActive === null || w.pctTookPart === null ? null : w.pctActive - w.pctTookPart;
+}
+
+function pctSuffix(pct: number | null): string {
+  return pct === null ? "" : ` (${pct}%)`;
 }
 
 function pctText(pct: number | null): string {
@@ -350,7 +399,7 @@ function describeActivity(data: ActivityWeek[]): string {
     } else {
       const pct = w.pctActive === null ? "" : ` (${w.pctActive}% of residents)`;
       const took = w.tookPart === null ? "no weekly summary" : `${w.tookPart} took part`;
-      s = `${w.active} active${pct}, ${took}, ${w.quiet ?? 0} quietly active`;
+      s = `${w.active} active${pct}, ${took}, ${w.quiet === null ? "quiet activity not tracked" : `${w.quiet} quietly active`}`;
     }
     const marks = w.markers.length ? `; ${w.markers.map(markerText).join("; ")}` : "";
     return `Week of ${w.label}: ${s}${marks}.`;
