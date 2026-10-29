@@ -126,9 +126,9 @@ export function TeamTable({ members }: { members: TeamMember[] }) {
 
             {/* Name + email + community */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <p
-                  className="text-sm font-medium truncate"
+                  className="text-sm font-medium truncate max-w-full"
                   style={{ color: "var(--nly-text-primary)" }}
                 >
                   {m.full_name}
