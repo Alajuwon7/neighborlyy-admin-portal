@@ -7,6 +7,7 @@ import {
   trackingNote,
   trackingStartedOn,
   trimLeadingGaps,
+  weeksSince,
   type ActivityWeek,
   type WeeklyActiveRow,
 } from "../../lib/activity-trend";
@@ -44,6 +45,31 @@ test("untracked weeks have null quiet", () => {
   assert.equal(w.quiet, null);
   assert.equal(w.active, 9);
   assert.equal(w.tracked, false);
+});
+
+test("untracked week: active is took part only, not the raw count", () => {
+  const w = last(merge(4, [{ week_start: W, active: 20, tracked: false }]));
+  assert.equal(w.tookPart, 4);
+  assert.equal(w.active, 4);
+  assert.equal(w.quiet, null);
+  const none = last(merge(undefined, [{ week_start: W, active: 20, tracked: false }]));
+  assert.equal(none.active, null);
+});
+
+test("pct is clamped to 100", () => {
+  const w = last(merge(60, [{ week_start: W, active: 80, tracked: true }], 43));
+  assert.equal(w.pctActive, 100);
+  assert.equal(w.pctTookPart, 100);
+});
+
+test("weeksSince drops weeks before creation, keeps the week containing it", () => {
+  // WEEKS: 2026-10-05, 10-12, 10-19, 10-26
+  const starts = (ws: typeof WEEKS) => ws.map((x) => x.start.toISOString().slice(0, 10));
+  assert.deepEqual(starts(weeksSince(WEEKS, "2026-10-21T09:00:00Z")), ["2026-10-19", "2026-10-26"]);
+  // created exactly at a week boundary: the previous week ended on/before it
+  assert.deepEqual(starts(weeksSince(WEEKS, "2026-10-19T00:00:00Z")), ["2026-10-19", "2026-10-26"]);
+  assert.equal(weeksSince(WEEKS, null), WEEKS);
+  assert.equal(weeksSince(WEEKS, "not a date"), WEEKS);
 });
 
 test("missing digest", () => {

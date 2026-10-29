@@ -24,6 +24,7 @@ import {
   trackingNote,
   trackingStartedOn,
   trimLeadingGaps,
+  weeksSince,
   type WeeklyActiveRow,
 } from "@/lib/activity-trend";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
@@ -56,6 +57,8 @@ export default async function InsightsPage({
   // digest row until it closes).
   const weeks = lastWeeks(now, TREND_WEEKS + 1).slice(0, -1);
   const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+  // Weeks that ended before the community existed are not "0 active" weeks.
+  const trendWeeks = weeksSince(weeks, community.created_at as string);
   const weekEnd = new Date(weeks[weeks.length - 1].start.getTime() + 7 * 86_400_000);
 
   // PostgREST caps every response at max_rows (1000) regardless of .limit(),
@@ -148,7 +151,7 @@ export default async function InsightsPage({
     // here degrades the chart to took-part only; it never breaks the page.
     supabase.rpc("get_weekly_active_residents", {
       p_community_code: code,
-      p_week_starts: weeks.map((w) => isoDate(w.start)),
+      p_week_starts: trendWeeks.map((w) => isoDate(w.start)),
     }),
     // PM markers: only titles and dates, no resident data.
     supabase
@@ -236,7 +239,7 @@ export default async function InsightsPage({
       at: a.created_at,
     })),
   ];
-  const mergedAll = mergeActivityWeeks(weeks, tookPartByWeek, activeRows, residents, markerRows);
+  const mergedAll = mergeActivityWeeks(trendWeeks, tookPartByWeek, activeRows, residents, markerRows);
   const weekly = trimLeadingGaps(mergedAll);
   const headline = activityHeadline(weekly[weekly.length - 1], residents);
   const trackingNoteText = weekly.some((w) => !w.tracked) ? trackingNote(trackingStartedOn(activeRows)) : null;

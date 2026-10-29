@@ -24,8 +24,17 @@ export type WeeklyActiveRow = {
 
 const DAY_MS = 86_400_000;
 
+// Capped at 100: anonymised or moved-out residents can push a past week's
+// count above today's roster.
 const pct = (n: number | null, residents: number): number | null =>
-  n === null || residents <= 0 ? null : Math.round((n / residents) * 100);
+  n === null || residents <= 0 ? null : Math.min(100, Math.round((n / residents) * 100));
+
+/** Drop weeks that ended on or before the community was created. Invalid or missing createdAt leaves weeks unchanged. */
+export function weeksSince(weeks: WeekWindow[], createdAt: string | null | undefined): WeekWindow[] {
+  const created = createdAt ? new Date(createdAt).getTime() : NaN;
+  if (Number.isNaN(created)) return weeks;
+  return weeks.filter((w) => w.start.getTime() + 7 * DAY_MS > created);
+}
 
 export function mergeActivityWeeks(
   weeks: WeekWindow[],
@@ -42,8 +51,12 @@ export function mergeActivityWeeks(
     const took = tookPart.get(weekStart) ?? null;
     const tracked = row?.tracked ?? false;
     const rawActive = row?.active ?? null;
-    const active =
-      rawActive === null && took === null ? null : Math.max(rawActive ?? 0, took ?? 0);
+    // Untracked weeks show taking part only (the log can't vouch for the rest).
+    const active = tracked
+      ? rawActive === null && took === null
+        ? null
+        : Math.max(rawActive ?? 0, took ?? 0)
+      : took;
     const quiet = tracked && active !== null ? active - (took ?? 0) : null;
     return {
       weekStart,
