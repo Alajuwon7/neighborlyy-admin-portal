@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   BarStack,
@@ -33,7 +31,6 @@ import type { MonthBucket } from "@/lib/insights";
  */
 const APPROVED = "#16A3B3";
 const REJECTED = "#d95926";
-const SURFACE = "#1A2B3D"; // 2px gaps between adjacent bars use the surface colour
 
 // PM markers: alerts reuse the app's alert yellow; events are neutral ink.
 const MARK_ALERT = "#E8C547";
@@ -41,70 +38,6 @@ const MARK_EVENT = "var(--nly-text-secondary)";
 
 const AXIS_TICK = { fill: "var(--nly-text-tertiary)", fontSize: 11 };
 const GRID = "rgba(255, 255, 255, 0.06)";
-
-/** value null = no weekly summary for that week (a gap, not zero). */
-export type WeeklyPoint = { label: string; value: number | null };
-
-export function WeeklyTookPartChart({ data }: { data: WeeklyPoint[] }) {
-  if (data.length === 0) {
-    return (
-      <p className="text-sm py-10 text-center" style={{ color: "var(--nly-text-tertiary)" }}>
-        {EMPTY_WEEKLY_COPY}
-      </p>
-    );
-  }
-  return (
-    <figure>
-      <figcaption className="sr-only">{describeWeekly(data)}</figcaption>
-      <div className="h-56">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
-            <defs>
-              <linearGradient id="activeFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={APPROVED} stopOpacity={0.25} />
-                <stop offset="100%" stopColor={APPROVED} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} stroke={GRID} />
-            <XAxis dataKey="label" tick={AXIS_TICK} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={16} />
-            <YAxis allowDecimals={false} tick={AXIS_TICK} tickLine={false} axisLine={false} width={48} />
-            <Tooltip
-              cursor={{ stroke: "var(--nly-text-tertiary)", strokeWidth: 1, strokeDasharray: "3 3" }}
-              content={(props) => <WeeklyTooltip {...props} />}
-            />
-            <Area
-              type="monotone"
-              dataKey="value"
-              connectNulls={false}
-              stroke={APPROVED}
-              strokeWidth={2}
-              fill="url(#activeFill)"
-              dot={false}
-              activeDot={{ r: 4, fill: APPROVED, stroke: SURFACE, strokeWidth: 2 }}
-              isAnimationActive={false}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-      <TableView caption="Residents who took part, by week">
-        <thead>
-          <tr>
-            <Th>Week of</Th>
-            <Th align="right">Took part</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((d) => (
-            <tr key={d.label}>
-              <Td>{d.label}</Td>
-              <Td align="right">{d.value ?? "—"}</Td>
-            </tr>
-          ))}
-        </tbody>
-      </TableView>
-    </figure>
-  );
-}
 
 export function DecisionsChart({ data }: { data: MonthBucket[] }) {
   const approvedTotal = data.reduce((s, d) => s + d.approved, 0);
@@ -409,14 +342,6 @@ function describeActivity(data: ActivityWeek[]): string {
 
 // ─── Pieces ─────────────────────────────────────────────────────────────────
 
-function describeWeekly(data: WeeklyPoint[]): string {
-  const known = data.filter((d): d is { label: string; value: number } => d.value !== null);
-  if (known.length === 0) return "No weekly data.";
-  const peak = known.reduce((a, b) => (b.value > a.value ? b : a));
-  const last = known[known.length - 1];
-  return `Residents who took part each week over ${data.length} weeks. Peak ${peak.value} (week of ${peak.label}); most recent ${last.value} (week of ${last.label}).`;
-}
-
 function TooltipShell({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -425,21 +350,6 @@ function TooltipShell({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
-  );
-}
-
-function WeeklyTooltip({ active, payload }: TooltipContentProps<ValueType, NameType>) {
-  if (!active || !payload?.length) return null;
-  const point = payload[0].payload as WeeklyPoint;
-  return (
-    <TooltipShell>
-      <p style={{ color: "var(--nly-text-tertiary)" }}>Week of {point.label}</p>
-      <p className="font-semibold mt-0.5">
-        {point.value === null
-          ? "No summary for this week"
-          : `${point.value} ${point.value === 1 ? "resident" : "residents"} took part`}
-      </p>
-    </TooltipShell>
   );
 }
 

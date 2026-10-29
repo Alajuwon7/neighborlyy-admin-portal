@@ -17,7 +17,14 @@ import {
   type DecisionRow,
   type HelpRow,
 } from "@/lib/insights";
-import { DecisionsChart, WeeklyTookPartChart } from "@/components/insights/InsightsCharts";
+import { DecisionsChart, WeeklyActivityChart } from "@/components/insights/InsightsCharts";
+import {
+  activityHeadline,
+  mergeActivityWeeks,
+  trackingNote,
+  trackingStartedOn,
+  type WeeklyActiveRow,
+} from "@/lib/activity-trend";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +55,7 @@ export default async function InsightsPage({
   // digest row until it closes).
   const weeks = lastWeeks(now, TREND_WEEKS + 1).slice(0, -1);
   const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+  const weekEnd = new Date(weeks[weeks.length - 1].start.getTime() + 7 * 86_400_000);
 
   // PostgREST caps every response at max_rows (1000) regardless of .limit(),
   // so page through rather than silently dropping rows. `page` must apply a
@@ -113,6 +121,9 @@ export default async function InsightsPage({
     ledgerRes,
     activeRes,
     weeklyRes,
+    weeklyActiveRes,
+    eventsRes,
+    alertsRes,
     helpRes,
     openHelpRes,
     waitingHelpRes,
@@ -132,6 +143,25 @@ export default async function InsightsPage({
       .eq("community_code", code)
       .gte("week_start", isoDate(weeks[0].start))
       .lte("week_start", isoDate(weeks[weeks.length - 1].start)),
+    // Daily-activity weekly counts (adds the "quietly active" slice). A failure
+    // here degrades the chart to took-part only; it never breaks the page.
+    supabase.rpc("get_weekly_active_residents", {
+      p_community_code: code,
+      p_week_starts: weeks.map((w) => isoDate(w.start)),
+    }),
+    // PM markers: only titles and dates, no resident data.
+    supabase
+      .from("events")
+      .select("id, title, event_date")
+      .eq("community_code", code)
+      .gte("event_date", weeks[0].start.toISOString())
+      .lt("event_date", weekEnd.toISOString()),
+    supabase
+      .from("alerts")
+      .select("id, title, created_at")
+      .eq("community_code", code)
+      .gte("created_at", weeks[0].start.toISOString())
+      .lt("created_at", weekEnd.toISOString()),
     readHelp(),
     // Open now (any age) and the five waiting longest.
     excludeAuthors(
@@ -188,9 +218,28 @@ export default async function InsightsPage({
   // A week with no digest row is a gap (job missed, or before the digest
   // existed) — null, not zero. Leading gaps are dropped so the chart starts at
   // the first summary.
-  const weeklyAll = weeks.map((w) => ({ label: w.label, value: tookPartByWeek.get(isoDate(w.start)) ?? null }));
-  const firstKnown = weeklyAll.findIndex((p) => p.value !== null);
-  const weekly = firstKnown === -1 ? [] : weeklyAll.slice(firstKnown);
+  // Optional reads: log and degrade rather than break the page.
+  if (weeklyActiveRes.error) console.error("insights weekly active read failed:", weeklyActiveRes.error);
+  if (eventsRes.error) console.error("insights events markers read failed:", eventsRes.error);
+  if (alertsRes.error) console.error("insights alerts markers read failed:", alertsRes.error);
+  const activeRows = weeklyActiveRes.error ? [] : ((weeklyActiveRes.data as WeeklyActiveRow[] | null) ?? []);
+  const markerRows = [
+    ...(eventsRes.error ? [] : ((eventsRes.data as { title: string; event_date: string }[] | null) ?? [])).map((e) => ({
+      kind: "event" as const,
+      title: e.title,
+      at: e.event_date,
+    })),
+    ...(alertsRes.error ? [] : ((alertsRes.data as { title: string; created_at: string }[] | null) ?? [])).map((a) => ({
+      kind: "alert" as const,
+      title: a.title,
+      at: a.created_at,
+    })),
+  ];
+  const mergedAll = mergeActivityWeeks(weeks, tookPartByWeek, activeRows, residents, markerRows);
+  const firstKnown = mergedAll.findIndex((w) => w.tookPart !== null || w.active !== null);
+  const weekly = firstKnown === -1 ? [] : mergedAll.slice(firstKnown);
+  const headline = activityHeadline(weekly[weekly.length - 1], residents);
+  const trackingNoteText = weekly.some((w) => !w.tracked) ? trackingNote(trackingStartedOn(activeRows)) : null;
   const monthly = monthlyDecisions(ledger, now, TREND_MONTHS);
 
   return (
@@ -275,12 +324,22 @@ export default async function InsightsPage({
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <Panel>
               <h3 className="text-sm font-semibold" style={{ color: "var(--nly-text-primary)" }}>
-                Residents who took part, by week
+                Resident activity, by week
               </h3>
-              <p className="text-xs mt-0.5 mb-4" style={{ color: "var(--nly-text-tertiary)" }}>
-                Posted, commented, asked for help, RSVPed, answered a survey or used Connect · same count as the Weekly Summary · last {TREND_WEEKS} completed weeks
+              <p className="text-xs mt-0.5 mb-2" style={{ color: "var(--nly-text-tertiary)" }}>
+                Took part = posted, commented, asked for help, RSVPed, answered a survey or used Connect (same as the Weekly Summary) · Quietly active = opened the app, liked, booked or listed something · last {TREND_WEEKS} completed weeks
               </p>
-              <WeeklyTookPartChart data={weekly} />
+              {headline ? (
+                <p className="text-sm font-medium mb-3 break-words" style={{ color: "var(--nly-text-primary)" }}>
+                  {headline}
+                </p>
+              ) : null}
+              <WeeklyActivityChart data={weekly} />
+              {trackingNoteText ? (
+                <p className="text-[11px] mt-3 leading-snug" style={{ color: "var(--nly-text-tertiary)" }}>
+                  {trackingNoteText}
+                </p>
+              ) : null}
             </Panel>
             <Panel>
               <h3 className="text-sm font-semibold" style={{ color: "var(--nly-text-primary)" }}>
