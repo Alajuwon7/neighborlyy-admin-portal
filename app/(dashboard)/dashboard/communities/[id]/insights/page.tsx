@@ -23,6 +23,7 @@ import {
   mergeActivityWeeks,
   trackingNote,
   trackingStartedOn,
+  trimLeadingGaps,
   type WeeklyActiveRow,
 } from "@/lib/activity-trend";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
@@ -236,8 +237,7 @@ export default async function InsightsPage({
     })),
   ];
   const mergedAll = mergeActivityWeeks(weeks, tookPartByWeek, activeRows, residents, markerRows);
-  const firstKnown = mergedAll.findIndex((w) => w.tookPart !== null || w.active !== null);
-  const weekly = firstKnown === -1 ? [] : mergedAll.slice(firstKnown);
+  const weekly = trimLeadingGaps(mergedAll);
   const headline = activityHeadline(weekly[weekly.length - 1], residents);
   const trackingNoteText = weekly.some((w) => !w.tracked) ? trackingNote(trackingStartedOn(activeRows)) : null;
   const monthly = monthlyDecisions(ledger, now, TREND_MONTHS);

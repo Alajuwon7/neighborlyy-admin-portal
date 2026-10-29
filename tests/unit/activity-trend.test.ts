@@ -6,6 +6,7 @@ import {
   mergeActivityWeeks,
   trackingNote,
   trackingStartedOn,
+  trimLeadingGaps,
   type ActivityWeek,
   type WeeklyActiveRow,
 } from "../../lib/activity-trend";
@@ -109,4 +110,19 @@ test("trackingStartedOn", () => {
   );
   assert.equal(trackingStartedOn([{ week_start: W, active: 9, tracked: true, tracking_started: ts }]), null);
   assert.equal(trackingStartedOn([]), null);
+});
+
+test("trimLeadingGaps drops leading untracked no-digest weeks, keeps later gaps", () => {
+  const w = (tookPart: number | null, tracked: boolean, active: number | null): ActivityWeek => ({
+    weekStart: "2026-01-05", label: "5 Jan", tookPart, quiet: null, active, tracked,
+    pctActive: null, pctTookPart: null, markers: [],
+  });
+  const gap = w(null, false, 0);
+  // (a) leading untracked, no digest: trimmed
+  assert.equal(trimLeadingGaps([gap, gap, w(3, false, 3)]).length, 1);
+  // (b) tracked week with no digest: kept
+  assert.equal(trimLeadingGaps([gap, w(null, true, 2), w(3, true, 4)]).length, 2);
+  // (c) mid-range gap kept
+  assert.equal(trimLeadingGaps([w(3, false, 3), gap, w(2, true, 2)]).length, 3);
+  assert.deepEqual(trimLeadingGaps([gap, gap]), []);
 });

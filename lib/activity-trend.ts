@@ -91,3 +91,9 @@ export function trackingNote(startedOn: string | null): string | null {
   });
   return `App-open tracking started ${d}; earlier weeks show taking part only.`;
 }
+
+/** Drop leading weeks with no real data (before the first digest and before tracking). */
+export function trimLeadingGaps(weeks: ActivityWeek[]): ActivityWeek[] {
+  const first = weeks.findIndex((w) => w.tookPart !== null || (w.tracked && w.active !== null));
+  return first === -1 ? [] : weeks.slice(first);
+}
