@@ -177,7 +177,7 @@ export function FacilityRowActions({
                 style={inputStyle}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label style={{ color: "var(--nly-text-secondary)" }}>
                   Opens

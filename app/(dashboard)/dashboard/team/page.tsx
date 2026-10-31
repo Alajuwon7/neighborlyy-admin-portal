@@ -54,8 +54,8 @@ export default async function TeamPage() {
         subtitle={`${members.length} ${members.length === 1 ? "member" : "members"} across ${communities.length} ${communities.length === 1 ? "community" : "communities"}`}
       />
 
-      <main className="flex-1 p-6 space-y-6">
-        <div className="flex items-center justify-between">
+      <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2
             className="text-sm font-medium"
             style={{ color: "var(--nly-text-secondary)" }}

@@ -88,7 +88,7 @@ export default async function FinalizePage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-6">
+    <div className="max-w-xl mx-auto w-full p-4 sm:p-6 space-y-6">
       <div className="space-y-2">
         <h1
           className="text-2xl font-bold"

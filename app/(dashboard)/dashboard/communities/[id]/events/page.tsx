@@ -37,7 +37,7 @@ export default async function EventsPage({
 
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2
             className="text-sm font-medium"
@@ -152,15 +152,16 @@ function EventCard({
           className="w-full h-32 object-cover rounded-xl"
         />
       )}
+      {/* Without an image the title sits beside the absolute edit/delete buttons — keep clear of them. */}
       <h4
-        className="text-sm font-semibold"
+        className={`text-sm font-semibold break-words ${event.image_url ? "" : "pr-20"}`}
         style={{ color: "var(--nly-text-primary)" }}
       >
         {event.title}
       </h4>
       {event.description && (
         <p
-          className="text-xs line-clamp-2"
+          className="text-xs line-clamp-2 break-words"
           style={{ color: "var(--nly-text-tertiary)" }}
         >
           {event.description}

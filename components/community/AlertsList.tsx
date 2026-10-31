@@ -46,7 +46,7 @@ function Row({
     >
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <h4 className="text-sm font-semibold" style={{ color: "var(--nly-text-primary)" }}>
+          <h4 className="min-w-0 break-words text-sm font-semibold" style={{ color: "var(--nly-text-primary)" }}>
             {alert.title}
           </h4>
           <span
@@ -64,7 +64,7 @@ function Row({
             </span>
           )}
         </div>
-        <p className="text-xs line-clamp-2" style={{ color: "var(--nly-text-secondary)" }}>
+        <p className="text-xs line-clamp-2 break-words" style={{ color: "var(--nly-text-secondary)" }}>
           {alert.message}
         </p>
       </div>

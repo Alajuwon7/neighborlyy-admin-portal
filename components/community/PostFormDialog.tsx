@@ -52,7 +52,7 @@ export function PostFormDialog({ communityCode }: { communityCode: string }) {
         New Post
       </DialogTrigger>
       <DialogContent
-        className="border sm:max-w-md"
+        className="border sm:max-w-md max-h-[90vh] overflow-y-auto"
         style={{
           backgroundColor: "var(--nly-surface)",
           borderColor: "var(--nly-border)",

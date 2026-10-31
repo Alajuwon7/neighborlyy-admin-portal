@@ -195,7 +195,7 @@ function WeekCard({
       ) : (
         <>
           {digest.narrative && (
-            <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--nly-text-secondary)" }}>
+            <p className="text-sm mt-2 leading-relaxed break-words" style={{ color: "var(--nly-text-secondary)" }}>
               {digest.narrative}
             </p>
           )}
@@ -216,7 +216,7 @@ function WeekCard({
       )}
 
       {digest.suggestions.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2 mt-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2 mt-4">
           {digest.suggestions.map((s) => (
             <SuggestionCard
               key={s.id}
@@ -267,7 +267,7 @@ export function SuggestionCard({
 
   return (
     <div
-      className="rounded-xl border p-4 flex flex-col"
+      className="min-w-0 break-words rounded-xl border p-4 flex flex-col"
       style={{
         borderColor: chosen ? "var(--nly-brand)" : "var(--nly-border)",
         backgroundColor: chosen ? "rgba(47, 196, 211, 0.06)" : "transparent",

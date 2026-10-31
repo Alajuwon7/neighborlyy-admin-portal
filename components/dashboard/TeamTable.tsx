@@ -126,9 +126,9 @@ export function TeamTable({ members }: { members: TeamMember[] }) {
 
             {/* Name + email + community */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <p
-                  className="text-sm font-medium truncate"
+                  className="text-sm font-medium truncate max-w-full"
                   style={{ color: "var(--nly-text-primary)" }}
                 >
                   {m.full_name}
@@ -151,7 +151,7 @@ export function TeamTable({ members }: { members: TeamMember[] }) {
             {/* Role */}
             {isOwner ? (
               <span
-                className="text-xs font-medium px-2.5 py-1 rounded-lg border shrink-0"
+                className="min-w-[5.5rem] text-center text-xs font-medium px-2.5 py-1 rounded-lg border shrink-0"
                 style={{
                   borderColor: "var(--nly-border)",
                   color: "var(--nly-text-secondary)",
@@ -162,7 +162,7 @@ export function TeamTable({ members }: { members: TeamMember[] }) {
             ) : (
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition-opacity hover:opacity-80 shrink-0"
+                  className="flex min-w-[5.5rem] items-center justify-between gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium whitespace-nowrap transition-opacity hover:opacity-80 shrink-0"
                   style={{
                     borderColor: "var(--nly-border)",
                     color: "var(--nly-text-secondary)",

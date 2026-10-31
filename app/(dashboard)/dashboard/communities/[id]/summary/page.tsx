@@ -60,7 +60,7 @@ export default async function WeeklySummaryPage({
 
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium" style={{ color: "var(--nly-text-secondary)" }}>
             Weekly Summary

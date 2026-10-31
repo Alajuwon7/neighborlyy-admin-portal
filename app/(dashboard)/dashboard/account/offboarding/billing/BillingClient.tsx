@@ -112,7 +112,7 @@ export function BillingClient({ deletionRequestId, initialCommunities }: Billing
             className="rounded-2xl border p-5 space-y-2"
             style={{ backgroundColor: "var(--nly-surface)", borderColor: "var(--nly-border)" }}
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold" style={{ color: "var(--nly-text-primary)" }}>
                   {c.name}
@@ -141,7 +141,7 @@ export function BillingClient({ deletionRequestId, initialCommunities }: Billing
                   type="button"
                   disabled={working !== null}
                   onClick={() => handleCancel(c.id)}
-                  className="h-9 rounded-lg text-sm font-medium border px-3 transition-opacity hover:opacity-80 disabled:opacity-40 inline-flex items-center gap-2"
+                  className="h-9 shrink-0 whitespace-nowrap rounded-lg text-sm font-medium border px-3 transition-opacity hover:opacity-80 disabled:opacity-40 inline-flex items-center gap-2"
                   style={{ borderColor: "var(--nly-brand)", color: "var(--nly-brand)" }}
                 >
                   {working === c.id ? (

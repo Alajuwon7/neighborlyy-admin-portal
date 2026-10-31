@@ -58,8 +58,8 @@ export default async function NotificationsPage({
         communityNameMap={communityNameMap}
       />
       <main className="flex-1 p-4 sm:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 overflow-x-auto">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-1 items-center gap-2 overflow-x-auto min-w-0">
             {NOTIFICATION_FILTERS.map((f) => (
               <Link
                 key={f.value}

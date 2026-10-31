@@ -97,7 +97,7 @@ export function AlertRowActions({ alert, communityId }: AlertRowActionsProps) {
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent
-          className="border sm:max-w-md"
+          className="border sm:max-w-md max-h-[90vh] overflow-y-auto"
           style={{
             backgroundColor: "var(--nly-surface)",
             borderColor: "var(--nly-border)",

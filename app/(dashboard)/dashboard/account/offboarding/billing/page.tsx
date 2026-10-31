@@ -57,7 +57,7 @@ export default async function BillingPage() {
   const isBlocked = req.status === "billing_blocked";
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="max-w-2xl mx-auto w-full p-4 sm:p-6 space-y-6">
       <header>
         <h1 className="text-2xl font-bold" style={{ color: "var(--nly-text-primary)" }}>
           Account closure — Step 1 of 2: Billing review

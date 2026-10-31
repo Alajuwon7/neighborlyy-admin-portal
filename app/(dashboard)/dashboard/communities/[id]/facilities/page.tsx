@@ -66,7 +66,7 @@ export default async function FacilitiesPage({
 
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2
             className="text-sm font-medium"
@@ -165,7 +165,7 @@ export default async function FacilitiesPage({
 
                 {f.description && (
                   <p
-                    className="text-xs line-clamp-2"
+                    className="text-xs line-clamp-2 break-words"
                     style={{ color: "var(--nly-text-secondary)" }}
                   >
                     {f.description}
@@ -173,11 +173,11 @@ export default async function FacilitiesPage({
                 )}
 
                 <div
-                  className="flex items-center gap-4 pt-3 border-t"
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 border-t"
                   style={{ borderColor: "var(--nly-divider)" }}
                 >
                   {f.capacity != null && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
                       <Users
                         size={12}
                         style={{ color: "var(--nly-text-tertiary)" }}
@@ -191,7 +191,7 @@ export default async function FacilitiesPage({
                     </div>
                   )}
                   {hoursLabel && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
                       <Clock
                         size={12}
                         style={{ color: "var(--nly-text-tertiary)" }}
@@ -206,7 +206,7 @@ export default async function FacilitiesPage({
                   )}
                   {upcomingReservations > 0 && (
                     <span
-                      className="text-xs font-medium"
+                      className="text-xs font-medium whitespace-nowrap"
                       style={{ color: "var(--nly-accent)" }}
                     >
                       {upcomingReservations} upcoming{" "}
