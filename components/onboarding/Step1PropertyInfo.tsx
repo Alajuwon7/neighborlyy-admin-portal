@@ -356,7 +356,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
         <button
           type="button"
           onClick={onBack}
-          className="flex-1 h-11 rounded-lg font-semibold text-sm border transition-opacity hover:opacity-80"
+          className="flex-none sm:flex-1 h-11 px-5 rounded-lg font-semibold text-sm whitespace-nowrap border transition-opacity hover:opacity-80"
           style={{
             borderColor: "var(--nly-border)",
             color: "var(--nly-text-secondary)",
@@ -368,7 +368,7 @@ export function Step1PropertyInfo({ data, onChange, onNext, onBack }: Props) {
         <button
           type="submit"
           disabled={validating}
-          className="flex-1 h-11 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex-1 min-w-0 h-11 px-3 rounded-xl font-semibold text-sm whitespace-nowrap transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
         >
           {validating ? "Checking availability…" : "Continue →"}

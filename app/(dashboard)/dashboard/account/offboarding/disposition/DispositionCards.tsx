@@ -155,7 +155,7 @@ function DispositionCard({
         />
       </fieldset>
 
-      <div className="flex items-center justify-between gap-3 pt-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         {current ? (
           <span className="text-xs inline-flex items-center gap-1" style={{ color: "var(--nly-success)" }}>
             <Check size={14} /> Confirmed: {current.action}

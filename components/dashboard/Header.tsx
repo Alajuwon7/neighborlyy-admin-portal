@@ -61,7 +61,7 @@ export function Header({
 
   return (
     <header
-      className="relative h-16 flex items-center justify-between px-6 border-b shrink-0 z-30"
+      className="relative h-16 flex items-center justify-between gap-3 px-4 sm:px-6 border-b shrink-0 z-30"
       style={{
         backgroundColor: "var(--nly-surface)",
         borderColor: "var(--nly-border)",
@@ -81,18 +81,19 @@ export function Header({
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className="min-w-0"
       >
-        <h1 className="text-lg font-semibold" style={{ color: "var(--nly-text-primary)" }}>
+        <h1 className="text-base sm:text-lg font-semibold truncate" style={{ color: "var(--nly-text-primary)" }}>
           {displayTitle}
         </h1>
         {subtitle && (
-          <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+          <p className="text-xs truncate" style={{ color: "var(--nly-text-tertiary)" }}>
             {subtitle}
           </p>
         )}
       </motion.div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Active residents indicator */}
         {activeResidents != null && activeResidents > 0 && (
           <div
@@ -120,7 +121,7 @@ export function Header({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
             style={{
               backgroundColor:
                 trialDaysLeft <= 3

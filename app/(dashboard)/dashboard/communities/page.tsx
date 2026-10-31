@@ -51,7 +51,7 @@ export default async function CommunitiesPage() {
       <DashboardAnimatedShell>
         {/* Actions bar */}
         <DashboardSection delay={0}>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2
               className="text-sm font-medium"
               style={{ color: "var(--nly-text-secondary)" }}
@@ -60,7 +60,7 @@ export default async function CommunitiesPage() {
             </h2>
             <Link
               href="/onboarding"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
+              className="flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
             >
               <Plus size={16} />

@@ -45,7 +45,7 @@ export default async function DispositionPage() {
   // with an indefinitely-disabled Continue button.
   if (communities.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto p-6 space-y-4 text-center">
+      <div className="max-w-2xl mx-auto w-full p-4 sm:p-6 space-y-4 text-center">
         <h1 className="text-2xl font-bold" style={{ color: "var(--nly-text-primary)" }}>
           No communities to disposition
         </h1>
@@ -65,7 +65,7 @@ export default async function DispositionPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="max-w-3xl mx-auto w-full p-4 sm:p-6 space-y-6">
       <header>
         <h1 className="text-2xl font-bold" style={{ color: "var(--nly-text-primary)" }}>
           Choose what happens to your communities

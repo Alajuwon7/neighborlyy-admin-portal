@@ -44,7 +44,7 @@ export default async function CommunityOverviewPage({
       {/* Trial banner */}
       {trialDaysLeft !== null && (
         <div
-          className="rounded-xl px-5 py-3 flex items-center justify-between"
+          className="rounded-xl px-4 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
           style={{
             backgroundColor:
               trialDaysLeft <= 3
@@ -68,7 +68,7 @@ export default async function CommunityOverviewPage({
           </p>
           <a
             href="/dashboard/billing"
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white whitespace-nowrap shrink-0"
             style={{ backgroundColor: "var(--nly-brand)", color: "var(--nly-brand-text)" }}
           >
             Upgrade Plan
@@ -77,7 +77,7 @@ export default async function CommunityOverviewPage({
       )}
 
       {/* Info grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Property Details */}
         <section
           className="rounded-2xl border p-5 space-y-4"
@@ -221,7 +221,7 @@ export default async function CommunityOverviewPage({
           >
             <Users size={15} /> Quick Stats
           </h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <StatBlock label="Units" value={community.unit_count ?? 0} />
             <StatBlock label="Pending" value={pendingCount ?? 0} />
             <StatBlock label="Active Alerts" value={alertsCount ?? 0} />
@@ -256,7 +256,7 @@ function InfoRow({
       <span
         className={`text-xs text-right ${mono ? "font-mono" : ""} ${
           capitalize ? "capitalize" : ""
-        } flex items-center gap-1`}
+        } flex items-start gap-1 [&>svg]:shrink-0 [&>svg]:mt-0.5`}
         style={{ color: "var(--nly-text-secondary)" }}
       >
         {icon}
@@ -269,7 +269,7 @@ function InfoRow({
 function StatBlock({ label, value }: { label: string; value: number }) {
   return (
     <div
-      className="rounded-xl p-3 text-center"
+      className="rounded-xl px-2 py-3 sm:p-3 text-center"
       style={{ backgroundColor: "var(--nly-background)" }}
     >
       <p

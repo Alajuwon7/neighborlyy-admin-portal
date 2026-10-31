@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -31,9 +32,21 @@ interface CommunitySubNavProps {
 export function CommunitySubNav({ communityId }: CommunitySubNavProps) {
   const pathname = usePathname();
   const basePath = `/dashboard/communities/${communityId}`;
+  const navRef = useRef<HTMLElement>(null);
+
+  // On narrow screens the tab strip scrolls horizontally; keep the active tab
+  // in view so a PM landing on e.g. Facilities can see where they are.
+  useEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!nav || !active || nav.scrollWidth <= nav.clientWidth) return;
+    const offset = active.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft;
+    nav.scrollLeft = offset - (nav.clientWidth - active.offsetWidth) / 2;
+  }, [pathname]);
 
   return (
     <nav
+      ref={navRef}
       className="flex items-center gap-1 px-4 sm:px-6 border-b overflow-x-auto"
       style={{
         backgroundColor: "var(--nly-surface)",

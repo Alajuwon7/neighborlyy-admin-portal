@@ -416,7 +416,10 @@
   pointer-events: none;
 }
 
-.nly-gradient-border > * {
+/* Skip absolutely-positioned decoration (e.g. SummaryCard's corner glow):
+   this unlayered rule beats Tailwind's layered .absolute, so without the
+   :not() the glow fell back into the flow and pushed card content down. */
+.nly-gradient-border > :not(.absolute) {
   position: relative;
   z-index: 2;
 }

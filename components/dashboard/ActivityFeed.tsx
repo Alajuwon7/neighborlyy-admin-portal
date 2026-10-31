@@ -202,7 +202,7 @@ export function ActivityFeed({ items, loading, communityCodes }: ActivityFeedPro
                     {item.actionHref && (
                       <a
                         href={item.actionHref}
-                        className="text-xs font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-xs font-medium shrink-0 whitespace-nowrap sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                         style={{ color: "var(--nly-accent)" }}
                       >
                         {item.actionLabel ?? "View"} →

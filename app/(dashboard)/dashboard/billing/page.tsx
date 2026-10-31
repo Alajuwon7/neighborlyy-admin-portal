@@ -85,7 +85,7 @@ export default async function BillingPage() {
     <div className="flex flex-col flex-1">
       <Header title="Billing" subtitle="Manage subscriptions and payments" />
 
-      <main className="flex-1 p-6 space-y-6">
+      <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Current plans */}
         <div className="space-y-3">
           <h2

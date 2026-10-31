@@ -256,7 +256,7 @@ export default async function InsightsPage({
             Who&apos;s joining, who&apos;s active, how quickly applicants hear back, and how neighbours help each other
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Range filter — one row, above everything it filters. */}
           <nav
             aria-label="Date range"
@@ -270,7 +270,7 @@ export default async function InsightsPage({
                   key={r.value}
                   href={`?range=${r.value}`}
                   aria-current={selected ? "page" : undefined}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium whitespace-nowrap rounded-lg transition-colors"
                   style={{
                     backgroundColor: selected ? "var(--nly-surface-hover)" : "transparent",
                     color: selected ? "var(--nly-text-primary)" : "var(--nly-text-tertiary)",
