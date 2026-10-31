@@ -256,11 +256,11 @@ export default async function InsightsPage({
             Who&apos;s joining, who&apos;s active, how quickly applicants hear back, and how neighbours help each other
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {/* Range filter — one row, above everything it filters. */}
           <nav
             aria-label="Date range"
-            className="flex rounded-xl border p-0.5"
+            className="flex w-full rounded-xl border p-0.5 sm:w-auto"
             style={{ borderColor: "var(--nly-border)", backgroundColor: "var(--nly-surface)" }}
           >
             {RANGES.map((r) => {
@@ -270,7 +270,7 @@ export default async function InsightsPage({
                   key={r.value}
                   href={`?range=${r.value}`}
                   aria-current={selected ? "page" : undefined}
-                  className="px-3 py-1.5 text-xs font-medium whitespace-nowrap rounded-lg transition-colors"
+                  className="flex-1 px-2 py-1.5 text-center text-xs font-medium whitespace-nowrap rounded-lg transition-colors sm:flex-none sm:px-3"
                   style={{
                     backgroundColor: selected ? "var(--nly-surface-hover)" : "transparent",
                     color: selected ? "var(--nly-text-primary)" : "var(--nly-text-tertiary)",
@@ -472,7 +472,7 @@ export default async function InsightsPage({
 function Panel({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="rounded-2xl border p-5"
+      className="min-w-0 rounded-2xl border p-4 sm:p-5"
       style={{ backgroundColor: "var(--nly-surface)", borderColor: "var(--nly-border)" }}
     >
       {children}

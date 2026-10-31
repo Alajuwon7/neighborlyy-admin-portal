@@ -57,7 +57,7 @@ export function DecisionsChart({ data }: { data: MonthBucket[] }) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -20 }} barGap={2} barCategoryGap="28%">
             <CartesianGrid vertical={false} stroke={GRID} />
-            <XAxis dataKey="label" tick={AXIS_TICK} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={8} />
+            <XAxis dataKey="label" tick={AXIS_TICK} tickLine={false} axisLine={false} tickMargin={6} interval="preserveStartEnd" minTickGap={8} />
             <YAxis allowDecimals={false} tick={AXIS_TICK} tickLine={false} axisLine={false} width={48} />
             <Tooltip cursor={{ fill: "rgba(255, 255, 255, 0.04)" }} content={(props) => <DecisionsTooltip {...props} />} />
             <Bar dataKey="approved" name="Approved" fill={APPROVED} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={false} />
@@ -121,17 +121,18 @@ export function WeeklyActivityChart({ data }: { data: ActivityWeek[] }) {
         className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-2 text-xs"
         style={{ color: "var(--nly-text-secondary)" }}
       >
-        <span className="whitespace-nowrap">
+        {/* Pairs wrap as units, so a phone never strands one key on its own line. */}
+        <span className="flex items-center gap-4 whitespace-nowrap">
           <LegendKey color={REJECTED} label="Took part" />
-        </span>
-        <span className="whitespace-nowrap">
           <LegendKey color={APPROVED} opacity={QUIET_OPACITY} label="Quietly active" />
         </span>
-        <span className="flex items-center gap-1.5 whitespace-nowrap">
-          <Diamond color={MARK_EVENT} /> Your event
-        </span>
-        <span className="flex items-center gap-1.5 whitespace-nowrap">
-          <Diamond color={MARK_ALERT} /> Your alert
+        <span className="flex items-center gap-4 whitespace-nowrap">
+          <span className="flex items-center gap-1.5">
+            <Diamond color={MARK_EVENT} /> Your event
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Diamond color={MARK_ALERT} /> Your alert
+          </span>
         </span>
       </div>
       <div className="h-64">
@@ -221,6 +222,9 @@ function QuietSlice(props: BarShapeProps) {
 
 /** Segments shorter than this get no count (it wouldn't fit). */
 const MIN_LABEL_HEIGHT = 14;
+/** Bars narrower than this (phones) get no counts at all: a two-digit 10px
+ * count spills into the neighbouring bars. Tooltip and table keep the numbers. */
+const MIN_LABEL_WIDTH = 14;
 
 /** Count inside a slice. `value` is the render value, where null was mapped to 0,
  * and 0 is never drawn — so untracked quiet slices and missing digests get no label.
@@ -229,7 +233,7 @@ function SliceCount({ x, y, width, height, value, slice }: LabelProps & { slice:
   const n = Number(value);
   // The quiet slice is drawn 2px short at its base (QuietSlice); centre on what's visible.
   const h = Number(height ?? 0) - (slice === "quiet" ? 2 : 0);
-  if (!Number.isFinite(n) || n <= 0 || h < MIN_LABEL_HEIGHT) return null;
+  if (!Number.isFinite(n) || n <= 0 || h < MIN_LABEL_HEIGHT || Number(width ?? 0) < MIN_LABEL_WIDTH) return null;
   return (
     <text
       x={Number(x) + Number(width) / 2}
@@ -258,6 +262,8 @@ function ActivityTick({ x, y, index, width, visibleTicksCount, payload, rows }: 
   const hasEvent = markers.some((m) => m.kind === "event");
   const hasAlert = markers.some((m) => m.kind === "alert");
   const glyphs = [hasEvent && MARK_EVENT, hasAlert && MARK_ALERT].filter((c): c is string => !!c);
+  // Shrink the ◆ pair on narrow slots so neighbouring weeks' pairs never touch.
+  const r = slot > 0 ? Math.min(5, slot / 4.5) : 5;
   return (
     <g>
       {showLabel && (
@@ -266,9 +272,9 @@ function ActivityTick({ x, y, index, width, visibleTicksCount, payload, rows }: 
         </text>
       )}
       {glyphs.map((color, i) => {
-        const gx = cx + (i - (glyphs.length - 1) / 2) * 11;
+        const gx = cx + (i - (glyphs.length - 1) / 2) * (2 * r + 1);
         const gy = cy + 28;
-        return <path key={color} d={`M${gx} ${gy - 5}L${gx + 5} ${gy}L${gx} ${gy + 5}L${gx - 5} ${gy}Z`} fill={color} />;
+        return <path key={color} d={`M${gx} ${gy - r}L${gx + r} ${gy}L${gx} ${gy + r}L${gx - r} ${gy}Z`} fill={color} />;
       })}
     </g>
   );
@@ -345,7 +351,7 @@ function describeActivity(data: ActivityWeek[]): string {
 function TooltipShell({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="rounded-lg border px-3 py-2 text-xs shadow-lg"
+      className="max-w-72 rounded-lg border px-3 py-2 text-xs break-words shadow-lg"
       style={{ backgroundColor: "var(--nly-surface-elevated)", borderColor: "var(--nly-border)", color: "var(--nly-text-primary)" }}
     >
       {children}
