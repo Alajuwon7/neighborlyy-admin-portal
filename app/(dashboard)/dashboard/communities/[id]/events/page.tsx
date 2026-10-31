@@ -152,8 +152,9 @@ function EventCard({
           className="w-full h-32 object-cover rounded-xl"
         />
       )}
+      {/* Without an image the title sits beside the absolute edit/delete buttons — keep clear of them. */}
       <h4
-        className="text-sm font-semibold"
+        className={`text-sm font-semibold break-words ${event.image_url ? "" : "pr-20"}`}
         style={{ color: "var(--nly-text-primary)" }}
       >
         {event.title}
