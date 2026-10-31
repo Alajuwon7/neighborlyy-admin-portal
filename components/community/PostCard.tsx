@@ -31,7 +31,7 @@ export function PostCard({ post }: PostCardProps) {
           <Megaphone size={14} style={{ color: "var(--nly-brand)" }} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
             <span
               className="text-xs px-1.5 py-0.5 rounded font-medium"
               style={{
@@ -47,7 +47,7 @@ export function PostCard({ post }: PostCardProps) {
             </span>
           </div>
           <p
-            className="text-sm leading-relaxed whitespace-pre-wrap"
+            className="text-sm leading-relaxed whitespace-pre-wrap break-words"
             style={{ color: "var(--nly-text-secondary)" }}
           >
             {post.content}
@@ -59,7 +59,7 @@ export function PostCard({ post }: PostCardProps) {
             <img
               src={post.image_url}
               alt="Post attachment"
-              className="mt-3 rounded-xl max-h-64 object-cover"
+              className="mt-3 rounded-xl max-h-64 max-w-full object-cover"
             />
           )}
         </div>

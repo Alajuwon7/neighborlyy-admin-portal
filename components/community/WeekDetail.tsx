@@ -107,7 +107,7 @@ export function WeekDetail({ communityId, digest: initialDigest, comparisons, is
               ? `Pick one to focus on. You can change your choice until ${nextSummaryLabel}.`
               : "This week has closed, so the choice is final."}
           </p>
-          <div className="grid gap-3 md:grid-cols-2 max-w-5xl">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 max-w-5xl">
             {digest.suggestions.map((s) => (
               <SuggestionCard
                 key={s.id}

@@ -165,7 +165,7 @@ export default async function FacilitiesPage({
 
                 {f.description && (
                   <p
-                    className="text-xs line-clamp-2"
+                    className="text-xs line-clamp-2 break-words"
                     style={{ color: "var(--nly-text-secondary)" }}
                   >
                     {f.description}

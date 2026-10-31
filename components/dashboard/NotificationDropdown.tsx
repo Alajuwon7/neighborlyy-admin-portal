@@ -126,7 +126,7 @@ export function NotificationDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.96 }}
             transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="absolute right-0 top-12 w-[380px] max-h-[480px] rounded-xl border shadow-lg overflow-hidden z-50"
+            className="absolute right-0 top-12 w-[calc(100vw-2rem)] max-w-[380px] max-h-[480px] rounded-xl border shadow-lg overflow-hidden z-50"
             style={{
               backgroundColor: "var(--nly-surface)",
               borderColor: "var(--nly-border)",

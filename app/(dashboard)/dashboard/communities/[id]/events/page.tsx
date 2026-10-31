@@ -161,7 +161,7 @@ function EventCard({
       </h4>
       {event.description && (
         <p
-          className="text-xs line-clamp-2"
+          className="text-xs line-clamp-2 break-words"
           style={{ color: "var(--nly-text-tertiary)" }}
         >
           {event.description}
