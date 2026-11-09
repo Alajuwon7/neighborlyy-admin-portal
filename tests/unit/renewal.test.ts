@@ -4,11 +4,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import {
   ENGAGED_RULE,
-  MIN_GROUP_LEASES,
-  isEngaged,
+  MIN_GROUP_UNITS,
+  rangePhrase,
   renewalNotes,
-  summarizeRenewals,
-  type LeaseEngagementRow,
+  toRenewalSummary,
+  type RenewalSummaryRow,
 } from "../../lib/renewal";
 import {
   normalizeUnit,
@@ -20,130 +20,88 @@ import {
   validateLeaseRows,
 } from "../../lib/rent-roll";
 
-const NOW = new Date(Date.UTC(2026, 10, 9, 15)); // 2026-11-09
-const START = new Date(Date.UTC(2026, 7, 11)); // 2026-08-11 (90 days back)
+// The 3-of-12 grouping, the under-5 floor, the date range and unit matching
+// run in SQL (get_lease_renewal_summary) so per-lease engagement never leaves
+// the database. Their edge cases are in supabase/tests/renewal/check.sql
+// (run: scripts/test-renewal-sql.sh). This file covers what the portal does
+// with the result, and the CSV parser.
 
-let n = 0;
-const lease = (over: Partial<LeaseEngagementRow> = {}): LeaseEngagementRow => ({
-  lease_id: `l${++n}`,
-  lease_end_date: "2026-10-01",
-  outcome: "renewed",
-  matched: true,
-  history_complete: true,
-  weeks_took_part: 5,
+const NOW = new Date(Date.UTC(2026, 10, 9, 15)); // 2026-11-09
+
+const row = (over: Partial<RenewalSummaryRow> = {}): RenewalSummaryRow => ({
+  total: 90,
+  unmatched: 0,
+  too_new: 0,
+  pending: 0,
+  engaged_rate: 83,
+  others_rate: 57,
+  engaged_leases: 41,
+  engaged_renewed: 34,
+  others_leases: 37,
+  others_renewed: 21,
   ...over,
 });
-const many = (count: number, over: Partial<LeaseEngagementRow>) => Array.from({ length: count }, () => lease(over));
 
-// ─── The 3-of-12 rule ───────────────────────────────────────────────────────
+// ─── Rule constants ─────────────────────────────────────────────────────────
 
-test("rule constant is 3 of 12", () => {
+test("rule constant is 3 of 12, inside the window band the database accepts", () => {
   assert.deepEqual(ENGAGED_RULE, { minWeeks: 3, windowWeeks: 12 });
+  assert.ok(ENGAGED_RULE.windowWeeks >= 8 && ENGAGED_RULE.windowWeeks <= 26);
+  assert.ok(ENGAGED_RULE.minWeeks >= 1 && ENGAGED_RULE.minWeeks <= ENGAGED_RULE.windowWeeks);
+  assert.equal(MIN_GROUP_UNITS, 5);
 });
 
-test("engaged at exactly minWeeks, not one below; the window max counts", () => {
-  assert.equal(isEngaged(2), false);
-  assert.equal(isEngaged(3), true);
-  assert.equal(isEngaged(12), true);
-  assert.equal(isEngaged(0), false);
+// ─── Suppression on the tile ────────────────────────────────────────────────
+
+test("both groups over the floor: rates and counts shown", () => {
+  const s = toRenewalSummary(row());
+  assert.deepEqual(s.engaged, { rate: 83, leases: 41, renewed: 34 });
+  assert.deepEqual(s.others, { rate: 57, leases: 37, renewed: 21 });
 });
 
-test("leases split into engaged / others at the 3-week edge", () => {
-  const s = summarizeRenewals(
-    [
-      ...many(5, { weeks_took_part: 3, outcome: "renewed" }),
-      ...many(5, { weeks_took_part: 2, outcome: "moved_out" }),
-    ],
-    START,
-    NOW,
-  );
-  assert.deepEqual(s.engaged, { leases: 5, renewed: 5, rate: 100 });
-  assert.deepEqual(s.others, { leases: 5, renewed: 0, rate: 0 });
+test("one group under the floor: its rate is blank and NEITHER group shows counts", () => {
+  // Counts withheld even if a value slips through, or the small group's size
+  // follows by subtraction from the totals.
+  const s = toRenewalSummary(row({ engaged_rate: null, engaged_leases: 4, engaged_renewed: 4 }));
+  assert.deepEqual(s.engaged, { rate: null, leases: null, renewed: null });
+  assert.deepEqual(s.others, { rate: 57, leases: null, renewed: null });
 });
 
-test("rates round to whole percents", () => {
-  const s = summarizeRenewals(
-    [...many(2, { outcome: "renewed" }), ...many(1, { outcome: "moved_out" }), ...many(3, { outcome: "renewed" })],
-    START,
-    NOW,
-  );
-  assert.equal(s.engaged.rate, 83); // 5 of 6
-});
-
-// ─── Under-5 suppression ────────────────────────────────────────────────────
-
-test("a group under MIN_GROUP_LEASES has no rate; at the floor it does", () => {
-  assert.equal(MIN_GROUP_LEASES, 5);
-  const s = summarizeRenewals(
-    [...many(4, { weeks_took_part: 6 }), ...many(5, { weeks_took_part: 0, outcome: "moved_out" })],
-    START,
-    NOW,
-  );
+test("both under the floor: nothing but blanks", () => {
+  const s = toRenewalSummary(row({ engaged_rate: null, others_rate: null }));
   assert.equal(s.engaged.rate, null);
-  assert.equal(s.engaged.leases, 4);
-  assert.equal(s.others.rate, 0);
+  assert.equal(s.others.rate, null);
+  assert.equal(s.others.leases, null);
 });
 
-test("pending leases don't count toward the floor or the rate", () => {
-  const s = summarizeRenewals(
-    [...many(4, { outcome: "renewed" }), ...many(3, { outcome: "pending" })],
-    START,
-    NOW,
-  );
-  assert.equal(s.engaged.leases, 4);
+test("odd values from the database never reach the tile", () => {
+  const s = toRenewalSummary(row({ engaged_rate: 140, total: -3, unmatched: Number.NaN }));
   assert.equal(s.engaged.rate, null);
-  assert.equal(s.pending, 3);
+  assert.equal(s.engaged.leases, null);
+  assert.equal(s.total, 0);
+  assert.equal(s.unmatched, 0);
+  assert.deepEqual(toRenewalSummary(null).engaged, { rate: null, leases: null, renewed: null });
 });
 
-// ─── Range ──────────────────────────────────────────────────────────────────
+// ─── Unmatched / too new / pending notes ────────────────────────────────────
 
-test("leases outside the range are ignored; both ends are inclusive", () => {
-  const s = summarizeRenewals(
-    [
-      lease({ lease_end_date: "2026-08-10" }), // day before start
-      lease({ lease_end_date: "2026-08-11" }), // start
-      lease({ lease_end_date: "2026-11-09" }), // today
-      lease({ lease_end_date: "2026-11-10" }), // future
-    ],
-    START,
-    NOW,
-  );
-  assert.equal(s.total, 2);
+test("unmatched leases are noted against the total", () => {
+  const notes = renewalNotes(toRenewalSummary(row({ total: 140, unmatched: 12 })));
+  assert.equal(notes[0], "12 of 140 leases not matched to a resident");
 });
 
-test("all time (null start) keeps every past lease", () => {
-  const s = summarizeRenewals([lease({ lease_end_date: "2019-01-31" }), lease({ lease_end_date: "2027-01-31" })], null, NOW);
-  assert.equal(s.total, 1);
+test("too-new and pending leases are noted; no notes when there's nothing to say", () => {
+  const notes = renewalNotes(toRenewalSummary(row({ too_new: 1, pending: 3 })));
+  assert.deepEqual(notes, [
+    "1 lease left out: less than 12 weeks of history before the lease ended",
+    "3 still pending",
+  ]);
+  assert.deepEqual(renewalNotes(toRenewalSummary(row())), []);
 });
 
-// ─── Unmatched and too-new leases ───────────────────────────────────────────
-
-test("unmatched leases are counted, kept out of both groups, and noted", () => {
-  const s = summarizeRenewals(
-    [...many(12, { matched: false, weeks_took_part: null }), ...many(128, { weeks_took_part: 4 })],
-    START,
-    NOW,
-  );
-  assert.equal(s.total, 140);
-  assert.equal(s.unmatched, 12);
-  assert.equal(s.engaged.leases, 128);
-  assert.equal(s.others.leases, 0);
-  assert.equal(renewalNotes(s)[0], "12 of 140 leases not matched to a resident");
-});
-
-test("matched leases without full history are left out and noted", () => {
-  const s = summarizeRenewals(
-    [lease({ history_complete: false, weeks_took_part: null }), ...many(5, {})],
-    START,
-    NOW,
-  );
-  assert.equal(s.tooNew, 1);
-  assert.equal(s.engaged.leases, 5);
-  assert.match(renewalNotes(s).join(" "), /1 lease left out/);
-});
-
-test("no notes when everything matched and decided", () => {
-  assert.deepEqual(renewalNotes(summarizeRenewals(many(5, {}), START, NOW)), []);
+test("range phrase reads naturally for all time", () => {
+  assert.equal(rangePhrase("90 days"), "in the last 90 days");
+  assert.equal(rangePhrase("all time"), "at any time");
 });
 
 // ─── CSV parser ─────────────────────────────────────────────────────────────
@@ -205,6 +163,14 @@ test("unit normalisation", () => {
   assert.equal(normalizeUnit("Apartment 12"), "12");
   assert.equal(normalizeUnit("000"), "0");
   assert.equal(normalizeUnit("#"), "");
+  // The prefix must be a whole word, and the result is stable when re-applied
+  // (the database CHECK requires unit = normalize_unit(unit)).
+  assert.equal(normalizeUnit("Stewart 1"), "STEWART1");
+  assert.equal(normalizeUnit("APT4B"), "APT4B");
+  for (const raw of ["Apt Ste 4", "0APT1", "Apt Apt 4", "Unit-07", "Suite.3"]) {
+    const once = normalizeUnit(raw);
+    assert.equal(normalizeUnit(once), once, raw);
+  }
 });
 
 test("dates: ISO, US month-first, 2-digit years; impossible dates rejected", () => {

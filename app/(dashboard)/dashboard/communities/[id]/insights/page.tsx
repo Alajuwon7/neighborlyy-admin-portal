@@ -29,7 +29,7 @@ import {
 } from "@/lib/activity-trend";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
 import { RenewalTile, type RenewalTileState } from "@/components/insights/RenewalTile";
-import { ENGAGED_RULE, summarizeRenewals, type LeaseEngagementRow } from "@/lib/renewal";
+import { ENGAGED_RULE, toRenewalSummary, type RenewalSummaryRow } from "@/lib/renewal";
 
 export const dynamic = "force-dynamic";
 
@@ -132,20 +132,19 @@ export default async function InsightsPage({
         .eq("community_code", code);
       if (countError) throw countError;
       if (!count) return { kind: "no-data" };
-      const { data, error } = await readAll<LeaseEngagementRow>((from, to) =>
-        supabase
-          .rpc("get_lease_engagement", {
-            p_community_code: code,
-            p_from: start ? isoDate(start) : null,
-            p_to: isoDate(now),
-            p_window_weeks: ENGAGED_RULE.windowWeeks,
-          })
-          .order("lease_end_date", { ascending: true })
-          .order("lease_id", { ascending: true })
-          .range(from, to),
-      );
+      // One row of group totals (grouping and suppression happen in SQL), so
+      // no paging is needed here.
+      const { data, error } = await supabase.rpc("get_lease_renewal_summary", {
+        p_community_code: code,
+        p_from: start ? isoDate(start) : null,
+        p_to: isoDate(now),
+        p_window_weeks: ENGAGED_RULE.windowWeeks,
+        p_min_weeks: ENGAGED_RULE.minWeeks,
+      });
       if (error) throw error;
-      return { kind: "ready", summary: summarizeRenewals(data, start, now) };
+      const row = (data as RenewalSummaryRow[] | null)?.[0];
+      if (!row) throw new Error("get_lease_renewal_summary returned no row");
+      return { kind: "ready", summary: toRenewalSummary(row) };
     } catch (e) {
       console.error("insights renewal read failed:", e);
       return { kind: "failed" };
@@ -327,7 +326,7 @@ export default async function InsightsPage({
         </Panel>
       ) : (
         <>
-          <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 xl:grid-cols-6 gap-3">
             <Tile label="Residents" value={String(residents)} note={`+${decisions.approved} approved in the last ${rangeLabel}`} />
             <Tile
               label="Active residents"

@@ -4,14 +4,16 @@
 -- A PM uploads a monthly rent-roll CSV per community. The portal keeps only
 -- unit, lease end date and renewal outcome — no tenant names, rents or
 -- contact details. The Insights "Renewal rate by engagement" tile joins these
--- rows to resident activity through get_lease_engagement (Miyora migration
+-- rows to resident activity through get_lease_renewal_summary (Miyora migration
 -- 20261109120000_lease_engagement.sql), which must be applied AFTER this file.
 --
--- Re-uploading the same month replaces that month's file (its earlier rows are
--- removed, then the new rows are written). A lease seen in several monthly
--- rolls is one row: unique (community_code, unit, lease_end_date), and the
--- newest report month wins, so re-uploading an old month can't turn a
--- "renewed" back into "pending".
+-- lease_records holds one row per lease PER REPORT MONTH (an observation):
+-- unique (community_code, unit, lease_end_date, report_month). Re-uploading a
+-- month replaces exactly that month's rows; other months are untouched. When a
+-- lease appears in several monthly rolls, readers use the newest month's row
+-- (get_lease_renewal_summary does DISTINCT ON ... ORDER BY report_month DESC),
+-- so pending -> renewed updates the lease and re-uploading an old month can't
+-- overwrite a newer outcome.
 --
 -- RLS: a PM reads and writes only the communities they manage, via
 -- internal.auth_user_manages_community (same helper the digest tables use).
@@ -22,7 +24,9 @@
 -- -----------------------------------------------------
 -- 1. Unit normalisation (shared with the profile match)
 -- -----------------------------------------------------
--- "Apt 04B" / "Unit #4b" / "4-B" -> "4B".
+-- "Apt 04B" / "Unit #4b" / "4-B" -> "4B". The prefix must be a whole word
+-- (\M), which also makes the function idempotent: the table CHECK below
+-- requires unit = normalize_unit(unit).
 -- KEEP IN SYNC with normalizeUnit() in lib/rent-roll.ts.
 CREATE OR REPLACE FUNCTION internal.normalize_unit(p_unit text)
  RETURNS text
@@ -32,7 +36,7 @@ CREATE OR REPLACE FUNCTION internal.normalize_unit(p_unit text)
 AS $function$
   SELECT regexp_replace(
            regexp_replace(
-             regexp_replace(upper(btrim(p_unit)), '^(APARTMENT|APT|UNIT|SUITE|STE)\.?\s*', ''),
+             regexp_replace(upper(btrim(p_unit)), '^(APARTMENT|APT|UNIT|SUITE|STE)\M\.?\s*', ''),
              '[^A-Z0-9]', '', 'g'),
            '^0+(?=.)', '');
 $function$;
@@ -66,14 +70,14 @@ CREATE TABLE IF NOT EXISTS public.lease_records (
   lease_end_date   date NOT NULL,
   outcome          text NOT NULL CHECK (outcome IN ('renewed', 'moved_out', 'pending')),
   report_month     date NOT NULL,
-  source_upload_id uuid REFERENCES public.rent_roll_uploads(id) ON DELETE SET NULL,
+  source_upload_id uuid NOT NULL REFERENCES public.rent_roll_uploads(id) ON DELETE CASCADE,
   created_at       timestamptz NOT NULL DEFAULT now(),
-  updated_at       timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (community_code, unit, lease_end_date)
+  UNIQUE (community_code, unit, lease_end_date, report_month)
 );
 
 CREATE INDEX IF NOT EXISTS idx_lease_records_community_end
   ON public.lease_records (community_code, lease_end_date);
+-- The UNIQUE above also serves the newest-month DISTINCT ON read.
 CREATE INDEX IF NOT EXISTS idx_lease_records_source_upload
   ON public.lease_records (source_upload_id);
 
@@ -189,29 +193,19 @@ BEGIN
         upload_count     = u.upload_count + 1
   RETURNING u.id INTO v_upload;
 
-  -- Re-upload of this month: drop what the earlier version of this file wrote.
+  -- Re-upload of this month: replace exactly this month's rows.
   DELETE FROM public.lease_records WHERE source_upload_id = v_upload;
   GET DIAGNOSTICS v_replaced = ROW_COUNT;
 
-  INSERT INTO public.lease_records AS l
+  -- A duplicate (unit, lease_end_date) inside one file violates the UNIQUE and
+  -- aborts the whole save; the portal removes duplicates before sending.
+  INSERT INTO public.lease_records
     (community_code, unit, lease_end_date, outcome, report_month, source_upload_id)
   SELECT p_community_code, r.unit, r.lease_end_date, r.outcome, p_report_month, v_upload
-    FROM jsonb_to_recordset(p_rows) AS r(unit text, lease_end_date date, outcome text)
-  ON CONFLICT (community_code, unit, lease_end_date) DO UPDATE
-    SET outcome          = EXCLUDED.outcome,
-        report_month     = EXCLUDED.report_month,
-        source_upload_id = EXCLUDED.source_upload_id,
-        updated_at       = now()
-    -- A newer month's roll already holds this lease: keep its outcome.
-    WHERE l.report_month <= EXCLUDED.report_month;
+    FROM jsonb_to_recordset(p_rows) AS r(unit text, lease_end_date date, outcome text);
   GET DIAGNOSTICS v_saved = ROW_COUNT;
 
-  RETURN jsonb_build_object(
-    'upload_id', v_upload,
-    'saved', v_saved,
-    'kept_newer', v_total - v_saved,
-    'replaced', v_replaced
-  );
+  RETURN jsonb_build_object('upload_id', v_upload, 'saved', v_saved, 'replaced', v_replaced);
 END;
 $function$;
 
@@ -219,6 +213,6 @@ REVOKE ALL ON FUNCTION public.import_rent_roll(text, date, text, jsonb, integer)
 GRANT EXECUTE ON FUNCTION public.import_rent_roll(text, date, text, jsonb, integer) TO authenticated;
 
 COMMENT ON TABLE public.lease_records IS
-  'Lease end dates + renewal outcomes from PM rent-roll uploads (portal 036). No tenant PII. Read by get_lease_engagement.';
+  'One row per lease per report month from PM rent-roll uploads (portal 036); newest month wins on read. No tenant PII. Read by get_lease_renewal_summary.';
 COMMENT ON TABLE public.rent_roll_uploads IS
   'One row per community per report month; re-uploads update it (upload_count). Portal 036.';

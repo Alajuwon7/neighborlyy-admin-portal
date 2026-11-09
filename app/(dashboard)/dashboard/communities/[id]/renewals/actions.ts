@@ -6,7 +6,7 @@ import { reportMonthStart, validateLeaseRows } from "@/lib/rent-roll";
 
 export type SaveRentRollResult =
   | { error: string }
-  | { success: true; saved: number; keptNewer: number; replaced: number };
+  | { success: true; saved: number; replaced: number };
 
 /**
  * Save a previewed rent roll. The browser parses the CSV (names and other
@@ -50,13 +50,12 @@ export async function saveRentRoll(input: {
     return { error: "Couldn't save the rent roll. Please try again." };
   }
 
-  const result = (data ?? {}) as { saved?: number; kept_newer?: number; replaced?: number };
+  const result = (data ?? {}) as { saved?: number; replaced?: number };
   revalidatePath(`/dashboard/communities/${input.communityId}/renewals`);
   revalidatePath(`/dashboard/communities/${input.communityId}/insights`);
   return {
     success: true,
     saved: result.saved ?? 0,
-    keptNewer: result.kept_newer ?? 0,
     replaced: result.replaced ?? 0,
   };
 }

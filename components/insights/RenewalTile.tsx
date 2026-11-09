@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ENGAGED_RULE, renewalNotes, type GroupStat, type RenewalSummary } from "@/lib/renewal";
+import { ENGAGED_RULE, rangePhrase, renewalNotes, type GroupStat, type RenewalSummary } from "@/lib/renewal";
 
 export type RenewalTileState =
   | { kind: "ready"; summary: RenewalSummary }
@@ -8,7 +8,7 @@ export type RenewalTileState =
 
 /**
  * "Renewal rate by engagement" — top-row Insights tile. Same shell as the
- * page's other tiles; spans both columns on phones (it holds two numbers).
+ * page's other tiles; two columns wide (it holds two numbers and a definition).
  * Shows only rates and lease counts, never names or units.
  */
 export function RenewalTile({
@@ -22,7 +22,7 @@ export function RenewalTile({
 }) {
   return (
     <div
-      className="col-span-2 xl:col-span-1 rounded-2xl border p-4 min-w-0"
+      className="col-span-2 rounded-2xl border p-4 min-w-0"
       style={{ backgroundColor: "var(--nly-surface)", borderColor: "var(--nly-border)" }}
     >
       <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
@@ -51,7 +51,7 @@ function Body({ state, rangeLabel, uploadHref }: { state: RenewalTileState; rang
   const s = state.summary;
   const notes = renewalNotes(s);
   if (s.total === 0) {
-    return <Message>No leases ended in the last {rangeLabel}.</Message>;
+    return <Message>No leases ended {rangePhrase(rangeLabel)}.</Message>;
   }
 
   return (
@@ -62,8 +62,8 @@ function Body({ state, rangeLabel, uploadHref }: { state: RenewalTileState; rang
       </div>
       <p className="text-[11px] mt-1 leading-snug" style={{ color: "var(--nly-text-tertiary)" }}>
         Engaged = posted, commented, liked, RSVPed, booked, listed, asked for help, answered a survey or used Connect in{" "}
-        {ENGAGED_RULE.minWeeks}+ of the {ENGAGED_RULE.windowWeeks} weeks before the lease ended · leases ended in the last{" "}
-        {rangeLabel}
+        {ENGAGED_RULE.minWeeks}+ of the {ENGAGED_RULE.windowWeeks} weeks before the lease ended · leases ended{" "}
+        {rangePhrase(rangeLabel)}
         {notes.length > 0 ? ` · ${notes.join(" · ")}` : ""}
       </p>
     </>
@@ -84,7 +84,7 @@ function Group({ label, stat }: { label: string; stat: GroupStat }) {
       )}
       <p className="text-[11px] mt-0.5" style={{ color: "var(--nly-text-tertiary)" }}>
         {label}
-        {stat.rate === null ? "" : ` · ${stat.renewed} of ${stat.leases} renewed`}
+        {stat.leases === null || stat.renewed === null ? "" : ` · ${stat.renewed} of ${stat.leases} renewed`}
       </p>
     </div>
   );

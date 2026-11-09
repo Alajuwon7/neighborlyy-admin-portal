@@ -24,17 +24,13 @@ export default async function RenewalsPage({ params }: { params: Promise<{ id: s
   const { supabase, community } = await getCommunityWithAuth(id);
   const code = community.community_code as string;
 
-  const [uploadsRes, leaseCountRes] = await Promise.all([
-    supabase
-      .from("rent_roll_uploads")
-      .select("id, report_month, file_name, row_count, rows_rejected, uploaded_by_name, uploaded_at, upload_count")
-      .eq("community_code", code)
-      .order("report_month", { ascending: false })
-      .limit(HISTORY_SHOWN),
-    supabase.from("lease_records").select("id", { count: "exact", head: true }).eq("community_code", code),
-  ]);
+  const uploadsRes = await supabase
+    .from("rent_roll_uploads")
+    .select("id, report_month, file_name, row_count, rows_rejected, uploaded_by_name, uploaded_at, upload_count")
+    .eq("community_code", code)
+    .order("report_month", { ascending: false })
+    .limit(HISTORY_SHOWN);
   if (uploadsRes.error) console.error("rent_roll_uploads read failed:", uploadsRes.error);
-  if (leaseCountRes.error) console.error("lease_records count failed:", leaseCountRes.error);
 
   const uploads = (uploadsRes.data as UploadRow[] | null) ?? [];
   const now = new Date();
@@ -84,16 +80,9 @@ export default async function RenewalsPage({ params }: { params: Promise<{ id: s
       </Panel>
 
       <Panel>
-        <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-          <h3 className="text-sm font-semibold" style={{ color: "var(--nly-text-primary)" }}>
-            Upload history
-          </h3>
-          {leaseCountRes.count != null && (
-            <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-              {leaseCountRes.count} {leaseCountRes.count === 1 ? "lease" : "leases"} on file
-            </p>
-          )}
-        </div>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--nly-text-primary)" }}>
+          Upload history
+        </h3>
         {uploadsRes.error ? (
           <p className="text-sm" style={{ color: "var(--nly-text-secondary)" }}>
             Couldn&apos;t load upload history. Please refresh to try again.

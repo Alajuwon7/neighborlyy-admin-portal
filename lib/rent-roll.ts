@@ -41,14 +41,14 @@ export const MAX_ROWS = 5000;
  * digit, drop leading zeros (keeping a lone "0").
  *
  * KEEP IN SYNC with internal.normalize_unit() in supabase/migrations/
- * 036_lease_records.sql — lease_records enforces it and get_lease_engagement
+ * 036_lease_records.sql — lease_records enforces it and get_lease_renewal_summary
  * matches profiles.unit_number with it.
  */
 export function normalizeUnit(raw: string): string {
   return raw
     .trim()
     .toUpperCase()
-    .replace(/^(APARTMENT|APT|UNIT|SUITE|STE)\.?\s*/, "")
+    .replace(/^(APARTMENT|APT|UNIT|SUITE|STE)\b\.?\s*/, "")
     .replace(/[^A-Z0-9]/g, "")
     .replace(/^0+(?=.)/, "");
 }

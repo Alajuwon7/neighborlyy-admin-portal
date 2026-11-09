@@ -8,7 +8,8 @@
  *   node --env-file=.env.local scripts/seed-renewal-demo.mjs --apply --backdate   # also backdate (see below)
  *   node --env-file=.env.local scripts/seed-renewal-demo.mjs --cleanup    # undo everything this script did
  *
- * Needs migrations 036 (portal) and 20261109120000 (Miyora) applied, and the
+ * Needs migrations 036 (portal) and Miyora 20261109120000_lease_renewal_summary
+ * applied, and the
  * demo.neighbor### accounts from Miyora scripts/seed-demo-marketing.mjs.
  *
  * What --apply does:
@@ -23,8 +24,7 @@
  *   You then upload that CSV on APLREVIEW's Renewals tab (the end-to-end test).
  *
  * --backdate: the tile ignores leases whose 12-week window starts before the
- * community existed, and a lease only matches a resident who joined before it
- * ended. If APLREVIEW or the demo accounts are too new, the dry run says so;
+ * community existed or before the unit's resident joined Miyora. If APLREVIEW or the demo accounts are too new, the dry run says so;
  * --backdate then moves communities.created_at (APLREVIEW) and the demo
  * neighbours' profiles.created_at back 30 weeks. Originals are saved in
  * scripts/.renewal-demo-state.json and restored by --cleanup.
@@ -117,7 +117,8 @@ async function plan() {
   const createdWeek = mondayOf(Date.parse(community.created_at));
   const newestNeighbor = Math.max(...neighbors.map((n) => Date.parse(n.created_at)));
   const tooNewCommunity = mondayOf(earliestEnd) - WINDOW_WEEKS * WEEK < createdWeek;
-  const tooNewPeople = newestNeighbor >= earliestEnd;
+  // Residents must have joined before the earliest lease's window begins.
+  const tooNewPeople = newestNeighbor > mondayOf(earliestEnd) - WINDOW_WEEKS * WEEK;
 
   const managers = await sb.from("property_managers").select("id, full_name, email, organization_id").then(must("pms"));
   const manager = managers.filter(
@@ -128,7 +129,7 @@ async function plan() {
   console.log(`Managed in the portal by: ${manager.map((m) => `${m.full_name} <${m.email}>`).join(", ") || "NOBODY — the upload will be refused"}`);
   console.log(`Lease ends: ${isoDay(earliestEnd)} … ${isoDay(latestEnd)}`);
   if (tooNewCommunity) console.log(`! ${COMMUNITY} is newer than ${WINDOW_WEEKS} weeks before the earliest lease end`);
-  if (tooNewPeople) console.log(`! Some demo neighbours joined after the earliest lease end (newest: ${new Date(newestNeighbor).toISOString().slice(0, 10)})`);
+  if (tooNewPeople) console.log(`! Some demo neighbours joined less than ${WINDOW_WEEKS} weeks before the earliest lease end (newest: ${new Date(newestNeighbor).toISOString().slice(0, 10)})`);
   return { community, neighbors, earliestEnd, latestEnd, needsBackdate: tooNewCommunity || tooNewPeople };
 }
 
@@ -144,10 +145,13 @@ async function apply() {
   const state = { community_created_at: null, profile_created_at: {}, posts: [] };
   if (p.needsBackdate) {
     const back = (iso) => new Date(Date.parse(iso) - BACKDATE_WEEKS * WEEK).toISOString();
+    // Record every original date BEFORE the first update, so a crash midway
+    // can still be undone by --cleanup.
     state.community_created_at = p.community.created_at;
+    for (const n of p.neighbors) state.profile_created_at[n.id] = n.created_at;
+    writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
     await sb.from("communities").update({ created_at: back(p.community.created_at) }).eq("community_code", COMMUNITY).then(must("backdate community"));
     for (const n of p.neighbors) {
-      state.profile_created_at[n.id] = n.created_at;
       await sb.from("profiles").update({ created_at: back(n.created_at) }).eq("id", n.id).eq("community_code", COMMUNITY).then(must("backdate profile"));
     }
   }

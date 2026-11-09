@@ -21,8 +21,10 @@ A plain `Status` or `Lease Status` column is **not** read as the outcome: in mos
 ### Unit
 
 Matched to the unit a resident entered in the Miyora app. Before matching, both sides are tidied the same way:
-uppercase, a leading `Apartment` / `Apt` / `Unit` / `Suite` / `Ste` is dropped, then anything that isn't a letter
-or digit, then leading zeros. So `Apt 0101`, `Unit #101` and `101` all match `101`; `4-B` matches `4B`.
+uppercase, a leading `Apartment` / `Apt` / `Unit` / `Suite` / `Ste` word is dropped, then anything that isn't a
+letter or digit, then leading zeros. So `Apt 0101`, `Unit #101` and `101` all match `101`; `4-B` matches `4B`.
+Building prefixes are kept (`Bldg 2 - 105` becomes `BLDG2105`), so use the same unit format residents use in
+the app.
 
 ### Lease end date
 
@@ -40,6 +42,10 @@ or digit, then leading zeros. So `Apt 0101`, `Unit #101` and `101` all match `10
 Anything else (for example `Month-to-month` or `Notice`) is skipped with an error, so you can decide what it
 means and fix it in the file. Pending leases are left out of the renewal rate.
 
+**Record the outcome on the old lease.** When a resident renews, many systems show the new lease (with a new
+end date) and drop the old one. If you only ever upload the new lease, the old one stays "pending" and never
+counts as a renewal. Before exporting, make sure leases that ended this month carry `Renewed` or `Moved out`.
+
 ## Rows that are skipped
 
 The preview lists every skipped row with its row number before anything is saved:
@@ -53,10 +59,11 @@ A file can have up to 5,000 rows and 5 MB.
 
 ## Uploading again
 
-- **Same month again:** replaces that month's upload. Leases from the earlier version that aren't in the new file
-  are removed.
-- **A new month:** a lease that was already on file (same unit and lease end date) is updated, e.g. pending →
-  renewed. The newest month wins, so re-uploading an older month never overwrites a newer outcome.
+- **Same month again:** replaces that month's upload completely (rows that aren't in the new file are dropped
+  for that month). Other months are never changed.
+- **A new month:** a lease that's in several monthly files (same unit and lease end date) uses the outcome from
+  the newest month, e.g. pending in October → renewed in November. Re-uploading an older month never overrides a
+  newer month's outcome.
 
 ## Example
 

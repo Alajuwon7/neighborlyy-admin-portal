@@ -81,8 +81,7 @@ export function RentRollUpload({
         toast.error(result.error);
         return;
       }
-      const kept = result.keptNewer > 0 ? ` · ${result.keptNewer} kept from a newer month` : "";
-      toast.success(`Saved ${result.saved} leases for ${formatReportMonth(monthStart)}${kept}`);
+      toast.success(`Saved ${result.saved} leases for ${formatReportMonth(monthStart)}`);
       reset();
       router.refresh();
     } catch {
@@ -119,8 +118,8 @@ export function RentRollUpload({
 
       {replacing && (
         <p className="text-xs" style={{ color: "var(--nly-text-secondary)" }}>
-          You already uploaded {formatReportMonth(monthStart!)}. Saving replaces that upload; leases in it that aren&apos;t
-          in this file are removed.
+          You already uploaded {formatReportMonth(monthStart!)}. Saving replaces that month&apos;s upload; other months
+          aren&apos;t changed.
         </p>
       )}
 
