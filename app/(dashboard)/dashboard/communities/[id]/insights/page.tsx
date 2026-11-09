@@ -28,6 +28,8 @@ import {
   type WeeklyActiveRow,
 } from "@/lib/activity-trend";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
+import { RenewalTile, type RenewalTileState } from "@/components/insights/RenewalTile";
+import { ENGAGED_RULE, summarizeRenewals, type LeaseEngagementRow } from "@/lib/renewal";
 
 export const dynamic = "force-dynamic";
 
@@ -120,7 +122,38 @@ export default async function InsightsPage({
       p_end: to.toISOString(),
     });
 
+  // Renewal tile: its own reads, never part of loadError — a failure here
+  // shows the tile's own state and leaves the rest of the page alone.
+  const readRenewals = async (): Promise<RenewalTileState> => {
+    try {
+      const { count, error: countError } = await supabase
+        .from("lease_records")
+        .select("id", { count: "exact", head: true })
+        .eq("community_code", code);
+      if (countError) throw countError;
+      if (!count) return { kind: "no-data" };
+      const { data, error } = await readAll<LeaseEngagementRow>((from, to) =>
+        supabase
+          .rpc("get_lease_engagement", {
+            p_community_code: code,
+            p_from: start ? isoDate(start) : null,
+            p_to: isoDate(now),
+            p_window_weeks: ENGAGED_RULE.windowWeeks,
+          })
+          .order("lease_end_date", { ascending: true })
+          .order("lease_id", { ascending: true })
+          .range(from, to),
+      );
+      if (error) throw error;
+      return { kind: "ready", summary: summarizeRenewals(data, start, now) };
+    } catch (e) {
+      console.error("insights renewal read failed:", e);
+      return { kind: "failed" };
+    }
+  };
+
   const [
+    renewalState,
     { count: residentCount, error: residentError },
     ledgerRes,
     activeRes,
@@ -132,6 +165,7 @@ export default async function InsightsPage({
     openHelpRes,
     waitingHelpRes,
   ] = await Promise.all([
+    readRenewals(),
     filterCountedResidents(
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("community_code", code),
     ),
@@ -293,7 +327,7 @@ export default async function InsightsPage({
         </Panel>
       ) : (
         <>
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
             <Tile label="Residents" value={String(residents)} note={`+${decisions.approved} approved in the last ${rangeLabel}`} />
             <Tile
               label="Active residents"
@@ -321,6 +355,11 @@ export default async function InsightsPage({
                   ? `Median time from applying to a decision (${wait.sample} ${wait.sample === 1 ? "applicant" : "applicants"})`
                   : "No decisions with a known application date"
               }
+            />
+            <RenewalTile
+              state={renewalState}
+              rangeLabel={rangeLabel}
+              uploadHref={`/dashboard/communities/${id}/renewals`}
             />
           </div>
 

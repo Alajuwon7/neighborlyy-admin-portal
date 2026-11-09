@@ -12,12 +12,14 @@ import {
   Dumbbell,
   BarChart3,
   LineChart,
+  Repeat,
 } from "lucide-react";
 
 const TABS = [
   { href: "", label: "Overview", icon: LayoutDashboard },
   { href: "/summary", label: "Weekly Summary", icon: BarChart3 },
   { href: "/insights", label: "Insights", icon: LineChart },
+  { href: "/renewals", label: "Renewals", icon: Repeat },
   { href: "/pending", label: "Pending", icon: Clock },
   { href: "/residents", label: "Residents", icon: Users },
   { href: "/events", label: "Events", icon: Calendar },

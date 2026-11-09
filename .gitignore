@@ -59,3 +59,6 @@ tests/.auth/
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Renewal demo seed state (scripts/seed-renewal-demo.mjs)
+scripts/.renewal-demo-state.json
