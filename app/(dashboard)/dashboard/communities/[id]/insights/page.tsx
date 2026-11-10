@@ -28,6 +28,8 @@ import {
   type WeeklyActiveRow,
 } from "@/lib/activity-trend";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
+import { RenewalTile, type RenewalTileState } from "@/components/insights/RenewalTile";
+import { ENGAGED_RULE, toRenewalSummary, type RenewalSummaryRow } from "@/lib/renewal";
 
 export const dynamic = "force-dynamic";
 
@@ -120,7 +122,37 @@ export default async function InsightsPage({
       p_end: to.toISOString(),
     });
 
+  // Renewal tile: its own reads, never part of loadError — a failure here
+  // shows the tile's own state and leaves the rest of the page alone.
+  const readRenewals = async (): Promise<RenewalTileState> => {
+    try {
+      const { count, error: countError } = await supabase
+        .from("lease_records")
+        .select("id", { count: "exact", head: true })
+        .eq("community_code", code);
+      if (countError) throw countError;
+      if (!count) return { kind: "no-data" };
+      // One row of group totals (grouping and suppression happen in SQL), so
+      // no paging is needed here.
+      const { data, error } = await supabase.rpc("get_lease_renewal_summary", {
+        p_community_code: code,
+        p_from: start ? isoDate(start) : null,
+        p_to: isoDate(now),
+        p_window_weeks: ENGAGED_RULE.windowWeeks,
+        p_min_weeks: ENGAGED_RULE.minWeeks,
+      });
+      if (error) throw error;
+      const row = (data as RenewalSummaryRow[] | null)?.[0];
+      if (!row) throw new Error("get_lease_renewal_summary returned no row");
+      return { kind: "ready", summary: toRenewalSummary(row) };
+    } catch (e) {
+      console.error("insights renewal read failed:", e);
+      return { kind: "failed" };
+    }
+  };
+
   const [
+    renewalState,
     { count: residentCount, error: residentError },
     ledgerRes,
     activeRes,
@@ -132,6 +164,7 @@ export default async function InsightsPage({
     openHelpRes,
     waitingHelpRes,
   ] = await Promise.all([
+    readRenewals(),
     filterCountedResidents(
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("community_code", code),
     ),
@@ -293,7 +326,7 @@ export default async function InsightsPage({
         </Panel>
       ) : (
         <>
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 xl:grid-cols-6 gap-3">
             <Tile label="Residents" value={String(residents)} note={`+${decisions.approved} approved in the last ${rangeLabel}`} />
             <Tile
               label="Active residents"
@@ -321,6 +354,11 @@ export default async function InsightsPage({
                   ? `Median time from applying to a decision (${wait.sample} ${wait.sample === 1 ? "applicant" : "applicants"})`
                   : "No decisions with a known application date"
               }
+            />
+            <RenewalTile
+              state={renewalState}
+              rangeLabel={rangeLabel}
+              uploadHref={`/dashboard/communities/${id}/renewals`}
             />
           </div>
 
