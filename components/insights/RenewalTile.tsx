@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ENGAGED_RULE, rangePhrase, renewalNotes, type GroupStat, type RenewalSummary } from "@/lib/renewal";
+import { ENGAGED_RULE, RENEWAL_PERIOD_LABEL, renewalNotes, type GroupStat, type RenewalSummary } from "@/lib/renewal";
 
 export type RenewalTileState =
   | { kind: "ready"; summary: RenewalSummary }
@@ -9,31 +9,24 @@ export type RenewalTileState =
 /**
  * "Renewal rate by engagement" — top-row Insights tile. Same shell as the
  * page's other tiles; two columns wide (it holds two numbers and a definition).
- * Shows only rates and lease counts, never names or units.
+ * Shows only rates and lease counts, never names or units. Always covers the
+ * last 12 months, whatever the page's range filter (see RENEWAL_PERIOD_LABEL).
  */
-export function RenewalTile({
-  state,
-  rangeLabel,
-  uploadHref,
-}: {
-  state: RenewalTileState;
-  rangeLabel: string;
-  uploadHref: string;
-}) {
+export function RenewalTile({ state, uploadHref }: { state: RenewalTileState; uploadHref: string }) {
   return (
     <div
       className="col-span-2 rounded-2xl border p-4 min-w-0"
       style={{ backgroundColor: "var(--nly-surface)", borderColor: "var(--nly-border)" }}
     >
       <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-        Renewal rate by engagement
+        Renewal rate by engagement · {RENEWAL_PERIOD_LABEL}
       </p>
-      <Body state={state} rangeLabel={rangeLabel} uploadHref={uploadHref} />
+      <Body state={state} uploadHref={uploadHref} />
     </div>
   );
 }
 
-function Body({ state, rangeLabel, uploadHref }: { state: RenewalTileState; rangeLabel: string; uploadHref: string }) {
+function Body({ state, uploadHref }: { state: RenewalTileState; uploadHref: string }) {
   if (state.kind === "failed") {
     return <Message>Renewals are unavailable right now. Refresh to try again.</Message>;
   }
@@ -51,7 +44,7 @@ function Body({ state, rangeLabel, uploadHref }: { state: RenewalTileState; rang
   const s = state.summary;
   const notes = renewalNotes(s);
   if (s.total === 0) {
-    return <Message>No leases ended {rangePhrase(rangeLabel)}.</Message>;
+    return <Message>No leases ended in the {RENEWAL_PERIOD_LABEL}.</Message>;
   }
 
   return (
@@ -61,9 +54,9 @@ function Body({ state, rangeLabel, uploadHref }: { state: RenewalTileState; rang
         <Group label="Others" stat={s.others} />
       </div>
       <p className="text-[11px] mt-1 leading-snug" style={{ color: "var(--nly-text-tertiary)" }}>
-        Engaged = posted, commented, liked, RSVPed, booked, listed, asked for help, answered a survey or used Connect in{" "}
-        {ENGAGED_RULE.minWeeks}+ of the {ENGAGED_RULE.windowWeeks} weeks before the lease ended · leases ended{" "}
-        {rangePhrase(rangeLabel)}
+        Engaged = took part (as in the activity chart) in at least {ENGAGED_RULE.minWeeks} of every{" "}
+        {ENGAGED_RULE.windowWeeks} weeks before the lease ended, counting only weeks since they joined · leases
+        ended in the {RENEWAL_PERIOD_LABEL}
         {notes.length > 0 ? ` · ${notes.join(" · ")}` : ""}
       </p>
     </>

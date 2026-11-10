@@ -18,6 +18,8 @@ export type LeaseRow = {
   /** YYYY-MM-DD (UTC calendar date). */
   lease_end_date: string;
   outcome: LeaseOutcome;
+  /** Preview only: the file said month-to-month, saved as renewed. Never sent to the server. */
+  monthToMonth?: true;
 };
 
 export type RejectedRow = {
@@ -97,10 +99,24 @@ const OUTCOME_WORDS: Record<string, LeaseOutcome> = {
   open: "pending",
 };
 
-/** Blank → pending (the roll often leaves future decisions empty); unknown → null. */
+/**
+ * Month-to-month means the resident stayed past the lease end — the retention
+ * outcome the renewal tile measures — so it is saved as renewed.
+ */
+const MONTH_TO_MONTH_WORDS = new Set(["monthtomonth", "mtm", "monthly", "holdover"]);
+
+const outcomeKey = (raw: string | undefined) => (raw ?? "").toLowerCase().replace(/[^a-z]/g, "");
+
+/** True when the outcome cell says month-to-month (saved as renewed). */
+export function isMonthToMonth(raw: string | undefined): boolean {
+  return MONTH_TO_MONTH_WORDS.has(outcomeKey(raw));
+}
+
+/** Blank → pending (the roll often leaves future decisions empty); month-to-month → renewed; unknown → null. */
 export function parseOutcome(raw: string | undefined): LeaseOutcome | null {
-  const key = (raw ?? "").toLowerCase().replace(/[^a-z]/g, "");
+  const key = outcomeKey(raw);
   if (key === "") return "pending";
+  if (MONTH_TO_MONTH_WORDS.has(key)) return "renewed";
   return Object.prototype.hasOwnProperty.call(OUTCOME_WORDS, key) ? OUTCOME_WORDS[key] : null;
 }
 
@@ -221,7 +237,7 @@ export function parseRentRoll(text: string, now: Date = new Date()): RentRollPar
     const rawOutcome = outcomeCol === -1 ? "" : (cells[outcomeCol] ?? "");
     const outcome = parseOutcome(rawOutcome);
     if (!outcome) {
-      reject(`Outcome "${rawOutcome.trim()}" isn't recognised (use renewed, moved out or pending)`);
+      reject(`Outcome "${rawOutcome.trim()}" isn't recognised (use renewed, moved out, month-to-month or pending)`);
       continue;
     }
 
@@ -229,7 +245,7 @@ export function parseRentRoll(text: string, now: Date = new Date()): RentRollPar
     const first = seen.get(key);
     if (first !== undefined) { reject(`Same unit and lease end as row ${first}`); continue; }
     seen.set(key, row);
-    rows.push({ unit, lease_end_date: end, outcome });
+    rows.push(isMonthToMonth(rawOutcome) ? { unit, lease_end_date: end, outcome, monthToMonth: true } : { unit, lease_end_date: end, outcome });
   }
 
   return {

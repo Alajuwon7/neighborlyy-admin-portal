@@ -29,7 +29,7 @@ import {
 } from "@/lib/activity-trend";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
 import { RenewalTile, type RenewalTileState } from "@/components/insights/RenewalTile";
-import { ENGAGED_RULE, toRenewalSummary, type RenewalSummaryRow } from "@/lib/renewal";
+import { ENGAGED_RULE, renewalPeriod, toRenewalSummary, type RenewalSummaryRow } from "@/lib/renewal";
 
 export const dynamic = "force-dynamic";
 
@@ -133,11 +133,13 @@ export default async function InsightsPage({
       if (countError) throw countError;
       if (!count) return { kind: "no-data" };
       // One row of group totals (grouping and suppression happen in SQL), so
-      // no paging is needed here.
+      // no paging is needed here. Always the last 12 months, not the page
+      // range: shorter ranges never have enough leases at small properties.
+      const period = renewalPeriod(now);
       const { data, error } = await supabase.rpc("get_lease_renewal_summary", {
         p_community_code: code,
-        p_from: start ? isoDate(start) : null,
-        p_to: isoDate(now),
+        p_from: period.from,
+        p_to: period.to,
         p_window_weeks: ENGAGED_RULE.windowWeeks,
         p_min_weeks: ENGAGED_RULE.minWeeks,
       });
@@ -245,6 +247,8 @@ export default async function InsightsPage({
   const residents = residentCount ?? 0;
   const activeShare = residents > 0 ? Math.round((active / residents) * 100) : null;
   const rangeLabel = RANGES.find((r) => r.value === range)!.label.toLowerCase();
+  // "in the last 90 days" / "to date" (never "in the last all time").
+  const inRangeText = rangeLabel === "all time" ? "to date" : `in the last ${rangeLabel}`;
 
   const tookPartByWeek = new Map(
     ((weeklyRes.data as { week_start: string; active_residents: number }[] | null) ?? []).map((r) => [
@@ -327,14 +331,14 @@ export default async function InsightsPage({
       ) : (
         <>
           <div className="grid grid-cols-2 xl:grid-cols-6 gap-3">
-            <Tile label="Residents" value={String(residents)} note={`+${decisions.approved} approved in the last ${rangeLabel}`} />
+            <Tile label="Residents" value={String(residents)} note={`+${decisions.approved} approved ${inRangeText}`} />
             <Tile
               label="Active residents"
               value={String(active)}
               note={
                 activeShare !== null
-                  ? `${activeShare}% of residents used the app in the last ${rangeLabel}`
-                  : `in the last ${rangeLabel}`
+                  ? `${activeShare}% of residents used the app ${inRangeText}`
+                  : `${inRangeText}`
               }
             />
             <Tile
@@ -342,7 +346,7 @@ export default async function InsightsPage({
               value={decisions.approvalRate === null ? "—" : `${decisions.approvalRate}%`}
               note={
                 decisions.total === 0
-                  ? `No applications decided in the last ${rangeLabel}`
+                  ? `No applications decided ${inRangeText}`
                   : `${decisions.approved} approved · ${decisions.rejected} rejected`
               }
             />
@@ -357,7 +361,6 @@ export default async function InsightsPage({
             />
             <RenewalTile
               state={renewalState}
-              rangeLabel={rangeLabel}
               uploadHref={`/dashboard/communities/${id}/renewals`}
             />
           </div>
@@ -400,14 +403,14 @@ export default async function InsightsPage({
                 Help requests
               </h3>
               <p className="text-xs mt-0.5" style={{ color: "var(--nly-text-tertiary)" }}>
-                Neighbours asking each other for help · requests made in the last {rangeLabel}
+                Neighbours asking each other for help · requests made {inRangeText}
               </p>
             </div>
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
               <Tile
                 label="Requests"
                 value={String(helpSummary.total)}
-                note={helpSummary.cancelled > 0 ? `${helpSummary.cancelled} withdrawn by the resident` : `asked in the last ${rangeLabel}`}
+                note={helpSummary.cancelled > 0 ? `${helpSummary.cancelled} withdrawn by the resident` : `asked ${inRangeText}`}
               />
               <Tile
                 label="Completed"
@@ -447,7 +450,7 @@ export default async function InsightsPage({
                 </h4>
                 {helpCategories.length === 0 ? (
                   <p className="text-sm" style={{ color: "var(--nly-text-tertiary)" }}>
-                    No help requests in the last {rangeLabel}.
+                    No help requests {inRangeText}.
                   </p>
                 ) : (
                   <ul className="space-y-2.5">

@@ -74,7 +74,7 @@ export function RentRollUpload({
         communityId,
         reportMonth: month,
         fileName: fileName ?? "rent-roll.csv",
-        rows: parsed.rows,
+        rows: parsed.rows.map(({ unit, lease_end_date, outcome }) => ({ unit, lease_end_date, outcome })),
         rowsRejected: parsed.rejected.length,
       });
       if ("error" in result) {
@@ -194,7 +194,7 @@ export function RentRollUpload({
                       <tr key={`${r.unit}|${r.lease_end_date}`} className="border-t" style={{ borderColor: "var(--nly-divider)" }}>
                         <td className="px-3 py-2" style={{ color: "var(--nly-text-primary)" }}>{r.unit}</td>
                         <td className="px-3 py-2 tabular-nums" style={{ color: "var(--nly-text-secondary)" }}>{r.lease_end_date}</td>
-                        <td className="px-3 py-2" style={{ color: "var(--nly-text-secondary)" }}>{OUTCOME_LABEL[r.outcome]}</td>
+                        <td className="px-3 py-2" style={{ color: "var(--nly-text-secondary)" }}>{r.monthToMonth ? "Renewed (month-to-month)" : OUTCOME_LABEL[r.outcome]}</td>
                       </tr>
                     ))}
                   </tbody>

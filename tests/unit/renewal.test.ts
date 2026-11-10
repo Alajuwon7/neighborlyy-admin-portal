@@ -5,8 +5,8 @@ import path from "node:path";
 import {
   ENGAGED_RULE,
   MIN_GROUP_UNITS,
-  rangePhrase,
   renewalNotes,
+  renewalPeriod,
   toRenewalSummary,
   type RenewalSummaryRow,
 } from "../../lib/renewal";
@@ -45,7 +45,8 @@ const row = (over: Partial<RenewalSummaryRow> = {}): RenewalSummaryRow => ({
 // ─── Rule constants ─────────────────────────────────────────────────────────
 
 test("rule constant is 3 of 12, inside the window band the database accepts", () => {
-  assert.deepEqual(ENGAGED_RULE, { minWeeks: 3, windowWeeks: 12 });
+  assert.deepEqual(ENGAGED_RULE, { minWeeks: 3, windowWeeks: 12, minHistoryWeeks: 4 });
+  assert.ok(ENGAGED_RULE.minHistoryWeeks >= 1 && ENGAGED_RULE.minHistoryWeeks <= ENGAGED_RULE.windowWeeks);
   assert.ok(ENGAGED_RULE.windowWeeks >= 8 && ENGAGED_RULE.windowWeeks <= 26);
   assert.ok(ENGAGED_RULE.minWeeks >= 1 && ENGAGED_RULE.minWeeks <= ENGAGED_RULE.windowWeeks);
   assert.equal(MIN_GROUP_UNITS, 5);
@@ -93,15 +94,16 @@ test("unmatched leases are noted against the total", () => {
 test("too-new and pending leases are noted; no notes when there's nothing to say", () => {
   const notes = renewalNotes(toRenewalSummary(row({ too_new: 1, pending: 3 })));
   assert.deepEqual(notes, [
-    "1 lease left out: less than 12 weeks of history before the lease ended",
+    "1 lease left out: less than 4 weeks of history before the lease ended",
     "3 still pending",
   ]);
   assert.deepEqual(renewalNotes(toRenewalSummary(row())), []);
 });
 
-test("range phrase reads naturally for all time", () => {
-  assert.equal(rangePhrase("90 days"), "in the last 90 days");
-  assert.equal(rangePhrase("all time"), "at any time");
+test("renewal period is the trailing 12 months, inclusive, whatever the page range", () => {
+  assert.deepEqual(renewalPeriod(new Date("2026-11-10T15:00:00Z")), { from: "2025-11-11", to: "2026-11-10" });
+  // Leap day: 29 Feb 2028 -> from 1 Mar 2027.
+  assert.deepEqual(renewalPeriod(new Date("2028-02-29T00:00:00Z")), { from: "2027-03-01", to: "2028-02-29" });
 });
 
 // ─── CSV parser ─────────────────────────────────────────────────────────────
@@ -118,18 +120,19 @@ test("sample rent roll: valid rows read, bad rows rejected with row numbers", ()
     { unit: "104", lease_end_date: "2026-04-30", outcome: "pending" },
     { unit: "105B", lease_end_date: "2026-05-31", outcome: "moved_out" },
     { unit: "106", lease_end_date: "2026-05-31", outcome: "pending" },
+    { unit: "108", lease_end_date: "2026-05-31", outcome: "renewed", monthToMonth: true },
   ]);
   assert.deepEqual(
     r.rejected.map((x) => x.row),
-    [8, 9, 10, 11, 12],
+    [8, 9, 11, 12, 13],
   );
   assert.match(r.rejected[0].error, /Unit is missing/);
   assert.match(r.rejected[1].error, /isn't a date/);
-  assert.match(r.rejected[2].error, /Month-to-month/);
-  assert.match(r.rejected[3].error, /Same unit and lease end as row 2/);
-  assert.match(r.rejected[4].error, /2062/);
+  assert.match(r.rejected[2].error, /Same unit and lease end as row 2/);
+  assert.match(r.rejected[3].error, /2062/);
+  assert.match(r.rejected[4].error, /Notice/);
   // Names never make it into the result.
-  assert.doesNotMatch(JSON.stringify(r), /Example|Casey/);
+  assert.doesNotMatch(JSON.stringify(r), /Example|Casey|Stayed On|Odd Outcome/);
 });
 
 test("missing required columns is a file-level error", () => {
@@ -190,6 +193,28 @@ test("outcomes: synonyms, blank = pending, unknown = null", () => {
   assert.equal(parseOutcome("  "), "pending");
   assert.equal(parseOutcome("Notice"), null);
   assert.equal(parseOutcome("constructor"), null);
+});
+
+test("month-to-month is saved as renewed, flagged for the preview only", () => {
+  for (const v of ["Month-to-month", "MTM", "month to month", "Holdover"]) assert.equal(parseOutcome(v), "renewed", v);
+  const r = parseRentRoll("Unit,Lease End,Renewal Outcome\n101,2026-03-31,Month-to-month\n102,2026-03-31,Renewed\n", NOW);
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  assert.deepEqual(r.rejected, []);
+  assert.deepEqual(r.rows, [
+    { unit: "101", lease_end_date: "2026-03-31", outcome: "renewed", monthToMonth: true },
+    { unit: "102", lease_end_date: "2026-03-31", outcome: "renewed" },
+  ]);
+  // The server rebuilds rows from unit / date / outcome only, so the flag is never stored.
+  assert.deepEqual(validateLeaseRows(r.rows, NOW), [
+    { unit: "101", lease_end_date: "2026-03-31", outcome: "renewed" },
+    { unit: "102", lease_end_date: "2026-03-31", outcome: "renewed" },
+  ]);
+});
+
+test("ISO and US month-first dates are both read", () => {
+  assert.equal(parseLeaseDate("2026-11-10"), "2026-11-10");
+  assert.equal(parseLeaseDate("11/10/2026"), "2026-11-10");
 });
 
 test("server re-validation rejects anything the parser wouldn't produce", () => {

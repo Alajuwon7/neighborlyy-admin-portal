@@ -124,7 +124,8 @@ export function WeeklyActivityChart({ data }: { data: ActivityWeek[] }) {
         {/* Pairs wrap as units, so a phone never strands one key on its own line. */}
         <span className="flex items-center gap-4 whitespace-nowrap">
           <LegendKey color={REJECTED} label="Took part" />
-          <LegendKey color={APPROVED} opacity={QUIET_OPACITY} label="Quietly active" />
+          {/* Hidden until a week has app-open tracking, so the key never points at bars that can't exist yet. */}
+          {data.some((w) => w.tracked) && <LegendKey color={APPROVED} opacity={QUIET_OPACITY} label="Quietly active" />}
         </span>
         <span className="flex items-center gap-4 whitespace-nowrap">
           <span className="flex items-center gap-1.5">

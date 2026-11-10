@@ -7,6 +7,7 @@ Sample Commons,105-B,Alex Example,2025-05-01,2026-05-31,1800,Not renewed
 Sample Commons,106,Drew Example,2025-05-01,2026-05-31,1800,Pending
 Sample Commons,,Blank Unit,2025-05-01,2026-05-31,1800,Renewed
 Sample Commons,107,Bad Date,2025-05-01,31/05/2026,1800,Renewed
-Sample Commons,108,Odd Outcome,2025-05-01,2026-05-31,1800,Month-to-month
+Sample Commons,108,Stayed On,2025-05-01,2026-05-31,1800,Month-to-month
 Sample Commons,Apt 101,Duplicate Row,2025-04-01,2026-03-31,1650,Renewed
 Sample Commons,109,Typo Year,2025-05-01,2062-05-31,1800,Renewed
+Sample Commons,110,Odd Outcome,2025-05-01,2026-05-31,1800,Notice

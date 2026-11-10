@@ -1,5 +1,6 @@
 -- Edge cases for import_rent_roll (portal 036) and get_lease_renewal_summary
--- (Miyora 20261109120000). Run with scripts/test-renewal-sql.sh — it loads
+-- (Miyora 20261109120000, body replaced by 20261110120000: took part only,
+-- prorated history, min 4 weeks). Run with scripts/test-renewal-sql.sh — it loads
 -- stub.sql and both migrations into a throwaway local Postgres first.
 -- Every t_check raises on failure, and the script runs with ON_ERROR_STOP.
 --
@@ -17,8 +18,11 @@ INSERT INTO public.property_managers VALUES ('aaaaaaaa-0000-4000-8000-0000000000
 INSERT INTO internal.pm_map VALUES
   ('aaaaaaaa-0000-4000-8000-000000000001', 'DEMO'),
   ('aaaaaaaa-0000-4000-8000-000000000001', 'FLOOR'),
+  ('aaaaaaaa-0000-4000-8000-000000000001', 'PRO'),
   ('bbbbbbbb-0000-4000-8000-000000000002', 'OTHER');
-INSERT INTO public.communities VALUES ('DEMO', '2026-03-01T12:00Z'), ('FLOOR', '2026-03-01T12:00Z'), ('OTHER', '2026-03-01T12:00Z');
+INSERT INTO public.communities VALUES ('DEMO', '2026-03-01T12:00Z'), ('FLOOR', '2026-03-01T12:00Z'), ('OTHER', '2026-03-01T12:00Z'),
+  -- PRO launched Mon 2026-08-03: leases ending 10-15 have 10 weeks of history (need ceil(10*3/12) = 3).
+  ('PRO', '2026-08-03T12:00Z');
 
 -- Residents. id = 00..0<unit><n> for readability.
 INSERT INTO public.profiles (id, community_code, role, unit_number, created_at) VALUES
@@ -36,7 +40,7 @@ INSERT INTO public.profiles (id, community_code, role, unit_number, created_at) 
   ('00000000-0000-4000-8000-000000303001', 'DEMO', 'resident', '303', '2026-01-01Z'),
   ('00000000-0000-4000-8000-000000304001', 'DEMO', 'resident', '304', '2026-01-01Z'),
   ('00000000-0000-4000-8000-000000305001', 'DEMO', 'resident', '305', '2026-01-01Z'),
-  -- 401 joined mid-window -> too new
+  -- 401 joined Tue 2026-09-01 -> judged on the 5 full weeks from Mon 09-07 (prorated)
   ('00000000-0000-4000-8000-000000401001', 'DEMO', 'resident', '401', '2026-09-01Z'),
   -- 402: departed tenant (very active) still in the app; new tenant (silent) joined after the move-out
   ('00000000-0000-4000-8000-000000402001', 'DEMO', 'resident', '402', '2025-01-01Z'),
@@ -118,19 +122,20 @@ SELECT public.import_rent_roll('DEMO', '2026-10-01', 'oct.csv', $j$[
 
 CREATE TEMP VIEW s AS SELECT * FROM public.get_lease_renewal_summary('DEMO', '2026-06-01', '2026-11-09', 12, 3);
 
--- Engaged (3+ weeks): 201-204 + 101 decided = 5 units; 205 pending. Others: 301-305 + 402 = 6.
+-- Engaged (3+ weeks): 201-204 + 101 decided = 5 units; 205 pending.
+-- Others: 301-305 + 402 + 401 (5 weeks of history, needs 2, has 0) = 7.
 SELECT t_check('range keeps 17 leases (402''s March lease is outside it)', (SELECT total FROM s) = 17);
 SELECT t_check('unmatched: joined after lease end, no resident, management', (SELECT unmatched FROM s) = 3);
-SELECT t_check('too new: resident joined mid-window', (SELECT too_new FROM s) = 1);
+SELECT t_check('prorated: resident who joined mid-window is judged, not too new', (SELECT too_new FROM s) = 0);
 SELECT t_check('pending excluded from rates', (SELECT pending FROM s) = 2);
 SELECT t_check('3 weeks incl. both window edges = engaged; roommates combine', (SELECT engaged_leases FROM s) = 5);
 SELECT t_check('engaged rate 4/5', (SELECT engaged_rate FROM s) = 80);
 SELECT t_check('2 weeks (outside-window and lease-end-week posts ignored) = others; departed tenant not credited',
-               (SELECT others_leases FROM s) = 6);
-SELECT t_check('others rate 4/6 rounds to 67', (SELECT others_rate FROM s) = 67);
+               (SELECT others_leases FROM s) = 7);
+SELECT t_check('others rate 5/7 rounds to 71', (SELECT others_rate FROM s) = 71);
 
 -- Threshold edge: at 2 weeks the others become engaged too.
--- Engaged becomes 10 leases (7 renewed); others shrink to 402 alone, so they
+-- Engaged becomes 10 leases (7 renewed); others shrink to 402 + 401, so they
 -- are suppressed and no counts are returned.
 SELECT t_check('min_weeks 2 moves the 2-week units into engaged (7/10)',
                (SELECT engaged_rate = 70 AND others_rate IS NULL AND engaged_leases IS NULL
@@ -140,8 +145,9 @@ SELECT t_check('min_weeks 2 moves the 2-week units into engaged (7/10)',
 SELECT t_check('range ending the day before the lease ends: none',
                (SELECT total FROM public.get_lease_renewal_summary('DEMO', '2026-06-01', '2026-10-14', 12, 3)) = 0);
 SELECT t_check('range starting on the lease-end day: all', (SELECT total FROM public.get_lease_renewal_summary('DEMO', '2026-10-15', '2026-10-15', 12, 3)) = 17);
-SELECT t_check('all time includes the March lease (too new: before the community''s first window)',
-               (SELECT total = 18 AND too_new = 2 FROM public.get_lease_renewal_summary('DEMO', NULL, '2026-11-09', 12, 3)));
+SELECT t_check('all time includes the March lease, judged on its 5 weeks since the community launched',
+               (SELECT total = 18 AND too_new = 0 AND others_leases = 8
+                  FROM public.get_lease_renewal_summary('DEMO', NULL, '2026-11-09', 12, 3)));
 
 -- November roll settles 205; newest month wins.
 SELECT public.import_rent_roll('DEMO', '2026-11-01', 'nov.csv',
@@ -187,6 +193,90 @@ SELECT t_check('4 distinct units (8 leases): engaged rate suppressed', (SELECT e
 SELECT t_check('5 distinct units: others rate shown (3/5)', (SELECT others_rate FROM f) = 60);
 SELECT t_check('one group suppressed: no group counts at all',
                (SELECT engaged_leases IS NULL AND engaged_renewed IS NULL AND others_leases IS NULL AND others_renewed IS NULL FROM f));
+
+-- PRO: which actions count, and proration edges. Window = weeks 08-03 .. 10-05 (10 weeks).
+RESET ROLE;
+INSERT INTO public.profiles (id, community_code, role, unit_number, created_at) VALUES
+  ('00000000-0000-4000-8000-000000801001', 'PRO', 'resident', 'E1', '2026-01-01Z'),  -- comments
+  ('00000000-0000-4000-8000-000000802001', 'PRO', 'resident', 'E2', '2026-01-01Z'),  -- help requests
+  ('00000000-0000-4000-8000-000000803001', 'PRO', 'resident', 'E3', '2026-01-01Z'),  -- RSVPs
+  ('00000000-0000-4000-8000-000000804001', 'PRO', 'resident', 'E4', '2026-01-01Z'),  -- survey answers
+  ('00000000-0000-4000-8000-000000805001', 'PRO', 'resident', 'E5', '2026-01-01Z'),  -- Connect requests
+  ('00000000-0000-4000-8000-000000806001', 'PRO', 'resident', 'E6', '2026-09-14T00:00Z'), -- exactly 4 weeks, 1 post
+  ('00000000-0000-4000-8000-000000901001', 'PRO', 'resident', 'O1', '2026-01-01Z'),  -- likes only
+  ('00000000-0000-4000-8000-000000902001', 'PRO', 'resident', 'O2', '2026-01-01Z'),  -- hidden comments only
+  ('00000000-0000-4000-8000-000000903001', 'PRO', 'resident', 'O3', '2026-01-01Z'),  -- 2 of 10 weeks
+  ('00000000-0000-4000-8000-000000904001', 'PRO', 'resident', 'O4', '2026-01-01Z'),
+  ('00000000-0000-4000-8000-000000905001', 'PRO', 'resident', 'O5', '2026-01-01Z'),
+  ('00000000-0000-4000-8000-000000906001', 'PRO', 'resident', 'O6', '2026-09-16Z');     -- 3 weeks -> too new
+INSERT INTO public.events VALUES ('e0000000-0000-4000-8000-000000000001', 'PRO');
+INSERT INTO public.surveys VALUES ('50000000-0000-4000-8000-000000000001', 'PRO');
+INSERT INTO public.posts (user_id, community_code, created_at, id) VALUES
+  ('00000000-0000-4000-8000-000000904001', 'PRO', '2026-07-01Z', 'f0000000-0000-4000-8000-000000000001');
+INSERT INTO public.comments  SELECT '00000000-0000-4000-8000-000000801001', 'PRO', d FROM unnest(ARRAY['2026-08-03T00:00Z','2026-09-01Z','2026-10-11T23:59:59Z']::timestamptz[]) d;
+INSERT INTO public.help_requests SELECT '00000000-0000-4000-8000-000000802001', 'PRO', d FROM unnest(ARRAY['2026-08-04Z','2026-08-12Z','2026-08-19Z']::timestamptz[]) d;
+INSERT INTO public.event_rsvps SELECT '00000000-0000-4000-8000-000000803001', 'e0000000-0000-4000-8000-000000000001', d FROM unnest(ARRAY['2026-08-04Z','2026-09-08Z','2026-10-06Z']::timestamptz[]) d;
+INSERT INTO public.survey_responses SELECT '00000000-0000-4000-8000-000000804001', '50000000-0000-4000-8000-000000000001', d FROM unnest(ARRAY['2026-08-04Z','2026-09-08Z','2026-10-06Z']::timestamptz[]) d;
+INSERT INTO public.connection_requests SELECT '00000000-0000-4000-8000-000000805001', 'PRO', d FROM unnest(ARRAY['2026-08-04Z','2026-09-08Z','2026-10-06Z']::timestamptz[]) d;
+INSERT INTO public.posts (user_id, community_code, created_at) VALUES ('00000000-0000-4000-8000-000000806001', 'PRO', '2026-09-30Z');
+INSERT INTO public.post_likes SELECT '00000000-0000-4000-8000-000000901001', 'f0000000-0000-4000-8000-000000000001', d FROM generate_series('2026-08-04'::timestamptz, '2026-10-06', '7 days') d;
+INSERT INTO public.comments  SELECT '00000000-0000-4000-8000-000000902001', 'PRO', d, true FROM generate_series('2026-08-04'::timestamptz, '2026-10-06', '7 days') d;
+INSERT INTO public.posts (user_id, community_code, created_at) VALUES
+  ('00000000-0000-4000-8000-000000903001', 'PRO', '2026-07-28Z'),  -- before the community launched: doesn't count
+  ('00000000-0000-4000-8000-000000903001', 'PRO', '2026-08-10Z'),
+  ('00000000-0000-4000-8000-000000903001', 'PRO', '2026-09-10Z');
+SET ROLE authenticated;
+SELECT public.import_rent_roll('PRO', '2026-10-01', 'p.csv', $j$[
+  {"unit":"E1","lease_end_date":"2026-10-15","outcome":"renewed"}, {"unit":"E2","lease_end_date":"2026-10-15","outcome":"renewed"},
+  {"unit":"E3","lease_end_date":"2026-10-15","outcome":"renewed"}, {"unit":"E4","lease_end_date":"2026-10-15","outcome":"renewed"},
+  {"unit":"E5","lease_end_date":"2026-10-15","outcome":"moved_out"}, {"unit":"E6","lease_end_date":"2026-10-15","outcome":"renewed"},
+  {"unit":"O1","lease_end_date":"2026-10-15","outcome":"renewed"}, {"unit":"O2","lease_end_date":"2026-10-15","outcome":"moved_out"},
+  {"unit":"O3","lease_end_date":"2026-10-15","outcome":"moved_out"}, {"unit":"O4","lease_end_date":"2026-10-15","outcome":"moved_out"},
+  {"unit":"O5","lease_end_date":"2026-10-15","outcome":"moved_out"}, {"unit":"O6","lease_end_date":"2026-10-15","outcome":"renewed"}
+]$j$::jsonb, 0) \g /dev/null
+CREATE TEMP VIEW p AS SELECT * FROM public.get_lease_renewal_summary('PRO', '2025-11-09', '2026-11-09', 12, 3);
+SELECT t_check('3 weeks of history is too new; exactly 4 is judged', (SELECT too_new FROM p) = 1);
+SELECT t_check('comments, help, RSVPs, surveys, Connect all count; 1 post in 4 weeks counts (6 engaged)',
+               (SELECT engaged_leases FROM p) = 6);
+SELECT t_check('engaged rate 5/6 rounds to 83', (SELECT engaged_rate FROM p) = 83);
+SELECT t_check('likes only, hidden comments only, 2 of 10 weeks = others (5)', (SELECT others_leases FROM p) = 5);
+SELECT t_check('others rate 1/5', (SELECT others_rate FROM p) = 20);
+
+-- Same answer under a non-UTC session: every conversion is explicit UTC.
+SET TimeZone = 'America/Los_Angeles';
+SELECT t_check('session time zone does not change the result',
+               (SELECT row(x.*)::text FROM public.get_lease_renewal_summary('PRO', '2025-11-09', '2026-11-09', 12, 3) x)
+             = (SELECT row(p.*)::text FROM p));
+RESET TimeZone;
+
+-- BND: rounding at 5 weeks of history (needs ceil(5*3/12) = 2), negative history,
+-- (A missing communities row can't happen: rent_roll_uploads has an FK to communities.)
+RESET ROLE;
+INSERT INTO internal.pm_map VALUES ('aaaaaaaa-0000-4000-8000-000000000001', 'BND');
+INSERT INTO public.communities VALUES ('BND', '2026-01-01Z');
+-- B1-B5 and C1-C5 joined Mon 2026-09-07 00:00 -> exactly 5 weeks before the lease-end week (10-12).
+INSERT INTO public.profiles (id, community_code, role, unit_number, created_at)
+SELECT ('00000000-0000-4000-8000-000000a' || g || n || '001')::uuid, 'BND', 'resident', g || n, '2026-09-07T00:00Z'
+  FROM unnest(ARRAY['b','c']) g, generate_series(1, 5) n;
+-- D1 joined Tue 10-13: after the lease-end Monday, before the lease ended -> negative history, too new.
+INSERT INTO public.profiles (id, community_code, role, unit_number, created_at) VALUES
+  ('00000000-0000-4000-8000-000000ad1001', 'BND', 'resident', 'D1', '2026-10-13Z');
+-- B: 2 active weeks (engaged). C: 1 active week, posted twice (others).
+INSERT INTO public.posts (user_id, community_code, created_at)
+SELECT ('00000000-0000-4000-8000-000000ab' || n || '001')::uuid, 'BND', d
+  FROM generate_series(1, 5) n, unnest(ARRAY['2026-09-08Z', '2026-10-06Z']::timestamptz[]) d;
+INSERT INTO public.posts (user_id, community_code, created_at)
+SELECT ('00000000-0000-4000-8000-000000ac' || n || '001')::uuid, 'BND', d
+  FROM generate_series(1, 5) n, unnest(ARRAY['2026-09-08Z', '2026-09-09Z']::timestamptz[]) d;
+SET ROLE authenticated;
+SELECT public.import_rent_roll('BND', '2026-10-01', 'b.csv',
+  (SELECT jsonb_agg(jsonb_build_object('unit', u, 'lease_end_date', '2026-10-15', 'outcome', 'renewed'))
+     FROM unnest(ARRAY['B1','B2','B3','B4','B5','C1','C2','C3','C4','C5','D1']) u), 0) \g /dev/null
+SELECT t_check('5 weeks of history: 2 active weeks = engaged, 1 = others',
+               (SELECT engaged_leases = 5 AND others_leases = 5
+                  FROM public.get_lease_renewal_summary('BND', '2025-11-09', '2026-11-09', 12, 3)));
+SELECT t_check('joined after the lease-end Monday: negative history clamped, too new',
+               (SELECT too_new FROM public.get_lease_renewal_summary('BND', '2025-11-09', '2026-11-09', 12, 3)) = 1);
 
 -- Guards.
 DO $$ BEGIN

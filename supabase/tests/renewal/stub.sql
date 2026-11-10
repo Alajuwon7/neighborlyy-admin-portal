@@ -14,7 +14,16 @@ CREATE TABLE public.communities (community_code text unique not null, created_at
 CREATE TABLE public.property_managers (user_id uuid, full_name text);
 GRANT SELECT ON public.property_managers TO authenticated;
 CREATE TABLE public.profiles (id uuid primary key, community_code text, role text, exclude_from_leaderboard boolean default false, unit_number text, created_at timestamptz, is_platform_owner boolean default false);
-CREATE TABLE public.posts (user_id uuid, community_code text, created_at timestamptz);
+CREATE TABLE public.posts (user_id uuid, community_code text, created_at timestamptz, is_hidden boolean default false, id uuid default gen_random_uuid());
+-- The other "took part" sources (internal.resident_took_part_user_ids) plus likes, which must NOT count.
+CREATE TABLE public.comments (user_id uuid, community_code text, created_at timestamptz, is_hidden boolean default false);
+CREATE TABLE public.help_requests (user_id uuid, community_code text, created_at timestamptz);
+CREATE TABLE public.events (id uuid primary key, community_code text);
+CREATE TABLE public.event_rsvps (user_id uuid, event_id uuid, created_at timestamptz);
+CREATE TABLE public.surveys (id uuid primary key, community_code text);
+CREATE TABLE public.survey_responses (user_id uuid, survey_id uuid, created_at timestamptz);
+CREATE TABLE public.connection_requests (author_id uuid, community_code text, created_at timestamptz);
+CREATE TABLE public.post_likes (user_id uuid, post_id uuid, created_at timestamptz);
 -- PM -> communities they manage
 CREATE TABLE internal.pm_map (user_id uuid, community_code text);
 CREATE FUNCTION internal.auth_user_manages_community(c text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$ SELECT EXISTS (SELECT 1 FROM internal.pm_map WHERE user_id = auth.uid() AND community_code = c) $$;

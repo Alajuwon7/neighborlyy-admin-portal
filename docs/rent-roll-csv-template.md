@@ -35,12 +35,13 @@ the app.
 
 | Saved as | Accepted values |
 |---|---|
-| Renewed | `Renewed`, `Renewal`, `Renew`, `Renewal Signed`, `Signed Renewal` |
+| Renewed | `Renewed`, `Renewal`, `Renew`, `Renewal Signed`, `Signed Renewal`, and month-to-month: `Month-to-month`, `MTM`, `Monthly`, `Holdover` |
 | Moved out | `Moved Out`, `Move Out`, `Vacated`, `Not Renewed`, `Non-renewal`, `Did Not Renew` |
 | Pending | blank, `Pending`, `Undecided`, `Open` |
 
-Anything else (for example `Month-to-month` or `Notice`) is skipped with an error, so you can decide what it
-means and fix it in the file. Pending leases are left out of the renewal rate.
+Month-to-month counts as renewed: the resident stayed past the lease end. The upload preview shows these rows as
+"Renewed (month-to-month)". Anything else (for example `Notice`) is skipped with an error, so you can decide what
+it means and fix it in the file. Pending leases are left out of the renewal rate.
 
 **Record the outcome on the old lease.** When a resident renews, many systems show the new lease (with a new
 end date) and drop the old one. If you only ever upload the new lease, the old one stays "pending" and never
