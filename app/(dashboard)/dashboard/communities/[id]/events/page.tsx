@@ -33,7 +33,8 @@ export default async function EventsPage({
 
   const now = new Date();
   const upcoming = events.filter((e) => new Date(e.event_date) >= now);
-  const past = events.filter((e) => new Date(e.event_date) < now);
+  // Upcoming: soonest first (query order). Past: most recent first.
+  const past = events.filter((e) => new Date(e.event_date) < now).reverse();
 
   return (
     <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
