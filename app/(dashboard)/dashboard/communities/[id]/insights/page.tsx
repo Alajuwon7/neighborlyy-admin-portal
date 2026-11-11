@@ -323,7 +323,7 @@ export default async function InsightsPage({
         </Panel>
       ) : (
         <>
-          <div className="grid grid-cols-2 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
             <Tile label="Residents" value={String(residents)} note={`+${decisions.approved} approved ${inRangeText}`} />
             <Tile
               label="Active residents"
