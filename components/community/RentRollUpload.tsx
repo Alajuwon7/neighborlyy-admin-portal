@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileUp } from "lucide-react";
 import { toast } from "sonner";
@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveRentRoll } from "@/app/(dashboard)/dashboard/communities/[id]/renewals/actions";
-import { formatReportMonth, parseRentRoll, reportMonthStart, type RentRollParse } from "@/lib/rent-roll";
+import {
+  formatReportMonth,
+  leaseWarnings,
+  parseRentRoll,
+  reportMonthStart,
+  type RecordedLease,
+  type RentRollParse,
+} from "@/lib/rent-roll";
 
 const OUTCOME_LABEL = { renewed: "Renewed", moved_out: "Moved out", pending: "Pending" } as const;
 const PREVIEW_ROWS = 8;
@@ -23,12 +30,15 @@ export function RentRollUpload({
   communityId,
   defaultMonth,
   uploadedMonths,
+  recordedLeases,
 }: {
   communityId: string;
   /** YYYY-MM, computed on the server so render is deterministic. */
   defaultMonth: string;
   /** report_month values (YYYY-MM-01) already uploaded. */
   uploadedMonths: string[];
+  /** Leases already saved (null if they couldn't be loaded: the preview then can't flag repeats). */
+  recordedLeases: RecordedLease[] | null;
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -40,6 +50,10 @@ export function RentRollUpload({
 
   const monthStart = reportMonthStart(month);
   const replacing = monthStart !== null && uploadedMonths.includes(monthStart);
+  const warnings = useMemo(
+    () => (parsed && recordedLeases ? leaseWarnings(parsed.rows, recordedLeases) : []),
+    [parsed, recordedLeases],
+  );
 
   function reset() {
     setParsed(null);
@@ -169,6 +183,28 @@ export function RentRollUpload({
                     <span className="min-w-0 break-words" style={{ color: "var(--nly-text-secondary)" }}>
                       {r.error}
                     </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {warnings.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold mb-1" style={{ color: "var(--nly-text-secondary)" }}>
+                Saved, but may not count toward the renewal rates
+              </h4>
+              <ul
+                className="max-h-48 overflow-y-auto rounded-xl border divide-y text-xs"
+                style={{ borderColor: "var(--nly-border)" }}
+              >
+                {warnings.map((w) => (
+                  <li
+                    key={`${w.unit}|${w.lease_end_date}`}
+                    className="px-3 py-2 break-words"
+                    style={{ borderColor: "var(--nly-divider)", color: "var(--nly-text-secondary)" }}
+                  >
+                    {w.message}
                   </li>
                 ))}
               </ul>

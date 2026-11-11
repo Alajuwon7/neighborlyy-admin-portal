@@ -1,7 +1,7 @@
 # Rent-roll CSV template
 
 Upload one CSV per community per month on the community's **Renewals** tab. Miyora uses it to work out the
-**Renewal rate by engagement** tile on Insights. Download a starter file from the tab ("Template CSV"), or export
+**Renewal rates** tile on Insights. Download a starter file from the tab ("Template CSV"), or export
 from your property-management system and upload it as-is — the column names below are recognised automatically.
 
 Only three things are saved: **unit**, **lease end date** and **renewal outcome**. Every other column (resident
@@ -60,11 +60,24 @@ A file can have up to 5,000 rows and 5 MB.
 
 ## Uploading again
 
-- **Same month again:** replaces that month's upload completely (rows that aren't in the new file are dropped
-  for that month). Other months are never changed.
-- **A new month:** a lease that's in several monthly files (same unit and lease end date) uses the outcome from
-  the newest month, e.g. pending in October → renewed in November. Re-uploading an older month never overrides a
-  newer month's outcome.
+- **Same month again:** replaces that month's upload history. Other months are never changed.
+- **Outcomes lock once recorded.** The first time a lease (same unit and lease end date) is saved as `Renewed`
+  or `Moved out`, that outcome is final: later files can't change or remove it, and the preview warns when a
+  row disagrees. A `Pending` lease can be resolved once, e.g. pending in October → renewed in November. To fix a
+  recorded mistake, contact Miyora support; every correction is logged.
+- **One lease per unit per 12 months.** If a unit turns over twice in a year, only the lease recorded first
+  counts while both fall in the tile's 12-month period. The preview flags the second one ("Unit 204 already has
+  a lease ending … Only the first is used while both are in the 12-month period."). It's still saved.
+
+## How the tile uses it
+
+- **Updated monthly.** On the 1st of each month the tile switches to leases recorded before that day, covering
+  leases that ended in the previous 12 full months. A file uploaded today shows from next month's update.
+- **Three groups, compared side by side:** residents who took part, residents who didn't, and households not on
+  Miyora (no matching resident account — this also includes vacant units, unit-number mismatches and deleted
+  accounts). It's a comparison, not a claim about cause.
+- **Privacy:** rates are rounded to the nearest 5% and the sample size is shown as a wide band (15–29, 30–99,
+  100+). If any group has fewer than 5 households, all three rates are hidden.
 
 ## Example
 

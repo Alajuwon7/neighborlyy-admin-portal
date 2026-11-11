@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Download } from "lucide-react";
 import { getCommunityWithAuth } from "@/lib/queries";
-import { formatReportMonth } from "@/lib/rent-roll";
+import { formatReportMonth, toRecordedLeases } from "@/lib/rent-roll";
 import { RentRollUpload } from "@/components/community/RentRollUpload";
 
 export const dynamic = "force-dynamic";
@@ -24,13 +24,19 @@ export default async function RenewalsPage({ params }: { params: Promise<{ id: s
   const { supabase, community } = await getCommunityWithAuth(id);
   const code = community.community_code as string;
 
-  const uploadsRes = await supabase
-    .from("rent_roll_uploads")
-    .select("id, report_month, file_name, row_count, rows_rejected, uploaded_by_name, uploaded_at, upload_count")
-    .eq("community_code", code)
-    .order("report_month", { ascending: false })
-    .limit(HISTORY_SHOWN);
+  const [uploadsRes, recordedRes] = await Promise.all([
+    supabase
+      .from("rent_roll_uploads")
+      .select("id, report_month, file_name, row_count, rows_rejected, uploaded_by_name, uploaded_at, upload_count")
+      .eq("community_code", code)
+      .order("report_month", { ascending: false })
+      .limit(HISTORY_SHOWN),
+    // Leases already recorded, so the preview can flag repeats and locked outcomes.
+    supabase.rpc("get_recorded_leases", { p_community_code: code }),
+  ]);
   if (uploadsRes.error) console.error("rent_roll_uploads read failed:", uploadsRes.error);
+  if (recordedRes.error) console.error("get_recorded_leases failed:", recordedRes.error);
+  const recordedLeases = recordedRes.error ? null : toRecordedLeases(recordedRes.data);
 
   const uploads = (uploadsRes.data as UploadRow[] | null) ?? [];
   const now = new Date();
@@ -43,7 +49,7 @@ export default async function RenewalsPage({ params }: { params: Promise<{ id: s
           Renewals
         </h2>
         <p className="text-xs mt-0.5" style={{ color: "var(--nly-text-tertiary)" }}>
-          Upload your monthly rent roll to see how engaged residents renew on the{" "}
+          Upload your monthly rent roll to compare renewal rates on the{" "}
           <Link href={`/dashboard/communities/${id}/insights`} className="underline underline-offset-2">
             Insights
           </Link>{" "}
@@ -59,7 +65,8 @@ export default async function RenewalsPage({ params }: { params: Promise<{ id: s
             </h3>
             <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--nly-text-tertiary)" }}>
               A CSV with a unit, a lease end date and (optionally) the renewal outcome: renewed, moved out or
-              pending. Only those three columns are saved — names and rents stay on your computer.
+              pending. Only those three columns are saved — names and rents stay on your computer. Renewal
+              rates update on the 1st of each month, and an outcome can&apos;t be changed once it&apos;s recorded.
             </p>
           </div>
           <a
@@ -76,6 +83,7 @@ export default async function RenewalsPage({ params }: { params: Promise<{ id: s
           communityId={id}
           defaultMonth={defaultMonth}
           uploadedMonths={uploads.map((u) => u.report_month)}
+          recordedLeases={recordedLeases}
         />
       </Panel>
 

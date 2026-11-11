@@ -5,13 +5,16 @@ import path from "node:path";
 import {
   ENGAGED_RULE,
   MIN_GROUP_UNITS,
+  formatPeriod,
+  nextUpdate,
   renewalNotes,
-  renewalPeriod,
-  toRenewalSummary,
-  type RenewalSummaryRow,
+  toRenewalSnapshot,
+  type RenewalSnapshotRow,
 } from "../../lib/renewal";
 import {
+  leaseWarnings,
   normalizeUnit,
+  toRecordedLeases,
   parseCsv,
   parseLeaseDate,
   parseOutcome,
@@ -20,90 +23,155 @@ import {
   validateLeaseRows,
 } from "../../lib/rent-roll";
 
-// The 3-of-12 grouping, the under-5 floor, the date range and unit matching
-// run in SQL (get_lease_renewal_summary) so per-lease engagement never leaves
+// The 3-of-12 grouping, the under-5 floor, the snapshot, locking, rounding,
+// size bands and unit matching run in SQL (get_lease_renewal_snapshot, Miyora
+// 20261111120100) so per-lease engagement never leaves
 // the database. Their edge cases are in supabase/tests/renewal/check.sql
 // (run: scripts/test-renewal-sql.sh). This file covers what the portal does
 // with the result, and the CSV parser.
 
 const NOW = new Date(Date.UTC(2026, 10, 9, 15)); // 2026-11-09
 
-const row = (over: Partial<RenewalSummaryRow> = {}): RenewalSummaryRow => ({
-  total: 90,
-  unmatched: 0,
-  too_new: 0,
+const row = (over: Partial<RenewalSnapshotRow> = {}): RenewalSnapshotRow => ({
+  snapshot_date: "2026-11-01",
+  period_from: "2025-11-01",
+  period_to: "2026-10-31",
+  leases_seen: true,
+  in_period: 40,
+  repeats: 0,
   pending: 0,
-  engaged_rate: 83,
-  others_rate: 57,
-  engaged_leases: 41,
-  engaged_renewed: 34,
-  others_leases: 37,
-  others_renewed: 21,
+  too_new: 0,
+  took_part_rate: 85,
+  others_rate: 60,
+  not_on_miyora_rate: 55,
+  size_band: "30-99",
   ...over,
 });
 
 // ─── Rule constants ─────────────────────────────────────────────────────────
 
-test("rule constant is 3 of 12, inside the window band the database accepts", () => {
+test("rule constant is 3 of 12 with 4 weeks minimum; floor is 5 households", () => {
   assert.deepEqual(ENGAGED_RULE, { minWeeks: 3, windowWeeks: 12, minHistoryWeeks: 4 });
-  assert.ok(ENGAGED_RULE.minHistoryWeeks >= 1 && ENGAGED_RULE.minHistoryWeeks <= ENGAGED_RULE.windowWeeks);
-  assert.ok(ENGAGED_RULE.windowWeeks >= 8 && ENGAGED_RULE.windowWeeks <= 26);
-  assert.ok(ENGAGED_RULE.minWeeks >= 1 && ENGAGED_RULE.minWeeks <= ENGAGED_RULE.windowWeeks);
   assert.equal(MIN_GROUP_UNITS, 5);
 });
 
-// ─── Suppression on the tile ────────────────────────────────────────────────
+// ─── Snapshot on the tile ───────────────────────────────────────────────────
 
-test("both groups over the floor: rates and counts shown", () => {
-  const s = toRenewalSummary(row());
-  assert.deepEqual(s.engaged, { rate: 83, leases: 41, renewed: 34 });
-  assert.deepEqual(s.others, { rate: 57, leases: 37, renewed: 21 });
+test("all three groups over the floor: three rates and a size band, no counts", () => {
+  const s = toRenewalSnapshot(row());
+  assert.deepEqual(s.rates, { tookPart: 85, others: 60, notOnMiyora: 55 });
+  assert.equal(s.sizeBand, "30–99");
+  assert.ok(!("leases" in s) && !("renewed" in s));
 });
 
-test("one group under the floor: its rate is blank and NEITHER group shows counts", () => {
-  // Counts withheld even if a value slips through, or the small group's size
-  // follows by subtraction from the totals.
-  const s = toRenewalSummary(row({ engaged_rate: null, engaged_leases: 4, engaged_renewed: 4 }));
-  assert.deepEqual(s.engaged, { rate: null, leases: null, renewed: null });
-  assert.deepEqual(s.others, { rate: 57, leases: null, renewed: null });
+test("one rate missing hides all three and the band", () => {
+  for (const k of ["took_part_rate", "others_rate", "not_on_miyora_rate", "size_band"] as const) {
+    const s = toRenewalSnapshot(row({ [k]: null }));
+    assert.equal(s.rates, null, k);
+    assert.equal(s.sizeBand, null, k);
+  }
 });
 
-test("both under the floor: nothing but blanks", () => {
-  const s = toRenewalSummary(row({ engaged_rate: null, others_rate: null }));
-  assert.equal(s.engaged.rate, null);
-  assert.equal(s.others.rate, null);
-  assert.equal(s.others.leases, null);
+test("unrounded, out-of-range or odd values never reach the tile", () => {
+  assert.equal(toRenewalSnapshot(row({ took_part_rate: 83 })).rates, null); // not a multiple of 5
+  assert.equal(toRenewalSnapshot(row({ others_rate: 140 })).rates, null);
+  assert.equal(toRenewalSnapshot(row({ size_band: "41" })).rates, null); // unknown band
+  const s = toRenewalSnapshot(row({ pending: -3, too_new: Number.NaN, snapshot_date: "soon" }));
+  assert.equal(s.pending, 0);
+  assert.equal(s.tooNew, 0);
+  assert.equal(s.snapshotDate, "");
+  const empty = toRenewalSnapshot(null);
+  assert.equal(empty.rates, null);
+  assert.equal(empty.leasesSeen, false);
 });
 
-test("odd values from the database never reach the tile", () => {
-  const s = toRenewalSummary(row({ engaged_rate: 140, total: -3, unmatched: Number.NaN }));
-  assert.equal(s.engaged.rate, null);
-  assert.equal(s.engaged.leases, null);
-  assert.equal(s.total, 0);
-  assert.equal(s.unmatched, 0);
-  assert.deepEqual(toRenewalSummary(null).engaged, { rate: null, leases: null, renewed: null });
+test("period and next update read as months", () => {
+  assert.equal(formatPeriod("2025-11-01", "2026-10-31"), "Nov 2025 – Oct 2026");
+  assert.equal(formatPeriod("", "2026-10-31"), "");
+  assert.equal(nextUpdate("2026-11-01"), "1 Dec");
+  assert.equal(nextUpdate("2026-12-01"), "1 Jan");
+  assert.equal(nextUpdate(""), "the 1st of next month");
 });
 
-// ─── Unmatched / too new / pending notes ────────────────────────────────────
-
-test("unmatched leases are noted against the total", () => {
-  const notes = renewalNotes(toRenewalSummary(row({ total: 140, unmatched: 12 })));
-  assert.equal(notes[0], "12 of 140 leases not matched to a resident");
-});
-
-test("too-new and pending leases are noted; no notes when there's nothing to say", () => {
-  const notes = renewalNotes(toRenewalSummary(row({ too_new: 1, pending: 3 })));
+test("too-new, pending and repeat leases are noted; no notes when there's nothing to say", () => {
+  const notes = renewalNotes(toRenewalSnapshot(row({ too_new: 1, pending: 3, repeats: 2 })));
   assert.deepEqual(notes, [
     "1 lease left out: less than 4 weeks of history before the lease ended",
     "3 still pending",
+    "2 more leases for the same unit not counted (one per unit)",
   ]);
-  assert.deepEqual(renewalNotes(toRenewalSummary(row())), []);
+  assert.deepEqual(renewalNotes(toRenewalSnapshot(row())), []);
 });
 
-test("renewal period is the trailing 12 months, inclusive, whatever the page range", () => {
-  assert.deepEqual(renewalPeriod(new Date("2026-11-10T15:00:00Z")), { from: "2025-11-11", to: "2026-11-10" });
-  // Leap day: 29 Feb 2028 -> from 1 Mar 2027.
-  assert.deepEqual(renewalPeriod(new Date("2028-02-29T00:00:00Z")), { from: "2027-03-01", to: "2028-02-29" });
+test("tile copy is a comparison and never claims Miyora causes renewals", () => {
+  // Comments stripped: only what can render is checked.
+  const src = readFileSync(path.join(__dirname, "../../components/insights/RenewalTile.tsx"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  assert.match(src, /Renewal rates for residents who took part, residents who didn&apos;t, and households not on Miyora\./);
+  assert.doesNotMatch(src, /\b(caus|driv|boost|increas|improv|lift)\w*/i);
+});
+
+// ─── Upload preview: repeats and locked outcomes ────────────────────────────
+
+test("a second lease for the same unit within 12 months is flagged, not dropped", () => {
+  const recorded = toRecordedLeases([{ unit: "204", lease_end_date: "2026-03-31", outcome: "moved_out" }]);
+  const w = leaseWarnings(
+    [
+      { unit: "204", lease_end_date: "2026-10-15", outcome: "renewed" },
+      { unit: "205", lease_end_date: "2026-10-15", outcome: "renewed" },
+    ],
+    recorded,
+  );
+  assert.deepEqual(w, [
+    {
+      unit: "204",
+      lease_end_date: "2026-10-15",
+      message:
+        "Unit 204 already has a lease ending 31 Mar 2026, within 12 months of this one. Only the first is used while both are in the 12-month period.",
+    },
+  ]);
+});
+
+test("inside one file the earlier end date wins; 12 months apart or more is fine", () => {
+  const w = leaseWarnings(
+    [
+      { unit: "7", lease_end_date: "2026-09-30", outcome: "renewed" },
+      { unit: "7", lease_end_date: "2026-01-31", outcome: "moved_out" },
+      { unit: "8", lease_end_date: "2025-10-15", outcome: "moved_out" },
+      { unit: "8", lease_end_date: "2026-10-15", outcome: "renewed" }, // exactly 12 months
+    ],
+    [],
+  );
+  assert.equal(w.length, 1);
+  assert.equal(w[0].lease_end_date, "2026-09-30");
+  assert.match(w[0].message, /ending 31 Jan 2026/);
+});
+
+test("changing a recorded final outcome is flagged; resolving a pending one is not", () => {
+  const recorded = toRecordedLeases([
+    { unit: "201", lease_end_date: "2026-10-15", outcome: "renewed" },
+    { unit: "205", lease_end_date: "2026-10-15", outcome: "pending" },
+  ]);
+  const w = leaseWarnings(
+    [
+      { unit: "201", lease_end_date: "2026-10-15", outcome: "moved_out" },
+      { unit: "205", lease_end_date: "2026-10-15", outcome: "moved_out" },
+    ],
+    recorded,
+  );
+  assert.equal(w.length, 1);
+  assert.match(w[0].message, /^Unit 201's lease ending 15 Oct 2026 is already recorded as renewed\./);
+  // Re-uploading the same outcome is quiet.
+  assert.deepEqual(leaseWarnings([{ unit: "201", lease_end_date: "2026-10-15", outcome: "renewed" }], recorded), []);
+});
+
+test("recorded leases from the database are read defensively", () => {
+  assert.deepEqual(toRecordedLeases(null), []);
+  assert.deepEqual(
+    toRecordedLeases([{ unit: "1", lease_end_date: "2026-01-01", outcome: "renewed" }, { unit: 2 }, "x", { unit: "3", lease_end_date: "2026-01-01", outcome: "gone" }]),
+    [{ unit: "1", lease_end_date: "2026-01-01", outcome: "renewed" }],
+  );
 });
 
 // ─── CSV parser ─────────────────────────────────────────────────────────────

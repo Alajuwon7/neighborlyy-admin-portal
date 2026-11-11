@@ -43,7 +43,7 @@ export const MAX_ROWS = 5000;
  * digit, drop leading zeros (keeping a lone "0").
  *
  * KEEP IN SYNC with internal.normalize_unit() in supabase/migrations/
- * 036_lease_records.sql — lease_records enforces it and get_lease_renewal_summary
+ * 036_lease_records.sql — lease_records enforces it and get_lease_renewal_snapshot
  * matches profiles.unit_number with it.
  */
 export function normalizeUnit(raw: string): string {
@@ -304,4 +304,82 @@ const MONTHS = [
 export function formatReportMonth(iso: string): string {
   const [y, m] = iso.split("-").map(Number);
   return `${MONTHS[m - 1]} ${y}`;
+}
+
+// ─── Already-recorded leases (upload preview warnings) ──────────────────────
+
+/** A lease the database already holds (get_recorded_leases), outcome locked once final. */
+export type RecordedLease = { unit: string; lease_end_date: string; outcome: LeaseOutcome };
+
+/** A row that saves fine but may not count on the tile, and why. */
+export type LeaseWarning = { unit: string; lease_end_date: string; message: string };
+
+/** get_recorded_leases' jsonb → rows; anything malformed is dropped. */
+export function toRecordedLeases(input: unknown): RecordedLease[] {
+  if (!Array.isArray(input)) return [];
+  return input.flatMap((r) => {
+    if (!r || typeof r !== "object") return [];
+    const { unit, lease_end_date, outcome } = r as Record<string, unknown>;
+    if (typeof unit !== "string" || typeof lease_end_date !== "string" || typeof outcome !== "string") return [];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(lease_end_date) || !(LEASE_OUTCOMES as readonly string[]).includes(outcome)) return [];
+    return [{ unit, lease_end_date, outcome: outcome as LeaseOutcome }];
+  });
+}
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const shortDate = (iso: string) => `${+iso.slice(8, 10)} ${SHORT_MONTHS[+iso.slice(5, 7) - 1]} ${iso.slice(0, 4)}`;
+const OUTCOME_WORD: Record<LeaseOutcome, string> = { renewed: "renewed", moved_out: "moved out", pending: "pending" };
+
+/** a + 12 months, clamped like Postgres (29 Feb → 28 Feb). */
+function plusYear(iso: string): string {
+  const y = +iso.slice(0, 4) + 1, m = +iso.slice(5, 7), d = +iso.slice(8, 10);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${y}-${iso.slice(5, 7)}-${String(Math.min(d, last)).padStart(2, "0")}`;
+}
+/** Strictly less than 12 months apart, so both can fall in one 12-month period. */
+function within12Months(a: string, b: string): boolean {
+  const [lo, hi] = a < b ? [a, b] : [b, a];
+  return lo !== hi && hi < plusYear(lo);
+}
+
+/**
+ * Rows that will save but not count, mirroring get_lease_renewal_snapshot:
+ *  - one lease per unit per 12-month period, and the one recorded FIRST wins
+ *    (already-recorded leases beat this file; inside the file, the earlier
+ *    end date wins);
+ *  - a final outcome, once recorded, is locked.
+ */
+export function leaseWarnings(rows: LeaseRow[], recorded: RecordedLease[]): LeaseWarning[] {
+  const byUnit = new Map<string, RecordedLease[]>();
+  for (const r of recorded) byUnit.set(r.unit, [...(byUnit.get(r.unit) ?? []), r]);
+  const exact = new Map(recorded.map((r) => [`${r.unit}|${r.lease_end_date}`, r]));
+
+  const warnings: LeaseWarning[] = [];
+  const fresh: LeaseRow[] = []; // leases this file adds
+  for (const row of rows) {
+    const known = exact.get(`${row.unit}|${row.lease_end_date}`);
+    if (!known) { fresh.push(row); continue; }
+    if (known.outcome !== "pending" && known.outcome !== row.outcome) {
+      warnings.push({
+        unit: row.unit,
+        lease_end_date: row.lease_end_date,
+        message: `Unit ${row.unit}'s lease ending ${shortDate(row.lease_end_date)} is already recorded as ${OUTCOME_WORD[known.outcome]}. Recorded outcomes can't be changed here; contact Miyora support to correct one.`,
+      });
+    }
+  }
+
+  const sorted = [...fresh].sort((a, b) => a.lease_end_date.localeCompare(b.lease_end_date));
+  for (const [i, row] of sorted.entries()) {
+    const prior =
+      (byUnit.get(row.unit) ?? []).find((r) => within12Months(r.lease_end_date, row.lease_end_date)) ??
+      sorted.slice(0, i).find((r) => r.unit === row.unit && within12Months(r.lease_end_date, row.lease_end_date));
+    if (prior) {
+      warnings.push({
+        unit: row.unit,
+        lease_end_date: row.lease_end_date,
+        message: `Unit ${row.unit} already has a lease ending ${shortDate(prior.lease_end_date)}, within 12 months of this one. Only the first is used while both are in the 12-month period.`,
+      });
+    }
+  }
+  return warnings;
 }

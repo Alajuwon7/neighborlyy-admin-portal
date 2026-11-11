@@ -6,10 +6,13 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MIYORA_DIR="${MIYORA_DIR:-$ROOT/../Miyora}"
-# Applied in order: v1, then v2 (took part + prorated) replaces its body.
+# Applied in order, as in production: v1 summary, v2 (took part + prorated),
+# metrics skip hidden content, v3 snapshot (drops the v1/v2 summary).
 SUMMARY_FILES=(
   "$MIYORA_DIR/supabase/migrations/20261109120000_lease_renewal_summary.sql"
   "$MIYORA_DIR/supabase/migrations/20261110120000_lease_renewal_took_part_prorated.sql"
+  "$MIYORA_DIR/supabase/migrations/20261111120000_metrics_skip_hidden.sql"
+  "$MIYORA_DIR/supabase/migrations/20261111120100_lease_renewal_snapshot.sql"
 )
 for f in "${SUMMARY_FILES[@]}"; do [ -f "$f" ] || { echo "Can't find $f (set MIYORA_DIR)"; exit 1; }; done
 
@@ -34,6 +37,6 @@ done
 "${PSQL[@]}" -f "$ROOT/supabase/tests/renewal/stub.sql"
 for pass in 1 2; do   # twice: both migrations must be idempotent
   "${PSQL[@]}" -f "$ROOT/supabase/migrations/036_lease_records.sql" 2>/dev/null
-  for f in "${SUMMARY_RUNS[@]}"; do "${PSQL[@]}" -f "$f" 2>/dev/null; done
+  for f in "${SUMMARY_RUNS[@]}"; do "${PSQL[@]}" -f "$f" 2>"$WORK/err" || { cat "$WORK/err"; exit 1; }; done
 done
 "${PSQL[@]}" -f "$ROOT/supabase/tests/renewal/check.sql" 2>&1 | sed 's/^psql:.*NOTICE:  //'

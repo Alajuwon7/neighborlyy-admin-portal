@@ -1,5 +1,5 @@
--- Stand-ins for the shared Supabase objects 036 and get_lease_renewal_summary
--- depend on, so both migrations can be tested on a throwaway local Postgres.
+-- Stand-ins for the shared Supabase objects 036 and the renewal / metrics
+-- migrations depend on, so they can be tested on a throwaway local Postgres.
 -- NEVER run against a real project. Used by scripts/test-renewal-sql.sh.
 -- resident_action_user_ids is reduced to posts only; the real one unions nine
 -- tables with the same (community, window, current-resident) filter.
@@ -18,8 +18,8 @@ CREATE TABLE public.posts (user_id uuid, community_code text, created_at timesta
 -- The other "took part" sources (internal.resident_took_part_user_ids) plus likes, which must NOT count.
 CREATE TABLE public.comments (user_id uuid, community_code text, created_at timestamptz, is_hidden boolean default false);
 CREATE TABLE public.help_requests (user_id uuid, community_code text, created_at timestamptz);
-CREATE TABLE public.events (id uuid primary key, community_code text);
-CREATE TABLE public.event_rsvps (user_id uuid, event_id uuid, created_at timestamptz);
+CREATE TABLE public.events (id uuid primary key, community_code text, event_date timestamptz);
+CREATE TABLE public.event_rsvps (user_id uuid, event_id uuid, created_at timestamptz, status text default 'going');
 CREATE TABLE public.surveys (id uuid primary key, community_code text);
 CREATE TABLE public.survey_responses (user_id uuid, survey_id uuid, created_at timestamptz);
 CREATE TABLE public.connection_requests (author_id uuid, community_code text, created_at timestamptz);
@@ -33,6 +33,13 @@ CREATE FUNCTION internal.resident_action_user_ids(p_community_code text, p_start
   SELECT DISTINCT x.user_id FROM public.posts x JOIN public.profiles pr ON pr.id = x.user_id
    WHERE x.community_code = p_community_code AND x.created_at >= p_start AND x.created_at < p_end
      AND pr.role = 'resident' AND NOT pr.exclude_from_leaderboard $$;
+
+-- Placeholder with the real signature, so Miyora 20261111120000 (which only
+-- CREATE OR REPLACEs it) can be applied and tested.
+CREATE FUNCTION internal.compute_community_metrics(p_community_code text, p_start date, p_end date)
+RETURNS TABLE (posts int, comments int, help_requests int, survey_responses int, connection_requests int,
+               event_rsvps int, events_held int, residents_joined int, residents_total int, active_residents int)
+LANGUAGE sql STABLE AS $$ SELECT 0,0,0,0,0,0,0,0,0,0 $$;
 
 CREATE FUNCTION public.t_check(label text, ok boolean) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN

@@ -11,6 +11,10 @@
  *
  * Ported from Miyora src/utils/digestWeeks.ts and CommunityDigestScreen.tsx —
  * keep the display rules in sync so a PM sees the same summary on both.
+ *
+ * The counts themselves are computed in the database by
+ * internal.compute_community_metrics (hidden posts/comments excluded since
+ * Miyora 20261111120000); this module only displays them.
  */
 
 export const METRIC_KEYS = [

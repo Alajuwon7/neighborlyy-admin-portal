@@ -1,25 +1,33 @@
 import Link from "next/link";
-import { ENGAGED_RULE, RENEWAL_PERIOD_LABEL, renewalNotes, type GroupStat, type RenewalSummary } from "@/lib/renewal";
+import {
+  ENGAGED_RULE,
+  MIN_GROUP_UNITS,
+  formatPeriod,
+  nextUpdate,
+  renewalNotes,
+  type RenewalSnapshot,
+} from "@/lib/renewal";
 
 export type RenewalTileState =
-  | { kind: "ready"; summary: RenewalSummary }
+  | { kind: "ready"; snapshot: RenewalSnapshot }
   | { kind: "no-data" }
   | { kind: "failed" };
 
 /**
- * "Renewal rate by engagement" — top-row Insights tile. Same shell as the
- * page's other tiles; two columns wide (it holds two numbers and a definition).
- * Shows only rates and lease counts, never names or units. Always covers the
- * last 12 months, whatever the page's range filter (see RENEWAL_PERIOD_LABEL).
+ * "Renewal rates" — top-row Insights tile, two columns wide. Compares three
+ * groups side by side; it never claims Miyora causes renewals. Shows rounded
+ * rates and a size band only, from the monthly snapshot (lib/renewal.ts).
  */
 export function RenewalTile({ state, uploadHref }: { state: RenewalTileState; uploadHref: string }) {
+  const period =
+    state.kind === "ready" ? formatPeriod(state.snapshot.periodFrom, state.snapshot.periodTo) : "";
   return (
     <div
       className="col-span-2 rounded-2xl border p-4 min-w-0"
       style={{ backgroundColor: "var(--nly-surface)", borderColor: "var(--nly-border)" }}
     >
       <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
-        Renewal rate by engagement · {RENEWAL_PERIOD_LABEL}
+        Renewal rates{period ? ` · ${period}` : ""}
       </p>
       <Body state={state} uploadHref={uploadHref} />
     </div>
@@ -41,43 +49,52 @@ function Body({ state, uploadHref }: { state: RenewalTileState; uploadHref: stri
     );
   }
 
-  const s = state.summary;
-  const notes = renewalNotes(s);
-  if (s.total === 0) {
-    return <Message>No leases ended in the {RENEWAL_PERIOD_LABEL}.</Message>;
+  const s = state.snapshot;
+  const next = nextUpdate(s.snapshotDate);
+  if (!s.leasesSeen) {
+    return <Message>Your rent roll is saved. Renewal rates update monthly; it will be included on {next}.</Message>;
+  }
+  if (s.inPeriod === 0) {
+    return <Message>No leases ended in {formatPeriod(s.periodFrom, s.periodTo) || "the last 12 months"}.</Message>;
   }
 
+  const notes = renewalNotes(s);
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 mt-1">
-        <Group label="Engaged" stat={s.engaged} />
-        <Group label="Others" stat={s.others} />
-      </div>
-      <p className="text-[11px] mt-1 leading-snug" style={{ color: "var(--nly-text-tertiary)" }}>
-        Engaged = took part (as in the activity chart) in at least {ENGAGED_RULE.minWeeks} of every{" "}
-        {ENGAGED_RULE.windowWeeks} weeks before the lease ended, counting only weeks since they joined · leases
-        ended in the {RENEWAL_PERIOD_LABEL}
+      <p className="text-[11px] mt-0.5 leading-snug" style={{ color: "var(--nly-text-secondary)" }}>
+        Renewal rates for residents who took part, residents who didn&apos;t, and households not on Miyora.
+      </p>
+      {s.rates ? (
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <Group label="Took part" rate={s.rates.tookPart} />
+          <Group label="Didn't take part" rate={s.rates.others} />
+          <Group label="Not on Miyora" rate={s.rates.notOnMiyora} />
+        </div>
+      ) : (
+        <p className="text-sm font-medium mt-2 leading-snug" style={{ color: "var(--nly-text-secondary)" }}>
+          Not enough leases yet: each group needs at least {MIN_GROUP_UNITS} households.
+        </p>
+      )}
+      <p className="text-[11px] mt-1.5 leading-snug" style={{ color: "var(--nly-text-tertiary)" }}>
+        {s.sizeBand ? `Based on ${s.sizeBand} leases · ` : ""}
+        Updated monthly, next on {next} · Took part = posted, commented, asked for help, RSVPed, answered a survey
+        or used Connect in at least {ENGAGED_RULE.minWeeks} of every {ENGAGED_RULE.windowWeeks} weeks before the
+        lease ended, counting only weeks since they joined · Not on Miyora = no matching resident account (includes
+        vacant units and unit-number mismatches)
         {notes.length > 0 ? ` · ${notes.join(" · ")}` : ""}
       </p>
     </>
   );
 }
 
-function Group({ label, stat }: { label: string; stat: GroupStat }) {
+function Group({ label, rate }: { label: string; rate: number }) {
   return (
     <div className="min-w-0">
-      {stat.rate === null ? (
-        <p className="text-sm font-medium mt-1.5 leading-tight" style={{ color: "var(--nly-text-secondary)" }}>
-          Not enough leases yet
-        </p>
-      ) : (
-        <p className="text-2xl font-semibold" style={{ color: "var(--nly-text-primary)" }}>
-          {stat.rate}%
-        </p>
-      )}
-      <p className="text-[11px] mt-0.5" style={{ color: "var(--nly-text-tertiary)" }}>
+      <p className="text-2xl font-semibold" style={{ color: "var(--nly-text-primary)" }}>
+        {rate}%
+      </p>
+      <p className="text-[11px] mt-0.5 leading-tight" style={{ color: "var(--nly-text-tertiary)" }}>
         {label}
-        {stat.leases === null || stat.renewed === null ? "" : ` · ${stat.renewed} of ${stat.leases} renewed`}
       </p>
     </div>
   );

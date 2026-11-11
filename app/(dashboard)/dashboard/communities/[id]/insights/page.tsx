@@ -29,7 +29,7 @@ import {
 } from "@/lib/activity-trend";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
 import { RenewalTile, type RenewalTileState } from "@/components/insights/RenewalTile";
-import { ENGAGED_RULE, renewalPeriod, toRenewalSummary, type RenewalSummaryRow } from "@/lib/renewal";
+import { toRenewalSnapshot, type RenewalSnapshotRow } from "@/lib/renewal";
 
 export const dynamic = "force-dynamic";
 
@@ -132,21 +132,14 @@ export default async function InsightsPage({
         .eq("community_code", code);
       if (countError) throw countError;
       if (!count) return { kind: "no-data" };
-      // One row of group totals (grouping and suppression happen in SQL), so
-      // no paging is needed here. Always the last 12 months, not the page
-      // range: shorter ranges never have enough leases at small properties.
-      const period = renewalPeriod(now);
-      const { data, error } = await supabase.rpc("get_lease_renewal_summary", {
-        p_community_code: code,
-        p_from: period.from,
-        p_to: period.to,
-        p_window_weeks: ENGAGED_RULE.windowWeeks,
-        p_min_weeks: ENGAGED_RULE.minWeeks,
-      });
+      // One row: the monthly snapshot (grouping, rounding and suppression all
+      // happen in SQL). The period is fixed by the database — the 12 full
+      // months before this month — not by the page's range filter.
+      const { data, error } = await supabase.rpc("get_lease_renewal_snapshot", { p_community_code: code });
       if (error) throw error;
-      const row = (data as RenewalSummaryRow[] | null)?.[0];
-      if (!row) throw new Error("get_lease_renewal_summary returned no row");
-      return { kind: "ready", summary: toRenewalSummary(row) };
+      const row = (data as RenewalSnapshotRow[] | null)?.[0];
+      if (!row) throw new Error("get_lease_renewal_snapshot returned no row");
+      return { kind: "ready", snapshot: toRenewalSnapshot(row) };
     } catch (e) {
       console.error("insights renewal read failed:", e);
       return { kind: "failed" };
