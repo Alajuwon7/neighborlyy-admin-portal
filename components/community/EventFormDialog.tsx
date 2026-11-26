@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { createEvent } from "@/app/(dashboard)/dashboard/communities/[id]/events/actions";
 import { EventImageField } from "@/components/community/EventImageField";
+import { HostedByField } from "@/components/community/HostedByField";
 import { localInputsToIso } from "@/lib/event-time";
 import { toast } from "sonner";
 
@@ -138,6 +139,7 @@ export function EventFormDialog({
               style={inputStyle}
             />
           </div>
+          <HostedByField defaultValue="management" />
           <EventImageField />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">

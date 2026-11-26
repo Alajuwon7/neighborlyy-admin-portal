@@ -1,5 +1,7 @@
 import { getCommunityWithAuth } from "@/lib/queries";
 import { trialDaysLeft as computeTrialDaysLeft } from "@/lib/trial-days";
+import { filterCountedResidents } from "@/lib/residents";
+import { BuildingResidentsField } from "@/components/community/BuildingResidentsField";
 import {
   Building2,
   Users,
@@ -20,7 +22,7 @@ export default async function CommunityOverviewPage({
   const { id } = await params;
   const { supabase, community } = await getCommunityWithAuth(id);
 
-  const [{ count: pendingCount }, { count: alertsCount }] = await Promise.all([
+  const [{ count: pendingCount }, { count: alertsCount }, { count: residentCount }] = await Promise.all([
     supabase
       .from("pending_users")
       .select("id", { count: "exact", head: true })
@@ -32,7 +34,14 @@ export default async function CommunityOverviewPage({
       .eq("community_code", community.community_code)
       // Match the app's AlertService.getActiveAlerts: unexpired alerts only.
       .or(`valid_until.is.null,valid_until.gt.${new Date().toISOString()}`),
+    filterCountedResidents(
+      supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("community_code", community.community_code),
+    ),
   ]);
+  const buildingResidents = (community.building_resident_count as number | null | undefined) ?? null;
 
   const trialDaysLeft =
     community.status === "trial" && community.trial_ends_at
@@ -95,6 +104,7 @@ export default async function CommunityOverviewPage({
           <div className="space-y-3">
             <InfoRow label="Property Type" value={community.property_type ?? "—"} capitalize />
             <InfoRow label="Unit Count" value={`${community.unit_count} units`} />
+            <BuildingResidentsField communityId={id} value={buildingResidents} />
             <InfoRow
               label="Address"
               value={
@@ -221,10 +231,14 @@ export default async function CommunityOverviewPage({
           >
             <Users size={15} /> Quick Stats
           </h2>
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            <StatBlock label="Units" value={community.unit_count ?? 0} />
-            <StatBlock label="Pending" value={pendingCount ?? 0} />
-            <StatBlock label="Active Alerts" value={alertsCount ?? 0} />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+            <StatBlock label="Units" value={(community.unit_count ?? 0).toLocaleString()} />
+            <StatBlock
+              label={buildingResidents ? `Residents on app (of ${buildingResidents.toLocaleString()})` : "Residents on app"}
+              value={(residentCount ?? 0).toLocaleString()}
+            />
+            <StatBlock label="Pending" value={(pendingCount ?? 0).toLocaleString()} />
+            <StatBlock label="Active Alerts" value={(alertsCount ?? 0).toLocaleString()} />
           </div>
         </section>
       </div>
@@ -266,7 +280,7 @@ function InfoRow({
   );
 }
 
-function StatBlock({ label, value }: { label: string; value: number }) {
+function StatBlock({ label, value }: { label: string; value: string }) {
   return (
     <div
       className="rounded-xl px-2 py-3 sm:p-3 text-center"

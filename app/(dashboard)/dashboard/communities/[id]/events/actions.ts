@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { parseEventHost } from "@/lib/event-host";
 import { revalidatePath } from "next/cache";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -88,6 +89,8 @@ export async function createEvent(formData: FormData, communityCode: string, com
     event_date: eventDate,
     image_url: imageUrl,
     max_attendees: maxAttendees,
+    // Portal posts default to management; the PM can mark resident-run events.
+    hosted_by: parseEventHost(formData.get("hosted_by")) ?? "management",
   });
 
   if (error) {
@@ -129,6 +132,8 @@ export async function updateEvent(
     event_date: eventDate,
     max_attendees: maxAttendees,
   };
+  const hostedBy = parseEventHost(formData.get("hosted_by"));
+  if (hostedBy) updates.hosted_by = hostedBy;
 
   // Image: a new file replaces it; the remove_image flag clears it; otherwise
   // leave image_url untouched.
