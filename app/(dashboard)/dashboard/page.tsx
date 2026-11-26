@@ -63,7 +63,9 @@ export default async function DashboardPage({
     commQuery = commQuery.eq("property_manager_id", pm.id);
   }
 
-  const { data: communitiesRaw } = await commQuery;
+  const { data: communitiesRaw, error: commError } = await commQuery;
+  // A failed read is not "no communities": don't send an existing PM to onboarding.
+  if (commError) throw commError;
 
   const communities = (
     communitiesRaw as
@@ -152,10 +154,24 @@ export default async function DashboardPage({
       .gte("created_at", weekAgoIso),
   ]);
 
-  const occupancyPct =
-    totalUnits > 0
-      ? Math.min(100, Math.round(((residentCount ?? 0) / totalUnits) * 100))
-      : 0;
+  // Adoption: residents on the app out of everyone living in the buildings.
+  // Only meaningful once every community has its building count set. Read
+  // separately so a missing column (migration 038 not applied) only hides
+  // the adoption bar instead of breaking the dashboard.
+  const { data: buildingRaw, error: buildingError } = await supabase
+    .from("communities")
+    .select("id, building_resident_count")
+    .in("id", communities.map((c) => c.id));
+  if (buildingError) console.error("dashboard building_resident_count read failed:", buildingError);
+  const buildingCounts = ((buildingRaw as { id: string; building_resident_count: number | null }[] | null) ?? []);
+  const buildingResidents =
+    !buildingError && buildingCounts.length === communities.length && buildingCounts.every((c) => c.building_resident_count)
+      ? buildingCounts.reduce((sum, c) => sum + (c.building_resident_count ?? 0), 0)
+      : null;
+  const adoptionPct =
+    buildingResidents
+      ? Math.min(100, Math.round(((residentCount ?? 0) / buildingResidents) * 100))
+      : null;
 
   // Build activity feed from recent events across tables
   const communityNameByCode = new Map(communities.map((c) => [c.community_code, c.name]));
@@ -355,9 +371,10 @@ export default async function DashboardPage({
           hasPendingUsers={(pendingCount ?? 0) > 0}
         />
 
-        {/* Summary cards */}
+        {/* Quick actions (left) + refresh (right), above the summary cards */}
         <DashboardSection delay={0}>
-          <div className="flex justify-end mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <QuickActions singleCommunityId={single ? firstId : null} />
             <RefreshButton />
           </div>
           <div data-tour="summary-cards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
@@ -381,39 +398,40 @@ export default async function DashboardPage({
               index={0}
             />
             <SummaryCard
-              label="Total Units"
-              value={totalUnits.toLocaleString()}
+              label="Total Residents"
+              value={(residentCount ?? 0).toLocaleString()}
               subtext={
-                totalUnits === 0
+                buildingResidents
+                  ? `of ${buildingResidents.toLocaleString()} residents are on the app`
+                  : (residentCount ?? 0) === 0
                   ? "No residents yet — share your community code"
-                  : "Across all properties"
+                  : "Residents on the app"
               }
               icon={<Users size={22} style={{ color: "var(--nly-accent)" }} />}
               accentColor="var(--nly-accent)"
-              href="/dashboard/communities"
-              trend={posDelta(newResidentsWk, "residents this week")}
+              href={single ? `/dashboard/communities/${firstId}` : "/dashboard/communities"}
+              trend={posDelta(newResidentsWk, "this week")}
               footer={
-                <div>
-                  <div
-                    className="h-1.5 w-full rounded-full overflow-hidden"
-                    style={{ backgroundColor: "var(--nly-border)" }}
-                  >
+                adoptionPct !== null ? (
+                  <div>
                     <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${occupancyPct}%`,
-                        backgroundColor: "var(--nly-accent)",
-                      }}
-                    />
+                      className="h-1.5 w-full rounded-full overflow-hidden"
+                      style={{ backgroundColor: "var(--nly-border)" }}
+                    >
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${adoptionPct}%`, backgroundColor: "var(--nly-accent)" }}
+                      />
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: "var(--nly-text-tertiary)" }}>
+                      {adoptionPct}% of the building has joined
+                    </p>
                   </div>
-                  <p
-                    className="text-xs mt-1.5"
-                    style={{ color: "var(--nly-text-tertiary)" }}
-                  >
-                    {occupancyPct}% occupied · {(residentCount ?? 0).toLocaleString()}{" "}
-                    {residentCount === 1 ? "resident" : "residents"}
+                ) : (
+                  <p className="text-xs" style={{ color: "var(--nly-text-tertiary)" }}>
+                    Add how many people live in your {single ? "building" : "buildings"} under Property Details to track adoption
                   </p>
-                </div>
+                )
               }
               index={1}
             />
@@ -481,11 +499,6 @@ export default async function DashboardPage({
               index={3}
             />
           </div>
-        </DashboardSection>
-
-        {/* Quick actions */}
-        <DashboardSection delay={0.05}>
-          <QuickActions singleCommunityId={single ? firstId : null} />
         </DashboardSection>
 
         {/* Smart nudges */}

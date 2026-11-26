@@ -28,6 +28,7 @@ import {
   type WeeklyActiveRow,
 } from "@/lib/activity-trend";
 import { RefreshButton } from "@/components/dashboard/RefreshButton";
+import { ExportReportDialog } from "@/components/insights/ExportReportDialog";
 import { RenewalTile, type RenewalTileState } from "@/components/insights/RenewalTile";
 import { toRenewalSnapshot, type RenewalSnapshotRow } from "@/lib/renewal";
 
@@ -311,6 +312,7 @@ export default async function InsightsPage({
               );
             })}
           </nav>
+          <ExportReportDialog communityId={id} />
           <RefreshButton />
         </div>
       </div>

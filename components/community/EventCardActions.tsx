@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { updateEvent, deleteEvent } from "@/app/(dashboard)/dashboard/communities/[id]/events/actions";
 import { EventImageField } from "@/components/community/EventImageField";
+import { HostedByField } from "@/components/community/HostedByField";
+import type { EventHost } from "@/lib/event-host";
 import { localInputsToIso, toLocalDateInput, toLocalTimeInput } from "@/lib/event-time";
 import { toast } from "sonner";
 
@@ -28,9 +30,11 @@ interface EventCardActionsProps {
     image_url: string | null;
   };
   communityId: string;
+  /** Current host (explicit or derived), to prefill the form. */
+  host?: EventHost;
 }
 
-export function EventCardActions({ event, communityId }: EventCardActionsProps) {
+export function EventCardActions({ event, communityId, host }: EventCardActionsProps) {
   const [deleting, setDeleting] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
@@ -156,6 +160,7 @@ export function EventCardActions({ event, communityId }: EventCardActionsProps) 
                 style={inputStyle}
               />
             </div>
+            <HostedByField defaultValue={host} />
             <EventImageField existingUrl={event.image_url} />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
